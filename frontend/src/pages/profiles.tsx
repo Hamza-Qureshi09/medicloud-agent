@@ -44,6 +44,7 @@ import {
 import { ConnectionBadge } from "@/components/common/statusBadge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConfirmAction } from "@/components/common/confirmAction"
+import { Container } from "@/components/common/container"
 
 
 export function ProfilesPage() {
@@ -102,7 +103,7 @@ export function ProfilesPage() {
 
 
 
-    return <div className="flex flex-col gap-6">
+    return <Container>
 
         {/* top space details */}
         <PageSection
@@ -287,7 +288,7 @@ export function ProfilesPage() {
                 }
             />
         )}
-    </div>
+    </Container>
 }
 
 
@@ -317,7 +318,7 @@ function ProfileDialog({
         },
     });
 
-
+    // dialog handler
     async function changeOpen(nextOpen: boolean) {
         setOpen(nextOpen)
 
@@ -328,11 +329,11 @@ function ProfileDialog({
         }
 
         // default selection of driver id
-        if (nextOpen && !profile && !form.getValues("driverId") && drivers[0]) {
+        if (nextOpen && !profile?.id && !form.getValues("driverId") && drivers[0]) {
             form.setValue("driverId", drivers[0].id)
         }
 
-        // // if i want to populate the whole profile form
+        // // if i want to populate the whole profile form with updated data not stale data
         // if (nextOpen && profile) {
         //     const result = await saveProfile.execute(
         //         () => api.profiles.get(profile.id)
@@ -373,27 +374,24 @@ function ProfileDialog({
         }
     }
 
+    const dialogTrigger = profile ? (
+        <Button variant="outline" size="sm">
+            <PencilSimpleIcon data-icon="inline-start" />
+            Edit profile
+        </Button>
+    ) : (
+        <Button size={"sm"}>
+            <PlusIcon data-icon="inline-start" />
+            Add analyzer
+        </Button>
+    )
 
     return <Dialog
         open={open}
         onOpenChange={(nextOpen) => void changeOpen(nextOpen)}
     >
         {/* dialog trigger (create/update) */}
-        <DialogTrigger
-            render={
-                profile ? (
-                    <Button variant="outline" size="sm">
-                        <PencilSimpleIcon data-icon="inline-start" />
-                        Edit profile
-                    </Button>
-                ) : (
-                    <Button size={"sm"}>
-                        <PlusIcon data-icon="inline-start" />
-                        Add analyzer
-                    </Button>
-                )
-            }
-        />
+        <DialogTrigger render={dialogTrigger} />
 
         <DialogContent>
             <form onSubmit={form.handleSubmit(onSubmit)} noValidate>

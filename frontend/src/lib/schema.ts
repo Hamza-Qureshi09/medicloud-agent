@@ -100,3 +100,14 @@ export type OrderPayload = ReturnType<typeof orderPayload>
 //     sampleType?: string | undefined;
 //     rackPosition?: string | undefined;
 // }
+
+// type OrderPayload = {
+//  sampleId: string;
+//  tests: string[];
+//  patientId: string | undefined;
+//  patientName: string | undefined;
+//  sampleType: string | undefined;
+//  rackPosition: string | undefined;
+//  expiresAt: string;
+//  machineId?: number | undefined;
+// }

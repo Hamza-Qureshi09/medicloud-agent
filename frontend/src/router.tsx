@@ -23,6 +23,12 @@ export const router = createBrowserRouter([
                     Component: (await import("@/pages/profiles")).ProfilesPage,
                 }),
             },
+            {
+                path: "orders",
+                lazy: async () => ({
+                    Component: (await import("@/pages/orders")).OrdersPage,
+                }),
+            },
 
 
             // if no route match show this 
