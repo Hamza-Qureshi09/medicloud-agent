@@ -44,9 +44,33 @@ export const router = createBrowserRouter([
                         (await import("./pages/orders/orderDetail.tsx")).OrderDetailPage,
                 }),
             },
+            {
+                path: "results",
+                lazy: async () => ({
+                    Component: (await import("@/pages/results/index")).ResultsPage,
+                }),
+            },
+            {
+                path: "catalogs",
+                lazy: async () => ({
+                    Component: (await import("@/pages/catalogs")).CatalogsPage,
+                }),
+            },
+            {
+                path: "drivers",
+                lazy: async () => ({
+                    Component: (await import("@/pages/drivers")).DriversPage,
+                }),
+            },
 
             // if no route match show this
             {
+                path: "*",
+                element: <Navigate to={"/"} replace={true} />
+            }
+        ]
+    }
+])
                 path: "*",
                 element: <Navigate to={"/"} replace={true} />,
             },

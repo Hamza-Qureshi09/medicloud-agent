@@ -19,7 +19,7 @@ export function RouteErrorPage() {
                 title="Dashboard route unavailable"
                 description={message}
                 action={
-                    <Button render={<Link to="/dashboard" />}>
+                    <Button render={<Link to="/dashboard/" />}>
                         <HouseIcon data-icon="inline-start" />
                         Return to overview
                     </Button>
