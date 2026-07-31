@@ -52,8 +52,6 @@ export function OrdersPage() {
     const sampleId = params.get("sampleId") || ""
     const [search, setSearch] = React.useState(sampleId);
 
-
-
     const orderQuery = React.useMemo(() => {
         return {
             status: status || undefined,

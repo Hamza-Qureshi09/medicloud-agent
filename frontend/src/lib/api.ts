@@ -47,7 +47,7 @@ export const api = {
         list: () => request<{ catalogs: CatalogSummary[] }>("/catalogs"),
 
         detailKey: (driverId: string) => ["catalogs.detail", driverId] as const,
-        get: (query: { driverId: string }) => request<CatalogDetail>("/catalogs", { query })
+        get: (query: { driver: string }) => request<CatalogDetail>("/catalogs", { query })
     },
 
     profiles: {

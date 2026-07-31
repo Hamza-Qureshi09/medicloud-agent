@@ -86,6 +86,7 @@ export function ProfilesPage() {
     } = useSWR(
         api.drivers.listKey(),
         () => api.drivers.list(),
+        {}
     )
 
     const running = React.useMemo(() => {

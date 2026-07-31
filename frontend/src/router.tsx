@@ -33,10 +33,28 @@ export const router = createBrowserRouter([
                     Component: (await import("@/pages/orders")).OrdersPage,
                 }),
             },
+            {
+                path: "results",
+                lazy: async () => ({
+                    Component: (await import("@/pages/results/index")).ResultsPage,
+                }),
+            },
+            {
+                path: "catalogs",
+                lazy: async () => ({
+                    Component: (await import("@/pages/catalogs")).CatalogsPage,
+                }),
+            },
+            {
+                path: "drivers",
+                lazy: async () => ({
+                    Component: (await import("@/pages/drivers")).DriversPage,
+                }),
+            },
 
             // if no route match show this 
             {
-                path: "*", 
+                path: "*",
                 element: <Navigate to={"/"} replace={true} />
             }
         ]
