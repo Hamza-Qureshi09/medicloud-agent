@@ -45,6 +45,8 @@ import {
 import { ConnectionBadge } from "@/components/common/statusBadge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConfirmAction } from "@/components/common/confirmAction"
+import { Container } from "@/components/common/container"
+
 
 // Directly import Shadcn's atomic UI elements
 import {
@@ -120,7 +122,7 @@ export function ProfilesPage() {
     const totalPages = Math.ceil(totalProfiles / ITEMS_PER_PAGE) || 1
 
     return (
-        <div className="flex flex-col gap-6">
+        <Container>
 
             {/* Header Section */}
             <PageSection
@@ -166,15 +168,15 @@ export function ProfilesPage() {
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
                                                 <CardTitle>
-                                                    <Link 
-                                                        to={`/dashboard/profiles/${profile.id}`} 
+                                                    <Link
+                                                        to={`/dashboard/profiles/${profile.id}`}
                                                         className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-bold text-base"
                                                     >
                                                         {profile.name || `Analyzer ${profile.id}`}
                                                         <ArrowRightIcon className="h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
                                                     </Link>
                                                 </CardTitle>
-                                                
+
                                                 <CardDescription className="pt-1">
                                                     <Link
                                                         to={`/dashboard/profiles/${profile.id}`}
@@ -338,7 +340,7 @@ export function ProfilesPage() {
                                             className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                         />
                                     </PaginationItem>
-                                    
+
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                         <PaginationItem key={page}>
                                             <PaginationLink
@@ -374,7 +376,7 @@ export function ProfilesPage() {
                     }
                 />
             )}
-        </div>
+        </Container>
     )
 }
 
@@ -403,17 +405,38 @@ function ProfileDialog({
         },
     });
 
+    // dialog handler
     async function changeOpen(nextOpen: boolean) {
         setOpen(nextOpen)
 
+        // clearn prvious errors/state
         if (nextOpen) {
             saveProfile.reset()
             form.clearErrors()
         }
 
-        if (nextOpen && !profile && !form.getValues("driverId") && drivers[0]) {
+        // default selection of driver id
+        if (nextOpen && !profile?.id && !form.getValues("driverId") && drivers[0]) {
             form.setValue("driverId", drivers[0].id)
         }
+
+        // // if i want to populate the whole profile form with updated data not stale data
+        // if (nextOpen && profile) {
+        //     const result = await saveProfile.execute(
+        //         () => api.profiles.get(profile.id)
+        //     )
+
+        //     form.reset({
+        //         name: result.profile.name,
+        //         driverId: result.profile.driverId,
+        //         enabled: result.profile.enabled,
+        //         config: JSON.stringify(
+        //             result.profile.config,
+        //             null,
+        //             2
+        //         ),
+        //     })
+        // }
     }
 
     const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
@@ -435,25 +458,25 @@ function ProfileDialog({
         }
     }
 
+    const dialogTrigger = profile ? (
+        <Button variant="outline" size="sm">
+            <PencilSimpleIcon data-icon="inline-start" />
+            Edit profile
+        </Button>
+    ) : (
+        <Button size={"sm"}>
+            <PlusIcon data-icon="inline-start" />
+            Add analyzer
+        </Button>
+    )
+
     return (
         <Dialog
             open={open}
             onOpenChange={(nextOpen) => void changeOpen(nextOpen)}
         >
             <DialogTrigger
-                render={
-                    profile ? (
-                        <Button variant="outline" size="sm">
-                            <PencilSimpleIcon data-icon="inline-start" />
-                            Edit profile
-                        </Button>
-                    ) : (
-                        <Button size={"sm"}>
-                            <PlusIcon data-icon="inline-start" />
-                            Add analyzer
-                        </Button>
-                    )
-                }
+                render={dialogTrigger}
             />
 
             <DialogContent>
@@ -509,7 +532,7 @@ function ProfileDialog({
                                         </Select>
                                     </Field>
                                 )
-                            }} 
+                            }}
                         />
 
                         <Field data-invalid={Boolean(form.formState.errors.config)}>

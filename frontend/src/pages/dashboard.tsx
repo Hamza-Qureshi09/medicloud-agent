@@ -27,6 +27,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } fro
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { OrderStatusBadge } from "@/components/common/statusBadge"
+import { Container } from "@/components/common/container"
 
 
 
@@ -45,6 +46,7 @@ export function DashboardPage() {
         isValidating: healthIsValidating
     } = useHealth()
 
+    // Rqst #1 (order)
     const orderQuery = React.useMemo(() => ({ limit: 50 }), [])
     const {
         data: ordersData,
@@ -57,6 +59,7 @@ export function DashboardPage() {
         {} // swr config for this rqst
     )
 
+    // Rqst #2 (test stats)
     const statisticQuery = React.useMemo(() => ({ limit: 12 }), [])
     const {
         data: statisticsData,
@@ -119,9 +122,8 @@ export function DashboardPage() {
     }
 
 
-    return <div className="flex flex-col gap-6">
-
-        {/* top space details */}
+    return <Container>
+        {/* top page details */}
         <PageSection
             eyebrow="Live workspace"
             title="Clinical throughput at a glance"
@@ -329,7 +331,7 @@ export function DashboardPage() {
             </Card>
         </div>
 
-    </div>
+    </Container>
 }
 
 // chip / stat card
