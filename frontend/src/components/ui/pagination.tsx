@@ -69,10 +69,10 @@ function PaginationPrevious({
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
   return (
     <PaginationLink
-      {...props}
       aria-label="Go to previous page"
       size="default"
       className={cn("pl-2!", className)}
+      {...props}
     >
       <CaretLeftIcon data-icon="inline-start" />
       <span className="hidden sm:block">{text}</span>
@@ -87,10 +87,10 @@ function PaginationNext({
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
   return (
     <PaginationLink
-      {...props}
       aria-label="Go to next page"
       size="default"
       className={cn("pr-2!", className)}
+      {...props}
     >
       <span className="hidden sm:block">{text}</span>
       <CaretRightIcon data-icon="inline-end" />
