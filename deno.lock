@@ -1,12 +1,12 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@hono/hono@^4.12.32": "4.12.32",
+    "jsr:@hono/hono@^4.12.32": "4.12.33",
     "jsr:@zod/zod@^4.4.3": "4.4.3"
   },
   "jsr": {
-    "@hono/hono@4.12.32": {
-      "integrity": "e1274e968ee724176d7e35946c184d3cb8508f05e3f8ae6cee157c4f29ef148d"
+    "@hono/hono@4.12.33": {
+      "integrity": "0df9fd54840e64fd3c10455aed240ed1dbc8b2773b6d9b825e3a681378d1ba77"
     },
     "@zod/zod@4.4.3": {
       "integrity": "4712ac0967efaa718b37c36eaffb4e1d4457e1a266aef6efb3ab36f54a6fefe4"
@@ -16,7 +16,7 @@
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseMachine.ts": "53ac83bc24ec8fe2e099a17c66d8067be559b56b476f73fbfe028059f508aa58",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseProtocol.ts": "e1fde65dfe527ba48ee61cd30e4e42a72d6c2d93f50439ac212e176cd8125848",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseStore.ts": "bcfcf24e9bde63b234d46564bc869d853493dfeeb69cf6cc6f1d183bdcf7b79b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/db/sqLite.ts": "96568859d796016bc2c160eee42ff7f98cab8f0f0104d56226a64eb2c9fbe223",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/db/sqLite.ts": "7ecfcb0e35bb7acb5d900809db07883eef74390c1a6c616359407071cfc77a13",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/orders.routes.ts": "df1dfbd5d725049150f6bec2b61a77c951f665c7433ff53120cd456864c5e40b",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/profile.routes.ts": "b98d34aabd5d51ae69b0632849e9e1f1d46900e50996d3614aaed14f6a3cf480",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/results.routes.ts": "d0a0b07007eccfebe858c5c73dc940dc79ee73bbe7ac4b147bc4ffa1d7c5fd85",
@@ -50,10 +50,10 @@
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/variants/cobasC111Serial.ts": "2a495df951a19d7fa65b90ce5b5dcbca557dfc0818778b83f1b56c2d68e8263e",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/registry.ts": "40d67c7a605a68ce4fa8f9a0485b8322610a7c4a72acb968efe5b2125aafd11e",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/schema.ts": "3fccfe30ad9b3e4618291f7d39523895b2313dcf56bbe5fa58f0625a3b036392",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/orderStore.ts": "e7cadd398a79382cfb487a55679bb081507f826dbc4c9f68a413b5637336d834",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/profileStore.ts": "f56970fb66aa57758e821958094c7301adc69d2d7b7841fd0e979f90a3039150",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/resultStore.ts": "b22f6dd329ecdd450d10f44e8407935b4567d5aaf63db390af280221bb2f902a",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/testStatisticStore.ts": "b9c138491a7e846dea6aa72ab131aeaf570ac1f34b3bbf6c34e9d2e5a1809656",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/orderStore.ts": "dfc7d2c7562ba63e7b26fdf349e22c7e8c056ddb2687b1c2fbeeef71646eba97",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/profileStore.ts": "2f0ea1c3a7adda512a10c0982b732ad73f476c72e1654183579ff440648f93a0",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/resultStore.ts": "2f29fdcaa1add1d4aee23cae6a67d4540aa9e3973e7e750ec74f7abfe9ab483f",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/testStatisticStore.ts": "515b432d0f0fc480e482ecdd6ba89f6b0eed442bcb11d79bcc15f4552235e366",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/machineCom.ts": "6c29c2be480f2f65a4b1f8ee43bb762f27196d0f52824a3d8e621cd8ebf61687",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/serialConn.ts": "74593a920b43361e823bae02214ad6917c9cc2613007a5ae2135cf74f46e8490",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/types.ts": "add373e7b5c7cc9d4cf1af00009bd6747ff0aa9e21254a1df98673e8db166b52"
