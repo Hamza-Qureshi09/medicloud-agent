@@ -387,14 +387,14 @@ function OrderDialog({
                 <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
 
                     <DialogHeader>
-                        <DialogTitle>{order ? "Edit order" : "Create order"}</DialogTitle>
+                        <DialogTitle>{order?.id ? "Edit order" : "Create order"}</DialogTitle>
                         <DialogDescription>
                             Active orders are staged in the target analyzer after validation.
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* no running analyzer/machine */}
-                    {!order && profiles.length === 0 ? (
+                    {!order?.id && profiles.length === 0 ? (
                         <div className="py-5">
                             <ResourceEmpty
                                 title="No running analyzer"
