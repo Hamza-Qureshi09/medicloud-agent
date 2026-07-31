@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { MachineOrder, MachineProfile, OrderStatus } from "@/types/api";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import { PageLoading, RefreshButton, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import useSWR from "swr";
 import { api } from "@/lib/api";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -39,12 +39,11 @@ import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { orderFormSchema, orderPayload, type OrderFormValues, } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
-import { ArrowCounterClockwiseIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon, PencilSimpleIcon, PlusIcon, TrashIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { OrderStatusBadge } from "@/components/common/statusBadge";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
-
 
 export function OrdersPage() {
     const [params, setParams] = useSearchParams()
@@ -59,6 +58,7 @@ export function OrdersPage() {
             limit: 100,
         }
     }, [status, sampleId])
+
     const {
         data: ordersData,
         isValidating: orderIsValidating,
@@ -67,17 +67,17 @@ export function OrdersPage() {
     } = useSWR(
         api.orders.listKey(orderQuery),
         () => api.orders.list(orderQuery),
-        {} // swr config for this rqst
+        {}
     )
 
-    const profileQuery = React.useMemo(() => ({ enabled: true }), [])
+    const profileQuery = useMemo(() => ({ enabled: true }), [])
     const {
         data: profilesData,
         mutate: profilesMutate
     } = useSWR(
         api.profiles.listKey(profileQuery),
         () => api.profiles.list(profileQuery),
-        {} // swr config for this rqst
+        {}
     )
 
     const orderAction = useAsyncAction("Order action failed.")
@@ -97,12 +97,10 @@ export function OrdersPage() {
 
     const debouncedUpdateFilter = useDebounceCallback(updateFilter, 400);
 
-
     if (!ordersData && !orderErrors) return <PageLoading />
     if (orderErrors) {
         return <ResourceError error={orderErrors} onRetry={() => orderMutate()} />
     }
-
 
     // actions
     async function runOrderMutation(action: () => Promise<unknown>) {
@@ -111,8 +109,6 @@ export function OrdersPage() {
             await Promise.all([orderMutate(), profilesMutate()])
         }).catch(() => undefined)
     }
-
-
 
     return (
         <Container>
@@ -137,14 +133,13 @@ export function OrdersPage() {
             />
 
             {/* search filter */}
-            <div className="grid gap-3 rounded-3xl border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+            <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
                 <Input
                     aria-label="Search by sample ID"
                     placeholder="Search sample ID"
                     value={search}
                     onChange={(event) => {
                         const value = event.target.value;
-
                         setSearch(value);
                         debouncedUpdateFilter("sampleId", value);
                     }}
@@ -174,7 +169,7 @@ export function OrdersPage() {
                 </Select>
             </div>
 
-            {/* error handling in case of search/filter*/}
+            {/* error handling */}
             {orderAction.error ? (
                 <Alert variant="destructive">
                     <AlertTitle>Order action failed</AlertTitle>
@@ -184,11 +179,11 @@ export function OrdersPage() {
 
             {/* order table */}
             {ordersData?.orders.length ? (
-                <div className="overflow-hidden rounded-3xl border bg-card">
+                <div className="overflow-x-auto rounded-2xl border border-border bg-card">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Sample</TableHead>
+                                <TableHead>Sample ID</TableHead>
                                 <TableHead>Patient</TableHead>
                                 <TableHead>Analyzer</TableHead>
                                 <TableHead>Tests</TableHead>
@@ -199,21 +194,44 @@ export function OrdersPage() {
                         </TableHeader>
                         <TableBody>
                             {ordersData.orders.map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell className="font-medium">{order.sampleId}</TableCell>
+                                <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
+                                    {/* Clickable Underlined Sample ID navigating to Order Details */}
+                                    <TableCell className="font-semibold">
+                                        <Link 
+                                            to={`/dashboard/orders/${order.id}`}
+                                            className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1 text-foreground"
+                                        >
+                                            {order.sampleId}
+                                            <ArrowRightIcon className="h-3.5 w-3.5 opacity-40 hover:opacity-100" />
+                                        </Link>
+                                    </TableCell>
+
                                     <TableCell>{order.patientName || order.patientId || "—"}</TableCell>
-                                    <TableCell className="tabular-nums">#{order.machineId}</TableCell>
-                                    <TableCell className="max-w-56 truncate">
+
+                                    {/* Clickable Analyzer Machine ID navigating to Profile */}
+                                    <TableCell className="tabular-nums font-mono text-xs">
+                                        <Link 
+                                            to={`/dashboard/profiles/${order.machineId}`}
+                                            className="hover:underline hover:text-primary text-muted-foreground transition-colors"
+                                        >
+                                            #{order.machineId}
+                                        </Link>
+                                    </TableCell>
+
+                                    <TableCell className="max-w-56 truncate font-medium">
                                         {order.tests.join(", ")}
                                     </TableCell>
+
                                     <TableCell>
                                         <OrderStatusBadge status={order.status} />
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground">
+
+                                    <TableCell className="text-muted-foreground text-xs font-mono">
                                         {new Date(order.expiresAt).toLocaleString()}
                                     </TableCell>
+
                                     <TableCell>
-                                        <div className="flex justify-end gap-1">
+                                        <div className="flex items-center justify-end gap-1">
                                             {order.status !== "completed" ? (
                                                 <OrderDialog
                                                     profiles={profilesData?.profiles ?? []}
@@ -221,7 +239,8 @@ export function OrdersPage() {
                                                     onSaved={orderMutate}
                                                 />
                                             ) : null}
-                                            {order.status === "failed" || order.status === "pending" ? (
+                                            
+                                            {(order.status === "failed" || order.status === "pending") && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon-xs"
@@ -234,7 +253,8 @@ export function OrdersPage() {
                                                 >
                                                     <ArrowCounterClockwiseIcon />
                                                 </Button>
-                                            ) : null}
+                                            )}
+
                                             {order.status !== "completed" ? (
                                                 <ConfirmAction
                                                     trigger={
@@ -279,8 +299,6 @@ export function OrdersPage() {
     )
 }
 
-
-// default values
 function getOrderFormDefaults(defaultExpiry: string, profiles: MachineProfile[], order?: MachineOrder): OrderFormValues {
     return {
         machineId: String(order?.machineId ?? profiles[0]?.id ?? ""),
@@ -291,11 +309,11 @@ function getOrderFormDefaults(defaultExpiry: string, profiles: MachineProfile[],
         sampleType: order?.sampleType ?? "",
         rackPosition: order?.rackPosition ?? "",
         expiresAt: order
-            ? new Date(order.expiresAt).toISOString()
-            : defaultExpiry,
+            ? new Date(order.expiresAt).toISOString().slice(0, 16)
+            : defaultExpiry.slice(0, 16),
     };
 }
-// order form (create/update)
+
 function OrderDialog({
     profiles,
     order,
@@ -306,54 +324,43 @@ function OrderDialog({
     onSaved: () => Promise<unknown>
 }) {
     const [open, setOpen] = React.useState(false)
-
     const saveOrder = useAsyncAction("Order could not be saved.")
+    const [defaultExpiry] = React.useState(() => new Date(Date.now() + 86_400_000).toISOString())
 
-    const [defaultExpiry] = React.useState(() => new Date(Date.now() + 86_400_000).toISOString()) // 24 hours
-
-    // form handler
     const form = useForm<OrderFormValues>({
         resolver: zodResolver(orderFormSchema),
         defaultValues: getOrderFormDefaults(defaultExpiry, profiles, order),
     });
     const machineId = form.watch("machineId")
 
-    // dialog handler
     async function changeOpen(nextOpen: boolean) {
         setOpen(nextOpen)
 
-        // clearn prvious errors/state
         if (nextOpen) {
             saveOrder.reset()
             form.clearErrors()
         }
 
-        // default selection of machine id
         if (nextOpen && !order?.id && !form.getValues("machineId") && profiles[0]) {
             form.setValue("machineId", String(profiles[0].id))
         }
 
-        // // if i want to populate the whole order form with updated data not stale data
         if (nextOpen && order?.id) {
             const { order: latestOrder } = await saveOrder.execute(
                 () => api.orders.get(order.id)
             )
-
             form.reset(getOrderFormDefaults(defaultExpiry, profiles, latestOrder))
         }
     }
 
-    // form submission
     const onSubmit: SubmitHandler<OrderFormValues> = async (data) => {
         try {
             await saveOrder.execute(async () => {
                 const input = orderPayload(data, Boolean(order?.id))
 
-                // update/create cases
                 if (order?.id) await api.orders.update(order.id, input)
                 else await api.orders.create(input)
 
-                // callback call
                 await onSaved()
                 setOpen(false)
             })
@@ -375,15 +382,13 @@ function OrderDialog({
             New order
         </Button>
     )
+
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => void changeOpen(nextOpen)}>
-
-            {/* dialog trigger (create/update) */}
             <DialogTrigger render={dialogTrigger} />
 
             <DialogContent>
                 <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-
                     <DialogHeader>
                         <DialogTitle>{order?.id ? "Edit order" : "Create order"}</DialogTitle>
                         <DialogDescription>
@@ -391,7 +396,6 @@ function OrderDialog({
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* no running analyzer/machine */}
                     {!order?.id && profiles.length === 0 ? (
                         <div className="py-5">
                             <ResourceEmpty
@@ -402,22 +406,21 @@ function OrderDialog({
                     ) : (
                         <FieldGroup className="py-5">
 
-                            {/* select analyzer */}
+                            {/* select analyzer (Required *) */}
                             {!order?.id ? (
                                 <Controller
                                     control={form.control}
                                     name="machineId"
                                     render={({ field, fieldState }) => (
                                         <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel>Analyzer profile</FieldLabel>
+                                            <FieldLabel>
+                                                Analyzer profile <span className="text-destructive ml-0.5">*</span>
+                                            </FieldLabel>
                                             <Select
                                                 value={field.value}
                                                 onValueChange={(value) => field.onChange(value ?? "")}
                                             >
-                                                <SelectTrigger
-                                                    className="w-full"
-                                                    aria-invalid={fieldState.invalid}
-                                                >
+                                                <SelectTrigger className="w-full" aria-invalid={fieldState.invalid}>
                                                     <SelectValue>
                                                         {profiles.find(
                                                             (profile) => String(profile.id) === field.value,
@@ -444,13 +447,15 @@ function OrderDialog({
                             ) : null}
 
                             <div className="grid gap-4 sm:grid-cols-2">
-                                {/* sampleID */}
+                                {/* sampleID (Required *) */}
                                 <Field data-invalid={Boolean(form.formState.errors.sampleId)}>
-                                    <FieldLabel htmlFor="sample-id">Sample ID</FieldLabel>
+                                    <FieldLabel htmlFor="sample-id">
+                                        Sample ID <span className="text-destructive ml-0.5">*</span>
+                                    </FieldLabel>
                                     <Input
                                         id="sample-id"
                                         aria-invalid={Boolean(form.formState.errors.sampleId)}
-                                        placeholder={"sample_id / barcode_id"}
+                                        placeholder="sample_id / barcode_id"
                                         required
                                         {...form.register("sampleId")}
                                     />
@@ -459,9 +464,11 @@ function OrderDialog({
                                     </FieldError>
                                 </Field>
 
-                                {/* Tests */}
+                                {/* Tests (Required *) */}
                                 <Field data-invalid={Boolean(form.formState.errors.tests)}>
-                                    <FieldLabel htmlFor="tests">Tests</FieldLabel>
+                                    <FieldLabel htmlFor="tests">
+                                        Tests <span className="text-destructive ml-0.5">*</span>
+                                    </FieldLabel>
                                     <Input
                                         id="tests"
                                         aria-invalid={Boolean(form.formState.errors.tests)}
@@ -472,9 +479,11 @@ function OrderDialog({
                                     <FieldError>{form.formState.errors.tests?.message}</FieldError>
                                 </Field>
 
-                                {/* patient Id */}
+                                {/* patient Id (Optional) */}
                                 <Field data-invalid={Boolean(form.formState.errors.patientId)}>
-                                    <FieldLabel htmlFor="patient-id">Patient ID</FieldLabel>
+                                    <FieldLabel htmlFor="patient-id">
+                                        Patient ID <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                                    </FieldLabel>
                                     <Input
                                         id="patient-id"
                                         aria-invalid={Boolean(form.formState.errors.patientId)}
@@ -485,9 +494,11 @@ function OrderDialog({
                                     </FieldError>
                                 </Field>
 
-                                {/* patient name */}
+                                {/* patient name (Optional) */}
                                 <Field data-invalid={Boolean(form.formState.errors.patientName)}>
-                                    <FieldLabel htmlFor="patient-name">Patient name</FieldLabel>
+                                    <FieldLabel htmlFor="patient-name">
+                                        Patient name <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                                    </FieldLabel>
                                     <Input
                                         id="patient-name"
                                         aria-invalid={Boolean(form.formState.errors.patientName)}
@@ -498,9 +509,11 @@ function OrderDialog({
                                     </FieldError>
                                 </Field>
 
-                                {/* sample type */}
+                                {/* sample type (Optional) */}
                                 <Field data-invalid={Boolean(form.formState.errors.sampleType)}>
-                                    <FieldLabel htmlFor="sample-type">Sample type</FieldLabel>
+                                    <FieldLabel htmlFor="sample-type">
+                                        Sample type <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                                    </FieldLabel>
                                     <Input
                                         id="sample-type"
                                         aria-invalid={Boolean(form.formState.errors.sampleType)}
@@ -512,9 +525,11 @@ function OrderDialog({
                                     </FieldError>
                                 </Field>
 
-                                {/* rack position */}
+                                {/* rack position (Optional) */}
                                 <Field data-invalid={Boolean(form.formState.errors.rackPosition)}>
-                                    <FieldLabel htmlFor="rack-position">Rack position</FieldLabel>
+                                    <FieldLabel htmlFor="rack-position">
+                                        Rack position <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                                    </FieldLabel>
                                     <Input
                                         id="rack-position"
                                         aria-invalid={Boolean(form.formState.errors.rackPosition)}
@@ -527,9 +542,11 @@ function OrderDialog({
                                 </Field>
                             </div>
 
-                            {/* order expire date setup */}
+                            {/* order expire date setup (Required *) */}
                             <Field data-invalid={Boolean(form.formState.errors.expiresAt)}>
-                                <FieldLabel htmlFor="expires-at">Expires at</FieldLabel>
+                                <FieldLabel htmlFor="expires-at">
+                                    Expires at <span className="text-destructive ml-0.5">*</span>
+                                </FieldLabel>
                                 <Input
                                     id="expires-at"
                                     type="datetime-local"
@@ -553,7 +570,6 @@ function OrderDialog({
                         </FieldGroup>
                     )}
 
-                    {/* footer */}
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                             Cancel
@@ -573,5 +589,4 @@ function OrderDialog({
             </DialogContent>
         </Dialog>
     )
-
 }
