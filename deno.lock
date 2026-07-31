@@ -1,0 +1,78 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@hono/hono@^4.12.32": "4.12.32",
+    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
+    "jsr:@zod/zod@^4.4.3": "4.4.3"
+  },
+  "jsr": {
+    "@hono/hono@4.12.32": {
+      "integrity": "e1274e968ee724176d7e35946c184d3cb8508f05e3f8ae6cee157c4f29ef148d"
+    },
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
+    },
+    "@zod/zod@4.4.3": {
+      "integrity": "4712ac0967efaa718b37c36eaffb4e1d4457e1a266aef6efb3ab36f54a6fefe4"
+    }
+  },
+  "remote": {
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseMachine.ts": "53ac83bc24ec8fe2e099a17c66d8067be559b56b476f73fbfe028059f508aa58",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseProtocol.ts": "e1fde65dfe527ba48ee61cd30e4e42a72d6c2d93f50439ac212e176cd8125848",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseStore.ts": "bcfcf24e9bde63b234d46564bc869d853493dfeeb69cf6cc6f1d183bdcf7b79b",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/db/sqLite.ts": "96568859d796016bc2c160eee42ff7f98cab8f0f0104d56226a64eb2c9fbe223",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/orders.routes.ts": "2296b929716ead30d28af32d7b31cd2dde3af5828a1603630a104cf8ebca8c46",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/profile.routes.ts": "175cb58e7fa9e0904a840db4f415da5a17135298c4a5b42c5e8c6874333338cc",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/results.routes.ts": "491061889bea63dbc823137ce70a770a2f28ea7c54b7b82f4a1520fb96297864",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/routes.ts": "3b371f69cf3a72383dec6794e816997c8f468df38ef9a324c62be516789267ba",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/testStatistics.routes.ts": "62c386538f249c20ca95e31672eeac87e07285ec4f504fa5b34388d9f1779b5c",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/utils.ts": "6f15b896071c918ae0d541178c0879931ffb61da792da74a1740ad49da1554e3",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/validation.ts": "359a336afef87b416ff435d4760b46bc6217ab45f3b508a50079453930d2925b",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/logger.ts": "72a058e233043335f6de297a5e064d0e89e7f91d74348cb25f774f00b5cd9aea",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/utils.ts": "553f499d3c4928feb28677d6bc392d8b39942857274dcb634327d2aa37fa863f",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machineManager.ts": "8f3d4f2585547a064e20966325803f1fd72ae954b01eac28148e94d82eb248fe",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/astm.ts": "15e39910ad43e625732c5b6ebead1664116d4e373ce8442b9d1f1fc33f7665d9",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/catalog.ts": "28eab55d28cde7c346942851907266a66b5e5a69d8ea01340886e24a20eba7a0",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/iFlash3000.ts": "a10bf97071f09d804950c450d202744a529082346127bbe21bff62a5df906b75",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/inbound.ts": "4d702cb3f8b7f0ee0a28ab07ec42f9420476bcb3ee2b46b8bbdbb1db10a9b679",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/outbound.ts": "4ed511d32778b6cd324cfc61689a52eca67dd6b504a5c083dcc12bcc162cb903",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/astm.ts": "9676d867e28f8cae56fb7cfc7f899e40bdaebdf1c0246a2c7714cbb34bae795f",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/catalog.ts": "8323943225b77adc68e3819abc7197fe8a2cbbfc9683c1d88b1f37979fd9c06a",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/inbound.ts": "72d408302568b01117a6e702d562bc3a99271b3a5c29650b19e146191dc2985b",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/maglumi800.ts": "baf722dc7178e91919f5b53bfdd3ca191768a82c867ed661dab274920444de9f",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/outbound.ts": "09eb89c5abca76d893c9661a098edb8b328649b02b508b20b3ad4afbabbe1232",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/mod.ts": "c1fbe9e0c1c9505fa5262c5571a7226048493df439c31d3a3398d47ebff78742",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/astm.ts": "eab22c737362c0c80a73e561958a3e12c084c1fec2f7ec85db0cfa73d4aaafd9",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/catalog.ts": "b75cf5672da57daf4c381e9b8dcc53414b0b7741803d5e54d413c5c2ff293d25",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/inbound.ts": "0efd352982d9d628abbe2889afc3c0975974324fd45048e59681491d0b79ab1c",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/outbound.ts": "f8d66a2745beeed1bb36a8352ecb654358ef606a0eca722f4aeb550301a0dc6f",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/rocheCobasC111.ts": "b5eae60c3698eb85688598c4e54b7a38d243f0f981fe228843bbce3a279979c2",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/checksum.ts": "a78810d892d6d6322e6b2337055cf982a84044f5b7ea0c112b7cee53e60d3dd2",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/constants.ts": "0123d0ebd1e4b4773738493c99660cf90ea92afc2018025e4c8ada2932ae3917",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/link.ts": "36b64374fd480ac16e58944d1302412a73491170fcb7e74005ae8b169014b11e",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/records.ts": "7412f206214601f876c3262fd66967c49340060f3f32c001e1e49967b715cb5e",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/variants/cobasC111Serial.ts": "2a495df951a19d7fa65b90ce5b5dcbca557dfc0818778b83f1b56c2d68e8263e",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/registry.ts": "60d6723d25236215879a22b40e3eba588a66c9fa6bdc78da02bc44eec3f899f0",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/orderStore.ts": "e7cadd398a79382cfb487a55679bb081507f826dbc4c9f68a413b5637336d834",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/profileStore.ts": "f56970fb66aa57758e821958094c7301adc69d2d7b7841fd0e979f90a3039150",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/resultStore.ts": "b22f6dd329ecdd450d10f44e8407935b4567d5aaf63db390af280221bb2f902a",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/testStatisticStore.ts": "b9c138491a7e846dea6aa72ab131aeaf570ac1f34b3bbf6c34e9d2e5a1809656",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/machineCom.ts": "6c29c2be480f2f65a4b1f8ee43bb762f27196d0f52824a3d8e621cd8ebf61687",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/serialConn.ts": "74593a920b43361e823bae02214ad6917c9cc2613007a5ae2135cf74f46e8490",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/types.ts": "2c54fe9763e527632548fb02233d6a4b58a26832d2f63c38d5ba58ae52561cba"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@hono/hono@^4.12.32",
+      "jsr:@std/assert@1",
+      "jsr:@zod/zod@^4.4.3"
+    ]
+  }
+}
