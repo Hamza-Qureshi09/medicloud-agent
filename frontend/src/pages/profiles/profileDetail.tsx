@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { useParams, useNavigate, Link } from "react-router-dom"
+import React from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import useSWR from "swr"
 import { api } from "@/lib/api"
 import { useHealth } from "@/contexts/health-context"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { ConfirmAction } from "@/components/common/confirmAction"
+import { Container } from "@/components/common/container"
 import { 
     ArrowLeftIcon, 
     CpuIcon, 
@@ -20,15 +21,13 @@ import {
     TrashIcon,
     ClockIcon,
     CheckCircleIcon,
+    XCircleIcon,
     RadioIcon,
     PlugsConnectedIcon,
     HardDriveIcon,
-    CopyIcon,
-    CheckIcon,
-    ActivityIcon,
-    BrowsersIcon,
-    ShieldCheckIcon,
-    SquaresFourIcon
+    FileCodeIcon,
+    LightningIcon,
+    SlidersIcon
 } from "@phosphor-icons/react"
 
 export function ProfileDetailPage() {
@@ -36,7 +35,6 @@ export function ProfileDetailPage() {
     const navigate = useNavigate()
     const machineId = Number(id)
 
-    const [copied, setCopied] = useState(false)
     const { data: healthData, mutate: healthMutate } = useHealth()
 
     // Fetch Profile Detail
@@ -76,7 +74,7 @@ export function ProfileDetailPage() {
     const profile = profileData.profile
     const matchedDriver = driversData?.drivers.find((d) => d.id === profile.driverId)
 
-    // Advanced Dynamic Config Parsing (TCP vs Serial RS232 detection)
+    // Dynamic Connection Detection (TCP vs Serial RS232)
     const configObj = (profile.config && typeof profile.config === 'object') ? profile.config as Record<string, unknown> : {}
     const isSerial = 'comPort' in configObj || 'baudRate' in configObj || 'path' in configObj
     
@@ -86,6 +84,7 @@ export function ProfileDetailPage() {
     const baudRate = configObj.baudRate ? String(configObj.baudRate) : "9600"
 
     const isRunning = machine?.running ?? profile.enabled
+    const isConnected = machine?.connected ?? false
 
     async function handleLifecycleAction(action: () => Promise<unknown>) {
         await profileAction.execute(async () => {
@@ -94,267 +93,233 @@ export function ProfileDetailPage() {
         }).catch(() => undefined)
     }
 
-    const handleCopyConfig = () => {
-        navigator.clipboard.writeText(JSON.stringify(profile.config, null, 2))
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-    }
-
     return (
-        <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto pb-10">
-            
-            {/* Top Navigation & Executive Actions */}
-            <div className="flex flex-col gap-3">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-fit gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all -ml-2"
-                    onClick={() => navigate("/dashboard/profiles")}
-                >
-                    <ArrowLeftIcon className="h-4 w-4" />
-                    <span className="text-xs font-semibold">Back to Analyzer Profiles</span>
-                </Button>
+        <Container>
+            <div className="flex flex-col gap-6 w-full">
+                
+                {/* Top Navigation & Action Header */}
+                <div className="flex flex-col gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-fit gap-1.5 text-muted-foreground hover:text-foreground p-0 hover:bg-transparent"
+                        onClick={() => navigate("/dashboard/profiles")}
+                    >
+                        <ArrowLeftIcon className="h-4 w-4" />
+                        <span>Back to Analyzer Profiles</span>
+                    </Button>
 
-                <PageSection
-                    eyebrow={`PROFILE SPECIFICATION • #${profile.id}`}
-                    title={profile.name || `Analyzer Profile ${profile.id}`}
-                    description="Real-time telemetry, interface drivers, hardware socket specs, and system payload validation."
-                    actions={
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            {/* Action Control Group */}
-                            {isRunning ? (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="gap-2 rounded-xl border-amber-500/30 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/30 shadow-sm"
-                                    onClick={() => handleLifecycleAction(() => api.profiles.stop(profile.id))}
-                                >
-                                    <StopIcon weight="fill" className="h-4 w-4" />
-                                    <span>Stop Analyzer</span>
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    className="gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
-                                    onClick={() => handleLifecycleAction(() => api.profiles.start(profile.id))}
-                                >
-                                    <PlayIcon weight="fill" className="h-4 w-4" />
-                                    <span>Start Analyzer</span>
-                                </Button>
-                            )}
+                    <PageSection
+                        eyebrow={`PROFILE ID: #${profile.id}`}
+                        title={profile.name || `Analyzer ${profile.id}`}
+                        description="Detailed connection specifications, live machine health, and driver runtime configuration."
+                        actions={
+                            <div className="flex flex-wrap items-center gap-2">
+                                <ConnectionBadge
+                                    connected={isConnected}
+                                    running={isRunning}
+                                />
 
-                            <ConfirmAction
-                                trigger={
-                                    <Button variant="destructive" size="sm" className="gap-2 rounded-xl shadow-sm">
-                                        <TrashIcon className="h-4 w-4" />
-                                        <span>Delete Profile</span>
+                                {isRunning ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleLifecycleAction(() => api.profiles.stop(profile.id))}
+                                    >
+                                        <StopIcon data-icon="inline-start" />
+                                        <span>Stop analyzer</span>
                                     </Button>
-                                }
-                                title="Delete analyzer profile?"
-                                description="Profiles referenced by orders, results, or statistics cannot be deleted."
-                                actionLabel="Delete profile"
-                                onConfirm={async () => {
-                                    await api.profiles.remove(profile.id)
-                                    navigate("/dashboard/profiles")
-                                }}
-                            />
-                        </div>
-                    }
-                />
-            </div>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleLifecycleAction(() => api.profiles.start(profile.id))}
+                                    >
+                                        <PlayIcon data-icon="inline-start" />
+                                        <span>Start analyzer</span>
+                                    </Button>
+                                )}
 
-            {profileAction.error && (
-                <Alert variant="destructive" className="rounded-2xl border-destructive/50 bg-destructive/5">
-                    <AlertTitle className="font-semibold">Execution Exception</AlertTitle>
-                    <AlertDescription>{profileAction.error}</AlertDescription>
-                </Alert>
-            )}
-
-            {/* Dribbble Level 3-Column Responsive Grid */}
-            <div className="grid gap-5 grid-cols-1 lg:grid-cols-3">
-
-                {/* Card 1: Machine Identity & Hardware Registry */}
-                <Card className="rounded-3xl border border-border/60 bg-card shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden">
-                    <div>
-                        <CardHeader className="border-b border-border/40 pb-4 bg-muted/20">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                    <HardDriveIcon className="h-4 w-4" />
-                                    Hardware Specs
-                                </span>
-                                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-muted border border-border/50 text-muted-foreground">
-                                    #{profile.id}
-                                </span>
+                                <ConfirmAction
+                                    trigger={
+                                        <Button variant="destructive" size="sm">
+                                            <TrashIcon data-icon="inline-start" />
+                                            <span>Delete</span>
+                                        </Button>
+                                    }
+                                    title="Delete analyzer profile?"
+                                    description="Profiles referenced by orders, results, or statistics cannot be deleted."
+                                    actionLabel="Delete profile"
+                                    onConfirm={async () => {
+                                        await api.profiles.remove(profile.id)
+                                        navigate("/dashboard/profiles")
+                                    }}
+                                />
                             </div>
-                            <CardTitle className="text-base font-bold pt-1">Analyzer Identity</CardTitle>
-                            <CardDescription className="text-xs">Mapped driver signature & brand specs</CardDescription>
-                        </CardHeader>
+                        }
+                    />
+                </div>
 
-                        <CardContent className="pt-5 flex flex-col gap-4">
-                            <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div className="p-3 rounded-2xl bg-muted/40 border border-border/30 space-y-1">
-                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Brand / Make</span>
-                                    <p className="font-bold text-foreground truncate">{matchedDriver?.brand || "SNIBE"}</p>
-                                </div>
+                {profileAction.error && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Action Failed</AlertTitle>
+                        <AlertDescription>{profileAction.error}</AlertDescription>
+                    </Alert>
+                )}
 
-                                <div className="p-3 rounded-2xl bg-muted/40 border border-border/30 space-y-1">
-                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Driver Signature</span>
-                                    <p className="font-mono font-semibold text-foreground truncate flex items-center gap-1">
-                                        <CpuIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                                        {profile.driverId}
-                                    </p>
-                                </div>
-                            </div>
+                {/* Clean 2-Card Layout (Left Vertical, Right Horizontal) */}
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-start">
 
-                            <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground font-medium">Last Modified Date:</span>
-                                    <span className="font-medium text-foreground font-mono text-[11px]">
-                                        {new Date(profile.updatedAt || profile.createdAt).toLocaleDateString()}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-xs pt-1 border-t border-border/30">
-                                    <span className="text-muted-foreground font-medium">Created Timestamp:</span>
-                                    <span className="font-medium text-foreground font-mono text-[11px]">
-                                        {new Date(profile.createdAt).toLocaleTimeString()}
-                                    </span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </div>
+                    {/* Left Card: Vertical Overview & Real State Status Banner */}
+                    <Card className="lg:col-span-1 flex flex-col justify-between border-border bg-card">
+                        <div>
+                            <CardHeader>
+                                <CardTitle className="text-base font-bold">Analyzer Overview</CardTitle>
+                                <CardDescription className="text-xs">Machine hardware specs & driver identity</CardDescription>
+                            </CardHeader>
 
-                    {/* Operational Banner */}
-                    <div className="p-4 m-4 mt-0 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
-                        <CheckCircleIcon weight="fill" className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                        <div className="space-y-0.5 text-xs">
-                            <p className="font-bold text-emerald-950 dark:text-emerald-300">LIS Driver Active</p>
-                            <p className="text-emerald-800/80 dark:text-emerald-400/90 text-[11px] leading-relaxed">
-                                Driver parsed and ready for ASTM/HL7 incoming data frames.
-                            </p>
-                        </div>
-                    </div>
-                </Card>
+                            <CardContent className="flex flex-col gap-4">
+                                <dl className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/50 p-3.5 text-sm">
+                                    <div>
+                                        <dt className="text-xs text-muted-foreground font-medium">Profile ID</dt>
+                                        <dd className="font-semibold tabular-nums">#{profile.id}</dd>
+                                    </div>
 
-                {/* Card 2: Live Connection & Interface Telemetry (Relocated Status Badge here) */}
-                <Card className="rounded-3xl border border-border/60 bg-card shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden">
-                    <div>
-                        <CardHeader className="border-b border-border/40 pb-4 bg-muted/20">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                    <ActivityIcon className="h-4 w-4" />
-                                    Telemetry & Link
-                                </span>
+                                    <div>
+                                        <dt className="text-xs text-muted-foreground font-medium">Driver Brand</dt>
+                                        <dd className="font-medium">{matchedDriver?.brand || "SNIBE"}</dd>
+                                    </div>
 
-                                {/* NEW: Dynamic relocated Status Badge */}
-                                <div className="flex items-center gap-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide border ${
-                                        isRunning 
-                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" 
-                                            : "bg-amber-500/10 border-amber-500/30 text-amber-600"
-                                    }`}>
-                                        <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-emerald-500 animate-ping" : "bg-amber-500"}`} />
-                                        {isRunning ? "Running" : "Stopped"}
-                                    </span>
-                                </div>
-                            </div>
-                            <CardTitle className="text-base font-bold pt-1">Connection & Socket Interface</CardTitle>
-                            <CardDescription className="text-xs">Physical serial or TCP/IP interface states</CardDescription>
-                        </CardHeader>
+                                    <div>
+                                        <dt className="text-xs text-muted-foreground font-medium">Driver ID</dt>
+                                        <dd className="font-mono text-xs font-medium flex items-center gap-1">
+                                            <CpuIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {profile.driverId}
+                                        </dd>
+                                    </div>
 
-                        <CardContent className="pt-5 flex flex-col gap-4">
-                            <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div className="p-3 rounded-2xl bg-muted/40 border border-border/30 space-y-1">
-                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Interface Mode</span>
-                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
-                                        {isSerial ? <HardDriveIcon className="h-4 w-4 text-amber-500" /> : <GlobeIcon className="h-4 w-4 text-blue-500" />}
-                                        <span>{isSerial ? "Serial RS-232" : "TCP/IP Network"}</span>
+                                    <div>
+                                        <dt className="text-xs text-muted-foreground font-medium">Last Updated</dt>
+                                        <dd className="font-medium text-xs flex items-center gap-1">
+                                            <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {new Date(profile.updatedAt || profile.createdAt).toLocaleDateString()}
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                <div className="space-y-2">
+                                    <div className="p-3 rounded-2xl bg-muted/50 flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                            {isSerial ? <HardDriveIcon className="h-3.5 w-3.5" /> : <GlobeIcon className="h-3.5 w-3.5" />}
+                                            Interface
+                                        </span>
+                                        <span className="font-medium text-foreground">{isSerial ? "Serial RS-232" : "TCP/IP Network"}</span>
+                                    </div>
+
+                                    <div className="p-3 rounded-2xl bg-muted/50 flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                            <GlobeIcon className="h-3.5 w-3.5" />
+                                            Endpoint
+                                        </span>
+                                        <span className="font-mono font-medium text-foreground">{isSerial ? `${comPort}:${baudRate}` : `${host}:${port}`}</span>
                                     </div>
                                 </div>
+                            </CardContent>
+                        </div>
 
-                                <div className="p-3 rounded-2xl bg-muted/40 border border-border/30 space-y-1">
-                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Endpoint</span>
-                                    <p className="font-mono font-bold text-foreground truncate">
-                                        {isSerial ? `${comPort}:${baudRate}` : `${host}:${port}`}
-                                    </p>
+                        {/* Dynamic Status Banner (Correct Status Reflecting Real State) */}
+                        <CardContent className="pt-2">
+                            {isRunning ? (
+                                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 flex items-start gap-3">
+                                    <CheckCircleIcon weight="fill" className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5 text-xs">
+                                        <p className="font-semibold text-emerald-950 dark:text-emerald-300">Driver Listening</p>
+                                        <p className="text-emerald-800/80 dark:text-emerald-400/90 leading-normal">
+                                            Active and awaiting incoming data packets on {isSerial ? comPort : `${host}:${port}`}.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex items-start gap-3">
+                                    <XCircleIcon weight="fill" className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5 text-xs">
+                                        <p className="font-semibold text-foreground">Driver Service Offline</p>
+                                        <p className="text-muted-foreground leading-normal">
+                                            Machine listener is stopped. Click "Start analyzer" to begin receiving lab results.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Right Card: Horizontal Runtime Settings, Protocol Specs & Payload */}
+                    <Card className="lg:col-span-2 border-border bg-card">
+                        <CardHeader>
+                            <CardTitle className="text-base font-bold">SDK Connection & Interface Settings</CardTitle>
+                            <CardDescription className="text-xs">Runtime parameters and protocol framing specifications for LIS driver</CardDescription>
+                        </CardHeader>
+
+                        <CardContent className="flex flex-col gap-5">
+                            {/* Live Socket & Listener State */}
+                            <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/50 p-3.5 text-sm">
+                                <div>
+                                    <dt className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                                        <RadioIcon className={`h-3.5 w-3.5 ${isRunning ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
+                                        Listener State
+                                    </dt>
+                                    <dd className="font-semibold text-xs mt-1">{isRunning ? "Active Listener" : "Idle / Stopped"}</dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                                        <PlugsConnectedIcon className={`h-3.5 w-3.5 ${isConnected ? "text-emerald-500" : "text-muted-foreground"}`} />
+                                        Socket Link
+                                    </dt>
+                                    <dd className="font-semibold text-xs mt-1">{isConnected ? "Connected to Analyzer" : "Disconnected"}</dd>
                                 </div>
                             </div>
 
-                            {/* Telemetry Metrics */}
-                            <div className="space-y-2">
-                                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground font-medium flex items-center gap-2">
-                                        <RadioIcon className={`h-4 w-4 ${isRunning ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
-                                        Socket Listener
+                            {/* Additional Technical Specifications filling the empty space */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-1">
+                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                                        <FileCodeIcon className="h-3.5 w-3.5 text-primary" />
+                                        Protocol Standard
                                     </span>
-                                    <span className="font-bold text-foreground">{isRunning ? "Listening" : "Offline"}</span>
+                                    <p className="font-semibold text-xs text-foreground">ASTM E1394 / HL7 v2.x</p>
                                 </div>
 
-                                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground font-medium flex items-center gap-2">
-                                        <PlugsConnectedIcon className={`h-4 w-4 ${machine?.connected ? "text-emerald-500" : "text-muted-foreground"}`} />
-                                        Machine Link Status
+                                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-1">
+                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                                        <LightningIcon className="h-3.5 w-3.5 text-amber-500" />
+                                        Communication Mode
                                     </span>
-                                    <ConnectionBadge
-                                        connected={machine?.connected ?? false}
-                                        running={isRunning}
-                                    />
+                                    <p className="font-semibold text-xs text-foreground">Bi-directional Query</p>
                                 </div>
+
+                                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-1">
+                                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                                        <SlidersIcon className="h-3.5 w-3.5 text-blue-500" />
+                                        Frame Delimiters
+                                    </span>
+                                    <p className="font-mono text-xs font-semibold text-foreground">&lt;STX&gt; ... &lt;ETX&gt; &lt;CR&gt;&lt;LF&gt;</p>
+                                </div>
+                            </div>
+
+                            {/* Raw Config JSON Container */}
+                            <div className="space-y-1.5">
+                                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block">
+                                    Configuration Payload
+                                </span>
+                                <pre className="max-h-60 overflow-auto rounded-2xl bg-muted p-4 text-xs font-mono text-foreground leading-relaxed">
+                                    {JSON.stringify(profile.config, null, 2)}
+                                </pre>
                             </div>
                         </CardContent>
-                    </div>
+                    </Card>
 
-                    <div className="p-4 m-4 mt-0 rounded-2xl bg-muted/40 border border-border/40 flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5 font-medium">
-                            <ShieldCheckIcon className="h-4 w-4 text-primary" />
-                            Security Protocol
-                        </span>
-                        <span className="font-mono text-[11px] font-semibold text-foreground">RAW / Direct Stream</span>
-                    </div>
-                </Card>
-
-                {/* Card 3: Syntax Highlighted Driver Config Payload */}
-                <Card className="rounded-3xl border border-border/60 bg-card shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden">
-                    <CardHeader className="border-b border-border/40 pb-4 bg-muted/20">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                <BrowsersIcon className="h-4 w-4" />
-                                Runtime Payload
-                            </span>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 text-[11px] gap-1.5 text-muted-foreground hover:text-foreground rounded-lg"
-                                onClick={handleCopyConfig}
-                            >
-                                {copied ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : <CopyIcon className="h-3.5 w-3.5" />}
-                                <span>{copied ? "Copied" : "Copy JSON"}</span>
-                            </Button>
-                        </div>
-                        <CardTitle className="text-base font-bold pt-1">Driver Settings JSON</CardTitle>
-                        <CardDescription className="text-xs">Transmitted runtime parameters</CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="pt-5 flex flex-col gap-3">
-                        <div className="relative group">
-                            <pre className="max-h-[220px] overflow-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-[11px] text-slate-100 font-mono leading-relaxed shadow-inner">
-                                {JSON.stringify(profile.config, null, 2)}
-                            </pre>
-                        </div>
-
-                        <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 text-[11px] text-muted-foreground leading-normal flex items-start gap-2">
-                            <SquaresFourIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <span>This JSON payload is validated by the SDK before establishing TCP socket handshake.</span>
-                        </div>
-                    </CardContent>
-
-                    <div className="p-4 m-4 mt-0 rounded-2xl bg-muted/20 border border-border/30 text-center">
-                        <span className="text-[11px] font-medium text-muted-foreground">
-                            Status: <span className="text-foreground font-semibold">Valid Schema</span>
-                        </span>
-                    </div>
-                </Card>
-
+                </div>
             </div>
-        </div>
+        </Container>
     )
 }
