@@ -1,58 +1,184 @@
-import type { ApiErrorBody } from "@/types/api"
+import type { ApiErrorBody, CatalogDetail, CatalogSummary, Driver, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
+import { ApiError, json } from "./helpers"
+import type { OrderPayload, ProfilePayload } from "./schema"
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly body?: ApiErrorBody,
-  ) {
-    super(message)
-    this.name = "ApiError"
-  }
+type QueryValue = string | number | boolean | null | undefined
+type Query = Record<string, QueryValue>
+
+// order query
+export interface OrderQuery extends Query {
+    machineId?: number
+    sampleId?: string
+    status?: OrderStatus
+    limit?: number
+    offset?: number
+}
+export interface ResultQuery extends Query {
+    orderId?: number
+    machineId?: number
+    sampleId?: string
+    limit?: number
+    offset?: number
+}
+export interface StatisticQuery extends Query {
+    machineId?: number
+    testId?: string
+    limit?: number
+    offset?: number
 }
 
-function apiUrl(path: string) {
-  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
-}
 
-export async function apiRequest<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    headers: {
-      accept: "application/json",
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
+// api registry for all requests
+export const api = {
+    health: {
+        detailKey: "health",
+        get: () => request<HealthResponse>("/health"),
     },
-  })
 
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as ApiErrorBody
-    throw new ApiError(
-      body.error || body.detail || `Request failed with status ${response.status}`,
-      response.status,
-      body,
-    )
-  }
+    drivers: {
+        listKey: (query: { id?: string; brand?: string } = {}) => ["drivers", query] as const,
+        list: (query: { id?: string; brand?: string } = {}) => request<{ drivers: Driver[] }>("/drivers", { query })
+    },
 
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
+    catalogs: {
+        listKey: "catalogs.list",
+        list: () => request<{ catalogs: CatalogSummary[] }>("/catalogs"),
+
+        detailKey: (driverId: string) => ["catalogs.detail", driverId] as const,
+        get: (query: { driverId: string }) => request<CatalogDetail>("/catalogs", { query })
+    },
+
+    profiles: {
+        listKey: (query: TProfileQuery) => ["profiles.list", query] as const,
+        list: (query: TProfileQuery) => request<{ profiles: MachineProfile[] }>("/profiles", { query }),
+
+        detailKey: (machineId: number) => ["profiles.detail", machineId] as const,
+        get: (machineId: number) => request<{ profile: MachineProfile }>(`/profiles/${machineId}`),
+
+        create: (input: ProfilePayload) =>
+            request<{ profile: MachineProfile }>("/profiles", json("POST", input)),
+
+        update: (machineId: number, input: ProfilePayload) =>
+            request<{ profile: MachineProfile }>(
+                `/profiles/${machineId}`,
+                json("PATCH", input),
+            ),
+
+        remove: (machineId: number) =>
+            request<{ success: true; id: number }>(`/profiles/${machineId}`, {
+                method: "DELETE",
+            }),
+
+        start: (machineId: number) =>
+            request<{ started: boolean; profile: MachineProfile }>(
+                `/profiles/${machineId}/start`,
+                { method: "POST" },
+            ),
+
+        stop: (machineId: number) =>
+            request<{ stopped: boolean; profile: MachineProfile }>(
+                `/profiles/${machineId}/stop`,
+                { method: "POST" },
+            ),
+    },
+
+    orders: {
+        listKey: (query: OrderQuery = {}) => ["orders.list", query] as const,
+        list: (query: OrderQuery = {}) => request<{ orders: MachineOrder[] }>("/orders", { query }),
+
+        detailKey: (orderId: number) => ["orders.detail", orderId] as const,
+        get: (orderId: number) => request<{ order: MachineOrder }>(`/orders/${orderId}`),
+
+        create: (input: OrderPayload) => request<{ order: MachineOrder }>("/orders", json("POST", input)),
+
+        update: (orderId: number, input: OrderPayload) =>
+            request<{ order: MachineOrder }>(
+                `/orders/${orderId}`,
+                json("PATCH", input),
+            ),
+
+        resend: (orderId: number) =>
+            request<{ order: MachineOrder }>(`/orders/${orderId}/resend`, {
+                method: "POST",
+            }),
+
+        remove: (orderId: number) =>
+            request<{ success: true; id: number }>(`/orders/${orderId}`, {
+                method: "DELETE",
+            }),
+    },
+
+    results: {
+        listKey: (query: ResultQuery = {}) => ["results.list", query] as const,
+        list: (query: ResultQuery = {}) => request<{ results: MachineResult[] }>("/results", { query }),
+
+        detailKey: (resultId: number) => ["results.detail", resultId] as const,
+        get: (resultId: number) => request<{ result: MachineResult }>(`/results/${resultId}`),
+    },
+
+    statistics: {
+        listKey: (query: StatisticQuery = {}) => ["statistics.list", query] as const,
+        list: (query: StatisticQuery = {}) => request<{ statistics: TestStatistic[] }>("/test-statistics", { query }),
+
+        detailKey: (statisticId: number) => ["statistics.detail", statisticId] as const,
+        get: (statisticId: number) => request<{ statistic: TestStatistic }>(`/test-statistics/${statisticId}`),
+
+        remove: (statisticId: number) => request<void>(`/test-statistics/${statisticId}`, { method: "DELETE" }),
+    }
 }
 
-export const apiFetcher = <T>(path: string) => apiRequest<T>(path)
 
-export function toSearchParams(
-  values: Record<string, string | number | undefined>,
-) {
-  const params = new URLSearchParams()
-  Object.entries(values).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") params.set(key, String(value))
-  })
-  const query = params.toString()
-  return query ? `?${query}` : ""
+// fetch request executor
+async function request<T>(
+    path: string,
+    {
+        query,
+        ...init
+    }: RequestInit & { query?: Query } = {}
+): Promise<T> {
+    const url = new URL(`${API_BASE_URL}${path}`)
+
+    if (query) {
+        Object.entries(query).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                url.searchParams.set(key, String(value))
+            }
+        })
+    }
+
+    const response = await fetch(url, {
+        ...init,
+        headers: {
+            accept: "application/json",
+            ...(init?.body ? { "content-type": "application/json" } : {}),
+            ...init?.headers,
+        },
+    })
+
+    if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as ApiErrorBody
+
+        throw new ApiError(
+            body.error || body.detail || `Request failed with status ${response.status}`,
+            response.status,
+            body,
+        )
+    }
+
+    // 204 No Content
+    if (response.status === 204) return undefined as T
+
+    // header validation
+    const contentType = response.headers.get("content-type") ?? ""
+    if (!contentType.includes("application/json")) {
+        throw new ApiError(
+            "The API returned a non-JSON response. Check VITE_API_BASE_URL.",
+            response.status,
+        )
+    }
+
+    // response
+    return response.json() as Promise<T>
 }
-

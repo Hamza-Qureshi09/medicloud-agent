@@ -67,6 +67,13 @@ app.get("/dashboard", (c, next) =>
   })(c, next)
 );
 
+// React Router fallback for nested dashboard URLs.
+app.get("/dashboard/*", (c, next) =>
+  serveStatic({
+    path: "./frontend/build/index.html",
+  })(c, next)
+);
+
 
 // Machine SDK
 app.all("*", async (c) => {

@@ -121,3 +121,41 @@ export interface ApiErrorBody {
   detail?: string
 }
 
+
+
+
+// profiles query
+export type TProfileQuery = {
+  id?: number | undefined;
+  driverId?: string | undefined;
+  name?: string | undefined;
+  enabled?: boolean | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
+}
+
+// orders query
+export type TOrderQuery = {
+  machineId?: number | undefined;
+  sampleId?: string | undefined;
+  status?: "pending" | "testing" | "completed" | "failed" | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
+}
+
+// results query
+export type TResultQuery = {
+  orderId?: number | undefined;
+  machineId?: number | undefined;
+  sampleId?: string | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
+}
+
+// test statistics query
+export type TTestStatisticQuery = {
+  machineId?: number | undefined;
+  testId?: string | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
+}

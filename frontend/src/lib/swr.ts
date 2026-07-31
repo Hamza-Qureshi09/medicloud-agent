@@ -1,16 +1,16 @@
 import type { SWRConfiguration } from "swr"
 
-import { ApiError, apiFetcher } from "@/lib/api"
-
 export const swrConfig: SWRConfiguration = {
-  fetcher: apiFetcher,
+  // fetcher: apiFetcher,
   revalidateOnFocus: false,
   revalidateOnReconnect: true,
+  revalidateIfStale: true,
   keepPreviousData: true,
-  dedupingInterval: 2_000,
+  dedupingInterval: 5_000,
+  refreshInterval: 30_000,
   errorRetryCount: 2,
-  errorRetryInterval: 1_500,
-  shouldRetryOnError: (error: unknown) =>
-    !(error instanceof ApiError && error.status >= 400 && error.status < 500),
+  errorRetryInterval: 3_000,
+  shouldRetryOnError: false,
+  // shouldRetryOnError: (error: unknown) =>
+  //   !(error instanceof ApiError && error.status >= 400 && error.status < 500),
 }
-
