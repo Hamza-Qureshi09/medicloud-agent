@@ -1,9 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
-
-
 import { RootLayout } from "./components/layout/rootLayout"
 import { RouteErrorPage } from "./pages/routeError"
-
 
 export const router = createBrowserRouter([
     {
@@ -20,7 +17,14 @@ export const router = createBrowserRouter([
             {
                 path: "profiles",
                 lazy: async () => ({
-                    Component: (await import("@/pages/profiles")).ProfilesPage,
+                    Component: (await import("@/pages/profiles/profiles")).ProfilesPage,
+                }),
+            },
+            // Dynamic Detailed Profile Route
+            {
+                path: "profiles/:id",
+                lazy: async () => ({
+                    Component: (await import("@/pages/profiles/profileDetail")).ProfileDetailPage,
                 }),
             },
             {
@@ -30,10 +34,10 @@ export const router = createBrowserRouter([
                 }),
             },
 
-
             // if no route match show this 
             {
-                path: "*", element: <Navigate to={"/"} replace={true} />
+                path: "*", 
+                element: <Navigate to={"/"} replace={true} />
             }
         ]
     }
