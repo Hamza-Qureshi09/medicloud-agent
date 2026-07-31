@@ -17,14 +17,14 @@ export const router = createBrowserRouter([
             {
                 path: "profiles",
                 lazy: async () => ({
-                    Component: (await import("@/pages/profiles")).ProfilesPage,
+                    Component: (await import("@/pages/profiles/profiles")).ProfilesPage,
                 }),
             },
             // 🚀 Dynamic Detailed Profile Route
             {
                 path: "profiles/:id",
                 lazy: async () => ({
-                    Component: (await import("@/pages/profile-detail")).ProfileDetailPage,
+                    Component: (await import("@/pages/profiles/profileDetail")).ProfileDetailPage,
                 }),
             },
 
