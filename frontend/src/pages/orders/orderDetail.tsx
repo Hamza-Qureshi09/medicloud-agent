@@ -1,4 +1,4 @@
-import React from "react"
+
 import { useParams, useNavigate, Link } from "react-router-dom"
 import useSWR from "swr"
 import { api } from "@/lib/api"
@@ -15,7 +15,6 @@ import {
     ArrowLeftIcon, 
     ArrowCounterClockwiseIcon, 
     BarcodeIcon, 
-    UserIcon, 
     CpuIcon, 
     ClockIcon, 
     TrashIcon,
