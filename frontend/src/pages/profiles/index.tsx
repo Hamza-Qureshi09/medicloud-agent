@@ -9,7 +9,7 @@ import { useHealth } from "@/contexts/health-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { api } from "@/lib/api";
 import type { Driver, MachineProfile } from "@/types/api";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import useSWR from "swr";
 import { Link } from "react-router-dom";
 import {
@@ -93,7 +93,7 @@ export function ProfilesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const { data: healthData, mutate: healthMutate } = useHealth();
 
-    const profileQuery = useMemo(() => ({
+    const profileQuery = React.useMemo(() => ({
         limit: ITEMS_PER_PAGE,
         offset: (currentPage - 1) * ITEMS_PER_PAGE,
     }), [currentPage]);
@@ -117,7 +117,7 @@ export function ProfilesPage() {
         () => api.drivers.list(),
     );
 
-    const running = useMemo(() => {
+    const running = React.useMemo(() => {
         return new Map(
             (healthData?.running_machines ?? []).map((item) => [
                 item.profile.id,
@@ -126,11 +126,11 @@ export function ProfilesPage() {
         );
     }, [healthData]);
 
-    const totalProfiles = useMemo(() => {
+    const totalProfiles = React.useMemo(() => {
         return profilesData?.profiles.length ?? 0;
     }, [profilesData?.profiles]);
 
-    const totalPages = useMemo(() => {
+    const totalPages = React.useMemo(() => {
         return Math.ceil(totalProfiles / ITEMS_PER_PAGE) || 1;
     }, [totalProfiles]);
 
@@ -181,8 +181,8 @@ export function ProfilesPage() {
 
             {profileAction.error ? (
                 <Alert variant="destructive">
-                    <AlertTitle>Analyzer action failed</AlertTitle>
-                    <AlertDescription>
+                    <AlertTitle className="font-normal">Analyzer action failed</AlertTitle>
+                    <AlertDescription className="font-normal">
                         {profileAction.error}
                     </AlertDescription>
                 </Alert>
@@ -213,7 +213,7 @@ export function ProfilesPage() {
                             return (
                                 <Card
                                     key={profile.id}
-                                    className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between"
+                                    className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between border-border bg-card"
                                 >
                                     <CardHeader>
                                         <div className="flex items-start justify-between gap-2">
@@ -221,7 +221,7 @@ export function ProfilesPage() {
                                                 <CardTitle>
                                                     <Link
                                                         to={`/dashboard/profiles/${profile.id}`}
-                                                        className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base"
+                                                        className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base text-foreground"
                                                     >
                                                         {profile.name ||
                                                             `Analyzer ${profile.id}`}
@@ -260,6 +260,7 @@ export function ProfilesPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuGroup>
                                                             <DropdownMenuItem
+                                                                className="font-normal"
                                                                 onClick={() =>
                                                                     void runProfileLifecycleAction(
                                                                         () => api.profiles.start(profile.id)
@@ -270,6 +271,7 @@ export function ProfilesPage() {
                                                                 Start
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
+                                                                className="font-normal"
                                                                 onClick={() =>
                                                                     void runProfileLifecycleAction(
                                                                         () => api.profiles.stop(profile.id)
@@ -293,7 +295,7 @@ export function ProfilesPage() {
                                                     <span className="text-xs text-muted-foreground font-normal block">
                                                         Profile ID
                                                     </span>
-                                                    <span className="font-normal tabular-nums text-sm">
+                                                    <span className="font-normal tabular-nums text-sm text-foreground">
                                                         #{profile.id}
                                                     </span>
                                                 </div>
@@ -301,7 +303,7 @@ export function ProfilesPage() {
                                                     <span className="text-xs text-muted-foreground font-normal block">
                                                         Driver Brand
                                                     </span>
-                                                    <span className="font-normal text-sm truncate block">
+                                                    <span className="font-normal text-sm truncate block text-foreground">
                                                         {matchedDriver?.brand || "SNIBE"}
                                                     </span>
                                                 </div>
@@ -312,7 +314,7 @@ export function ProfilesPage() {
                                                     <span className="text-xs text-muted-foreground font-normal block">
                                                         Endpoint
                                                     </span>
-                                                    <span className="font-normal text-xs  flex items-center gap-1 mt-0.5 truncate">
+                                                    <span className="font-normal text-xs flex items-center gap-1 mt-0.5 truncate text-foreground">
                                                         <GlobeIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                                         {host}:{port}
                                                     </span>
@@ -321,7 +323,7 @@ export function ProfilesPage() {
                                                     <span className="text-xs text-muted-foreground font-normal block">
                                                         Updated
                                                     </span>
-                                                    <span className="font-normal text-xs block">
+                                                    <span className="font-normal text-xs block text-foreground">
                                                         {new Date(profile.updatedAt || profile.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
@@ -332,7 +334,7 @@ export function ProfilesPage() {
                                             <span className="text-[11px] font-normal text-muted-foreground uppercase tracking-wider block">
                                                 Connection Settings
                                             </span>
-                                            <pre className="max-h-36 overflow-auto rounded-2xl bg-muted p-3 text-xs font-normal">
+                                            <pre className="max-h-36 overflow-auto rounded-2xl bg-muted p-3 text-xs font-normal text-foreground">
                                                 {JSON.stringify(profile.config, null, 2)}
                                             </pre>
                                         </div>
@@ -349,7 +351,7 @@ export function ProfilesPage() {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        className="shrink-0"
+                                                        className="shrink-0 font-normal"
                                                         onClick={() =>
                                                             void runProfileLifecycleAction(
                                                                 () => api.profiles.stop(profile.id)
@@ -362,7 +364,7 @@ export function ProfilesPage() {
                                                 ) : (
                                                     <Button
                                                         size="sm"
-                                                        className="shrink-0"
+                                                        className="shrink-0 font-normal"
                                                         onClick={() =>
                                                             void runProfileLifecycleAction(
                                                                 () => api.profiles.start(profile.id)
@@ -380,7 +382,7 @@ export function ProfilesPage() {
                                                     <Button
                                                         variant="destructive"
                                                         size="sm"
-                                                        className="w-full sm:w-auto shrink-0"
+                                                        className="w-full sm:w-auto shrink-0 font-normal"
                                                     >
                                                         <TrashIcon data-icon="inline-start" />
                                                         Delete
@@ -413,8 +415,8 @@ export function ProfilesPage() {
                                             }
                                             className={
                                                 currentPage === 1
-                                                    ? "pointer-events-none opacity-50"
-                                                    : "cursor-pointer"
+                                                    ? "pointer-events-none opacity-50 font-normal"
+                                                    : "cursor-pointer font-normal"
                                             }
                                         />
                                     </PaginationItem>
@@ -427,7 +429,7 @@ export function ProfilesPage() {
                                             <PaginationLink
                                                 isActive={currentPage === page}
                                                 onClick={() => setCurrentPage(page)}
-                                                className="cursor-pointer"
+                                                className="cursor-pointer font-normal"
                                             >
                                                 {page}
                                             </PaginationLink>
@@ -443,8 +445,8 @@ export function ProfilesPage() {
                                             }
                                             className={
                                                 currentPage === totalPages
-                                                    ? "pointer-events-none opacity-50"
-                                                    : "cursor-pointer"
+                                                    ? "pointer-events-none opacity-50 font-normal"
+                                                    : "cursor-pointer font-normal"
                                             }
                                         />
                                     </PaginationItem>
@@ -535,22 +537,22 @@ function ProfileDialog({
             <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 sm:flex-initial"
+                className="flex-1 sm:flex-initial font-normal"
             >
                 <PencilSimpleIcon data-icon="inline-start" />
                 Edit profile
             </Button>
         )
         : (
-            <Button size={"sm"}>
+            <Button size={"sm"} className="font-normal">
                 <PlusIcon data-icon="inline-start" />
                 Add analyzer
             </Button>
         );
 
-    // Formatted Error Renderer: Paragraphs and symbols (❌ / \n) are cleanly split into List Items
+    // Formatted Error Renderer: Paragraphs and symbols (✖ / × / \n) split into List Items
     const rootErrorMessage = form.formState.errors.root?.message;
-    const formattedErrorList = useMemo(() => {
+    const formattedErrorList = React.useMemo(() => {
         if (!rootErrorMessage) return [];
         return rootErrorMessage
             .split(/✖|×|\n/)
@@ -567,16 +569,19 @@ function ProfileDialog({
                 render={dialogTrigger}
             />
 
-            {/* onPointerDownOutside prevents closing the dialog when clicking outside overlay */}
-            <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
+            {/* Guaranteed Outside Click & Esc Dismiss Prevention via Radix Primative Event Overrides */}
+            <DialogContent
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="font-normal">
                             {profile?.id
                                 ? "Edit analyzer profile"
                                 : "Add analyzer profile"}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="font-normal">
                             Choose a registered driver and provide its connection settings.
                         </DialogDescription>
                     </DialogHeader>
@@ -586,7 +591,7 @@ function ProfileDialog({
                         <Field
                             data-invalid={Boolean(form.formState.errors.name)}
                         >
-                            <FieldLabel htmlFor="profile-name">
+                            <FieldLabel htmlFor="profile-name" className="font-normal">
                                 Display name{" "}
                                 <span className="text-xs font-normal text-muted-foreground ml-1">
                                     (optional)
@@ -596,9 +601,10 @@ function ProfileDialog({
                                 id="profile-name"
                                 aria-invalid={Boolean(form.formState.errors.name)}
                                 placeholder="Main chemistry analyzer"
+                                className="font-normal"
                                 {...form.register("name")}
                             />
-                            <FieldError>
+                            <FieldError className="font-normal">
                                 {form.formState.errors.name?.message}
                             </FieldError>
                         </Field>
@@ -619,7 +625,7 @@ function ProfileDialog({
 
                                 return (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>
+                                        <FieldLabel className="font-normal">
                                             Driver{" "}
                                             <span className="text-destructive ml-0.5">
                                                 *
@@ -630,10 +636,10 @@ function ProfileDialog({
                                             onValueChange={(value) => field.onChange(value ?? "")}
                                         >
                                             <SelectTrigger
-                                                className="w-full"
+                                                className="w-full font-normal"
                                                 aria-invalid={fieldState.invalid}
                                             >
-                                                <SelectValue>
+                                                <SelectValue className="font-normal">
                                                     {selectValue}
                                                 </SelectValue>
                                             </SelectTrigger>
@@ -643,6 +649,7 @@ function ProfileDialog({
                                                         <SelectItem
                                                             key={driver.id}
                                                             value={driver.id}
+                                                            className="font-normal"
                                                         >
                                                             {driver.brand || driver.id}
                                                         </SelectItem>
@@ -659,7 +666,7 @@ function ProfileDialog({
                         <Field
                             data-invalid={Boolean(form.formState.errors.config)}
                         >
-                            <FieldLabel htmlFor="profile-config">
+                            <FieldLabel htmlFor="profile-config" className="font-normal">
                                 Configuration JSON{" "}
                                 <span className="text-destructive ml-0.5">
                                     *
@@ -672,10 +679,10 @@ function ProfileDialog({
                                 className="font-normal text-xs"
                                 {...form.register("config")}
                             />
-                            <FieldDescription>
+                            <FieldDescription className="font-normal">
                                 The selected driver validates these values before starting.
                             </FieldDescription>
-                            <FieldError>
+                            <FieldError className="font-normal">
                                 {form.formState.errors.config?.message}
                             </FieldError>
                         </Field>
@@ -687,13 +694,13 @@ function ProfileDialog({
                             render={({ field }) => (
                                 <Field orientation="horizontal">
                                     <div className="flex flex-1 flex-col gap-1">
-                                        <FieldLabel htmlFor="profile-enabled">
+                                        <FieldLabel htmlFor="profile-enabled" className="font-normal">
                                             Start immediately{" "}
                                             <span className="text-xs font-normal text-muted-foreground ml-1">
                                                 (optional)
                                             </span>
                                         </FieldLabel>
-                                        <FieldDescription>
+                                        <FieldDescription className="font-normal">
                                             Enable the profile after it is saved.
                                         </FieldDescription>
                                     </div>
@@ -706,11 +713,11 @@ function ProfileDialog({
                             )}
                         />
 
-                        {/* Beautiful Bulleted Error Alert Box */}
+                        {/* Bulleted Error Alert Box */}
                         {formattedErrorList.length > 0 ? (
                             <Alert variant="destructive" className="mt-2">
                                 <AlertTitle className="font-normal">Profile not saved</AlertTitle>
-                                <AlertDescription className="mt-2 text-xs leading-relaxed">
+                                <AlertDescription className="mt-2 text-xs leading-relaxed font-normal">
                                     <ul className="list-disc pl-4 space-y-1">
                                         {formattedErrorList.map((errItem, idx) => (
                                             <li key={idx}>{errItem}</li>
@@ -725,11 +732,12 @@ function ProfileDialog({
                         <Button
                             type="button"
                             variant="outline"
+                            className="font-normal"
                             onClick={() => setOpen(false)}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={saveProfile.pending}>
+                        <Button type="submit" disabled={saveProfile.pending} className="font-normal">
                             {saveProfile.pending
                                 ? <Spinner data-icon="inline-start" />
                                 : null}
