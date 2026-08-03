@@ -77,21 +77,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { Container } from "@/components/common/container";
+import { ITEMS_PER_PAGE } from "@/lib/global";
+import { Pagination } from "@/components/common/pagination";
 
-import {
-    Pagination as ShadcnPagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
-
-const ITEMS_PER_PAGE = 6;
 
 export function ProfilesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const { data: healthData, mutate: healthMutate } = useHealth();
+
+    const {
+        data: profileCount,
+        error: countError,
+        mutate: profileCountMutate
+    } = useSWR(
+        api.profiles.countKey,
+        () => api.profiles.count(),
+        {}
+    )
+
+    const count = profileCount?.count ?? 0;
+    const totalPages = Math.max(
+        1,
+        Math.ceil(count / ITEMS_PER_PAGE)
+    );
 
     const profileQuery = React.useMemo(() => ({
         limit: ITEMS_PER_PAGE,
@@ -107,8 +115,6 @@ export function ProfilesPage() {
         () => api.profiles.query(profileQuery),
         {},
     );
-
-    
 
     const {
         data: driversData,
@@ -128,38 +134,46 @@ export function ProfilesPage() {
         );
     }, [healthData]);
 
-    const totalProfiles = React.useMemo(() => {
-        return profilesData?.profiles.length ?? 0;
-    }, [profilesData?.profiles]);
-
-    const totalPages = React.useMemo(() => {
-        return Math.ceil(totalProfiles / ITEMS_PER_PAGE) || 1;
-    }, [totalProfiles]);
+    const driversById = React.useMemo(
+        () =>
+            new Map(
+                (driversData?.drivers ?? []).map(driver => [
+                    driver.id,
+                    driver,
+                ])
+            ),
+        [driversData]
+    );
 
     const profileAction = useAsyncAction("Analyzer action failed.");
-
-    if (!profilesData && !profilesError) return <PageLoading />;
-    if (profilesError) {
-        return (
-            <ResourceError
-                error={profilesError}
-                onRetry={() => profilesMutate()}
-            />
-        );
+    async function runHardRefresh() {
+        await Promise.all([
+            healthMutate(),
+            driversMutate(),
+            profileCountMutate(),
+            profilesMutate(),
+        ]);
     }
-
     async function runProfileLifecycleAction(
         action: () => Promise<unknown>,
     ) {
         await profileAction.execute(async () => {
             await action();
-            await Promise.all([
-                driversMutate(),
-                healthMutate(),
-                profilesMutate(),
-            ]);
+            await runHardRefresh();
         }).catch(() => undefined);
     }
+
+
+    if (!profilesData && !profilesError) return <PageLoading />;
+    if (profilesError || countError) {
+        return (
+            <ResourceError
+                error={profilesError ?? countError}
+                onRetry={runHardRefresh}
+            />
+        );
+    }
+
 
     return (
         <Container>
@@ -171,11 +185,11 @@ export function ProfilesPage() {
                     <>
                         <RefreshButton
                             isLoading={profileIsValidating}
-                            onRefresh={() => profilesMutate()}
+                            onRefresh={runHardRefresh}
                         />
                         <ProfileDialog
                             drivers={driversData?.drivers ?? []}
-                            onCreated={profilesMutate}
+                            onCreated={runHardRefresh}
                         />
                     </>
                 }
@@ -195,9 +209,7 @@ export function ProfilesPage() {
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                         {profilesData?.profiles.map((profile) => {
                             const machine = running.get(profile.id);
-                            const matchedDriver = driversData?.drivers.find(
-                                (d) => d.id === profile.driverId
-                            );
+                            const matchedDriver = driversById.get(profile.driverId);
 
                             const host =
                                 profile.config &&
@@ -346,7 +358,7 @@ export function ProfilesPage() {
                                                 <ProfileDialog
                                                     drivers={driversData?.drivers ?? []}
                                                     profile={profile}
-                                                    onCreated={profilesMutate}
+                                                    onCreated={runHardRefresh}
                                                 />
 
                                                 {profile.enabled ? (
@@ -408,52 +420,12 @@ export function ProfilesPage() {
 
                     {totalPages > 1 && (
                         <div className="pt-2 flex justify-center">
-                            <ShadcnPagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            onClick={() =>
-                                                setCurrentPage((prev) => Math.max(prev - 1, 1))
-                                            }
-                                            className={
-                                                currentPage === 1
-                                                    ? "pointer-events-none opacity-50 font-normal"
-                                                    : "cursor-pointer font-normal"
-                                            }
-                                        />
-                                    </PaginationItem>
 
-                                    {Array.from(
-                                        { length: totalPages },
-                                        (_, i) => i + 1,
-                                    ).map((page) => (
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                isActive={currentPage === page}
-                                                onClick={() => setCurrentPage(page)}
-                                                className="cursor-pointer font-normal"
-                                            >
-                                                {page}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
-
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            onClick={() =>
-                                                setCurrentPage((prev) =>
-                                                    Math.min(prev + 1, totalPages)
-                                                )
-                                            }
-                                            className={
-                                                currentPage === totalPages
-                                                    ? "pointer-events-none opacity-50 font-normal"
-                                                    : "cursor-pointer font-normal"
-                                            }
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </ShadcnPagination>
+                            <Pagination
+                                page={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     )}
                 </div>
@@ -464,7 +436,7 @@ export function ProfilesPage() {
                     action={
                         <ProfileDialog
                             drivers={driversData?.drivers ?? []}
-                            onCreated={profilesMutate}
+                            onCreated={runHardRefresh}
                         />
                     }
                 />
@@ -497,6 +469,7 @@ function ProfileDialog({
                 : '{\n  "host": "0.0.0.0",\n  "port": 7001\n}',
         },
     });
+
 
     async function changeOpen(nextOpen: boolean) {
         setOpen(nextOpen);

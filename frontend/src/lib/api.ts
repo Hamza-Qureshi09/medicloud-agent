@@ -125,6 +125,9 @@ export const api = {
         listKey: (query: StatisticQuery = {}) => ["statistics.list", query] as const,
         list: (query: StatisticQuery = {}) => request<{ statistics: TestStatistic[] }>("/test-statistics", { query }),
 
+        countKey: "statistics.count",
+        count: () => request<{ count: number }>("/test-statistics/count"),
+
         detailKey: (statisticId: number) => ["statistics.detail", statisticId] as const,
         get: (statisticId: number) => request<{ statistic: TestStatistic }>(`/test-statistics/${statisticId}`),
 
