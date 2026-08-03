@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
             {
                 path: "results",
                 lazy: async () => ({
-                    Component: (await import("@/pages/results/index")).ResultsPage,
+                    Component: (await import("@/pages/results/index.tsx")).ResultsPage,
                 }),
             },
             {
