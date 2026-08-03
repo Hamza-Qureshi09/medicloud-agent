@@ -103,10 +103,12 @@ export function ProfilesPage() {
         isValidating: profileIsValidating,
         mutate: profilesMutate,
     } = useSWR(
-        api.profiles.listKey(profileQuery),
-        () => api.profiles.list(profileQuery),
+        api.profiles.queryKey(profileQuery),
+        () => api.profiles.query(profileQuery),
         {},
     );
+
+    
 
     const {
         data: driversData,
@@ -199,14 +201,14 @@ export function ProfilesPage() {
 
                             const host =
                                 profile.config &&
-                                typeof profile.config === "object" &&
-                                "host" in profile.config
+                                    typeof profile.config === "object" &&
+                                    "host" in profile.config
                                     ? String(profile.config.host)
                                     : "0.0.0.0";
                             const port =
                                 profile.config &&
-                                typeof profile.config === "object" &&
-                                "port" in profile.config
+                                    typeof profile.config === "object" &&
+                                    "port" in profile.config
                                     ? String(profile.config.port)
                                     : "7001";
 

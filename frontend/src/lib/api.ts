@@ -51,8 +51,11 @@ export const api = {
     },
 
     profiles: {
-        listKey: (query?: TProfileQuery) => ["profiles.list", query] as const,
-        list: (query?: TProfileQuery) => request<{ profiles: MachineProfile[] }>("/profiles", { query }),
+        queryKey: (query?: TProfileQuery) => ["profiles.list", query] as const,
+        query: (query?: TProfileQuery) => request<{ profiles: MachineProfile[] }>("/profiles", { query }),
+
+        countKey: "profiles.count",
+        count: () => request<{ count: number }>("/profiles/count"),
 
         detailKey: (machineId: number) => ["profiles.detail", machineId] as const,
         get: (machineId: number) => request<{ profile: MachineProfile }>(`/profiles/${machineId}`),
