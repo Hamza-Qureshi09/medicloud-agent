@@ -2,6 +2,8 @@ export type OrderStatus = "pending" | "testing" | "completed" | "failed"
 
 export type DriverConfigFieldType = "string" | "number" | "boolean" | "select"
 
+export type DriverTransportType = 'tcp' | 'serial' | 'custom';
+
 export interface DriverConfigField {
   key: string
   label: string
@@ -17,6 +19,7 @@ export interface Driver {
   brand?: string
   models: string[]
   configFields: DriverConfigField[]
+  transportType?: DriverTransportType
 }
 
 export interface RunningMachine {
