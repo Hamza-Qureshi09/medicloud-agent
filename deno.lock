@@ -1,12 +1,12 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@hono/hono@^4.12.32": "4.12.33",
+    "jsr:@hono/hono@^4.12.32": "4.12.34",
     "jsr:@zod/zod@^4.4.3": "4.4.3"
   },
   "jsr": {
-    "@hono/hono@4.12.33": {
-      "integrity": "0df9fd54840e64fd3c10455aed240ed1dbc8b2773b6d9b825e3a681378d1ba77"
+    "@hono/hono@4.12.34": {
+      "integrity": "8450d540c4bd7008addd5156ce096fe10f754545ef75c18269d33f9be2f17b3c"
     },
     "@zod/zod@4.4.3": {
       "integrity": "4712ac0967efaa718b37c36eaffb4e1d4457e1a266aef6efb3ab36f54a6fefe4"
@@ -17,38 +17,38 @@
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseProtocol.ts": "e1fde65dfe527ba48ee61cd30e4e42a72d6c2d93f50439ac212e176cd8125848",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseStore.ts": "bcfcf24e9bde63b234d46564bc869d853493dfeeb69cf6cc6f1d183bdcf7b79b",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/db/sqLite.ts": "7ecfcb0e35bb7acb5d900809db07883eef74390c1a6c616359407071cfc77a13",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/orders.routes.ts": "63d5a34e4a2539ae15953f196a0cb28f63242222d21336329d227b4b26c475e6",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/profile.routes.ts": "cb4648047236b21fd1abe6517daed46b6230af6a6c27a54f0c04f1eaf8d0c56b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/results.routes.ts": "ab230f63967e3fa97b214fc209a86681dcc6adbd05f48cbd545993876eda6cf0",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/orders.routes.ts": "457953f37d64ac903d8ee678d0f811ac9946177952f2a5740e8adcc73f7cb225",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/profile.routes.ts": "68ed8c93fdd2531f7acfb8bbaed6a85f487dda3f702bc378ae2e76d4bf249164",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/results.routes.ts": "427c4334418397b9255c3df6d090e4b468c90622015c4c7a557e7764f8d53467",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/routes.ts": "1c6f0a2da2385ec7ac43d73c7945ba79d5b26bc72bbd7e67a00c508ecf4650fc",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/testStatistics.routes.ts": "7d6474a7f9c14b4faa6f95ca1211ab3d2dba51d3815c41f0b2fa822faba6985c",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/testStatistics.routes.ts": "572a07dc496ea6e8d74f9c46c32be0a929298b9889414b4a53c3b49763bcdffb",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/utils.ts": "6f15b896071c918ae0d541178c0879931ffb61da792da74a1740ad49da1554e3",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/validation.ts": "359a336afef87b416ff435d4760b46bc6217ab45f3b508a50079453930d2925b",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/logger.ts": "72a058e233043335f6de297a5e064d0e89e7f91d74348cb25f774f00b5cd9aea",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/utils.ts": "ab06ac22e8968f3ad10a0d2465d638433c723830646422be04e6f268beb38e03",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machineManager.ts": "8f3d4f2585547a064e20966325803f1fd72ae954b01eac28148e94d82eb248fe",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/astm.ts": "15e39910ad43e625732c5b6ebead1664116d4e373ce8442b9d1f1fc33f7665d9",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/catalog.ts": "28eab55d28cde7c346942851907266a66b5e5a69d8ea01340886e24a20eba7a0",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/iFlash3000.ts": "254b182eab551857676ef5c2fd0bcc0e5ef62f420ff1f6c35e7946e0c031469a",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/catalog.ts": "3141e3b3de879afe73dd4e66ffe5c96feb625989c03c47c5f95d93324a3fbd47",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/iFlash3000.ts": "0134896ae374ef40c44307457b357d8831bf3c9162a93a13edc7dc75d3897cdf",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/inbound.ts": "4d702cb3f8b7f0ee0a28ab07ec42f9420476bcb3ee2b46b8bbdbb1db10a9b679",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/outbound.ts": "4ed511d32778b6cd324cfc61689a52eca67dd6b504a5c083dcc12bcc162cb903",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/astm.ts": "9676d867e28f8cae56fb7cfc7f899e40bdaebdf1c0246a2c7714cbb34bae795f",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/catalog.ts": "8323943225b77adc68e3819abc7197fe8a2cbbfc9683c1d88b1f37979fd9c06a",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/catalog.ts": "ea9f7feb9314e1652629f03f2b35211cb7cb0caddddd4b3ac646744cbd2e7fec",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/inbound.ts": "72d408302568b01117a6e702d562bc3a99271b3a5c29650b19e146191dc2985b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/maglumi800.ts": "9a93a42da45d3afdbeff4bbc81c2e91c5e0e4d996db65073850bf18ef710a48d",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/maglumi800.ts": "e8c58cca27d73670772e7b318242f438817677df199622c85220c4e979529323",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/outbound.ts": "09eb89c5abca76d893c9661a098edb8b328649b02b508b20b3ad4afbabbe1232",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/mod.ts": "c1fbe9e0c1c9505fa5262c5571a7226048493df439c31d3a3398d47ebff78742",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/astm.ts": "eab22c737362c0c80a73e561958a3e12c084c1fec2f7ec85db0cfa73d4aaafd9",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/catalog.ts": "b75cf5672da57daf4c381e9b8dcc53414b0b7741803d5e54d413c5c2ff293d25",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/catalog.ts": "dc92e09543e86a2a318f56e7cd366e174aee74e42c8c398d63999f5ba46dbcf1",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/inbound.ts": "0efd352982d9d628abbe2889afc3c0975974324fd45048e59681491d0b79ab1c",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/outbound.ts": "f8d66a2745beeed1bb36a8352ecb654358ef606a0eca722f4aeb550301a0dc6f",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/rocheCobasC111.ts": "ebcbaff76053dbfdf131b7a5a66dba43af26eaa4f56e819d8417f3d095e8e725",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/rocheCobasC111.ts": "becebcdd3fc8c764c88720f86b2330713c844320a98d9827d298cca92ba1b3c9",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/checksum.ts": "a78810d892d6d6322e6b2337055cf982a84044f5b7ea0c112b7cee53e60d3dd2",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/constants.ts": "0123d0ebd1e4b4773738493c99660cf90ea92afc2018025e4c8ada2932ae3917",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/link.ts": "36b64374fd480ac16e58944d1302412a73491170fcb7e74005ae8b169014b11e",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/records.ts": "7412f206214601f876c3262fd66967c49340060f3f32c001e1e49967b715cb5e",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/variants/cobasC111Serial.ts": "2a495df951a19d7fa65b90ce5b5dcbca557dfc0818778b83f1b56c2d68e8263e",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/registry.ts": "d81601b3c4a017440013b8b82e2bd2ba410dffb5a69fc22a26c788f77aed6290",
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/registry.ts": "4a60888a922aa1e53d6573f0aa86f172c76429d258ba704fd664bca3f4ce6ba2",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/schema.ts": "3fccfe30ad9b3e4618291f7d39523895b2313dcf56bbe5fa58f0625a3b036392",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/orderStore.ts": "f2cf9173762c90faa1bfab46adbb047114b282277504016456369861303f5abf",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/profileStore.ts": "f40e1bfb1eba9114b866ea6ea7af690a7d3b2b263b3621f697f6b90a8ff8c3f3",
@@ -56,7 +56,7 @@
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/testStatisticStore.ts": "6ba72e4314008fa931d6fcf4c81f94af62bc5a996e5ef105e2a72a2bc1040a73",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/machineCom.ts": "6c29c2be480f2f65a4b1f8ee43bb762f27196d0f52824a3d8e621cd8ebf61687",
     "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/serialConn.ts": "74593a920b43361e823bae02214ad6917c9cc2613007a5ae2135cf74f46e8490",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/types.ts": "7fc56e79f2dd65720bed551c206f9ceb3f94e906c872f2a2464673ecde85f23a"
+    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/types.ts": "264a6cbcaf2e9044a2678f8fb153d36bfa9290d0934c6cd441537b324f479c6e"
   },
   "workspace": {
     "dependencies": [

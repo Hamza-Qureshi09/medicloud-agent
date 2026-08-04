@@ -125,11 +125,44 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
+  }
+
+  /* in order to hide shadcn scrollbar but still scrollable */
+  [data-slot="scroll-area-scrollbar"] {
+    display: none !important;
+  }
+
+
+  /* consistent gap btw a field label & its controls, & btw stacked fields */
+  [data-slot="field"] {
+    gap: 0.5rem !important;
+  }
+
+  [data-slot="field-group"] {
+    gap: 1rem !important;
+  }
+
+  [data-slot="field-label"] {
+    gap: 1px !important;
+  }
+
+  /* Required-asterisk and "(optional)"*/
+  .field-required-mark {
+    margin-inline-start: 0.25rem;
+    color: var(--destructive);
+  }
+
+  .field-optional-mark {
+    margin-inline-start: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
   }
 
   /*( Chrome, Safari, Edge) use webkit, (Firefox) use moz  */
@@ -154,6 +187,7 @@
 
   /* when user enabled "Reduce Motion" in their OS accessibility settings, website should minimize or remove motion-based animations. */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {

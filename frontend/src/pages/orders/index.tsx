@@ -386,7 +386,7 @@ function OrderDialog({
             form.setError("root", {
                 message:
                     error instanceof Error ? error.message : "Order could not be saved.",
-            });
+        });
         }
     };
 
