@@ -91,6 +91,9 @@ export const api = {
         listKey: (query: OrderQuery = {}) => ["orders.list", query] as const,
         list: (query: OrderQuery = {}) => request<{ orders: MachineOrder[] }>("/orders", { query }),
 
+        countKey: "orders.count",
+        count: () => request<{ count: number }>("/orders/count"),
+
         detailKey: (orderId: number) => ["orders.detail", orderId] as const,
         get: (orderId: number) => request<{ order: MachineOrder }>(`/orders/${orderId}`),
 
@@ -116,6 +119,9 @@ export const api = {
     results: {
         listKey: (query: ResultQuery = {}) => ["results.list", query] as const,
         list: (query: ResultQuery = {}) => request<{ results: MachineResult[] }>("/results", { query }),
+
+        countKey: "results.count",
+        count: () => request<{ count: number }>("/results/count"),
 
         detailKey: (resultId: number) => ["results.detail", resultId] as const,
         get: (resultId: number) => request<{ result: MachineResult }>(`/results/${resultId}`),
