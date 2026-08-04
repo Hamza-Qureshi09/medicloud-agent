@@ -1,9 +1,22 @@
 export type OrderStatus = "pending" | "testing" | "completed" | "failed"
 
+export type DriverConfigFieldType = "string" | "number" | "boolean" | "select"
+
+export interface DriverConfigField {
+  key: string
+  label: string
+  type: DriverConfigFieldType
+  required?: boolean
+  default?: string | number | boolean
+  options?: Array<{ value: string; label: string }>
+  hint?: string
+}
+
 export interface Driver {
   id: string
   brand?: string
   models: string[]
+  configFields: DriverConfigField[]
 }
 
 export interface RunningMachine {

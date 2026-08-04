@@ -20,7 +20,7 @@ import { ConfirmAction } from "@/components/common/confirmAction";
 import { TrashIcon } from "@phosphor-icons/react";
 
 export function StatisticsPage() {
-    const [currentPage, setCurrentPage] = React.useState(1);
+    const [currentPage] = React.useState(1);
 
     const statisticQuery = React.useMemo(() => ({
         limit: ITEMS_PER_PAGE,
