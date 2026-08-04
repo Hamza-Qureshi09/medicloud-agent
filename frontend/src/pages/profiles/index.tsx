@@ -7,6 +7,7 @@ import {
 } from "@/components/common/resourceState";
 import { useHealth } from "@/contexts/health-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
+import { useProfileForm } from "@/hooks/use-profile-form";
 import { api } from "@/lib/api";
 import type { Driver, MachineProfile } from "@/types/api";
 import React, { useState } from "react";
@@ -33,13 +34,6 @@ import {
     StopIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, type SubmitHandler, useForm } from "react-hook-form";
-import {
-    profileFormSchema,
-    type ProfileFormValues,
-    profilePayload,
-} from "@/lib/schema";
 import {
     Field,
     FieldDescription,
@@ -56,7 +50,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -111,8 +105,8 @@ export function ProfilesPage() {
         isValidating: profileIsValidating,
         mutate: profilesMutate,
     } = useSWR(
-        api.profiles.queryKey(profileQuery),
-        () => api.profiles.query(profileQuery),
+        api.profiles.listKey(profileQuery),
+        () => api.profiles.list(profileQuery),
         {},
     );
 
@@ -445,6 +439,7 @@ export function ProfilesPage() {
     );
 }
 
+
 function ProfileDialog({
     drivers,
     profile,
@@ -454,58 +449,18 @@ function ProfileDialog({
     profile?: MachineProfile;
     onCreated: () => Promise<unknown>;
 }) {
-    const [open, setOpen] = React.useState(false);
 
-    const saveProfile = useAsyncAction("Profile could not be saved.");
+    const {
+        form,
+        dispatch,
+        selectedDriver,
+        open,
+        saveProfile,
+        handleDriverChange,
+        handleOpenChange,
+        handleSubmit,
+    } = useProfileForm(drivers, onCreated, profile);
 
-    const form = useForm<ProfileFormValues>({
-        resolver: zodResolver(profileFormSchema),
-        defaultValues: {
-            name: profile?.name ?? "",
-            driverId: profile?.driverId ?? drivers[0]?.id ?? "",
-            enabled: profile?.enabled ?? false,
-            config: profile
-                ? JSON.stringify(profile.config, null, 2)
-                : '{\n  "host": "0.0.0.0",\n  "port": 7001\n}',
-        },
-    });
-
-
-    async function changeOpen(nextOpen: boolean) {
-        setOpen(nextOpen);
-
-        if (nextOpen) {
-            saveProfile.reset();
-            form.clearErrors();
-        }
-
-        if (
-            nextOpen && !profile?.id && !form.getValues("driverId") &&
-            drivers[0]
-        ) {
-            form.setValue("driverId", drivers[0].id);
-        }
-    }
-
-    const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
-        try {
-            await saveProfile.execute(async () => {
-                const input = profilePayload(data);
-
-                if (profile?.id) await api.profiles.update(profile.id, input);
-                else await api.profiles.create(input);
-
-                await onCreated();
-                setOpen(false);
-            });
-        } catch (error) {
-            form.setError("root", {
-                message: error instanceof Error
-                    ? error.message
-                    : "Profile could not be saved.",
-            });
-        }
-    };
 
     const dialogTrigger = profile
         ? (
@@ -525,31 +480,20 @@ function ProfileDialog({
             </Button>
         );
 
-    // Formatted Error Renderer: Paragraphs and symbols (✖ / × / \n) split into List Items
-    const rootErrorMessage = form.formState.errors.root?.message;
-    const formattedErrorList = React.useMemo(() => {
-        if (!rootErrorMessage) return [];
-        return rootErrorMessage
-            .split(/✖|×|\n/)
-            .map((err) => err.trim())
-            .filter((err) => err.length > 0);
-    }, [rootErrorMessage]);
-
     return (
         <Dialog
             open={open}
-            onOpenChange={(nextOpen) => void changeOpen(nextOpen)}
+            onOpenChange={handleOpenChange}
         >
             <DialogTrigger
                 render={dialogTrigger}
             />
-
-            {/* Guaranteed Outside Click & Esc Dismiss Prevention via Radix Primative Event Overrides */}
+           
             <DialogContent
-                onInteractOutside={(e) => e.preventDefault()}
-                onEscapeKeyDown={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
             >
-                <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+                <form onSubmit={handleSubmit} noValidate>
                     <DialogHeader>
                         <DialogTitle className="font-normal">
                             {profile?.id
@@ -557,150 +501,150 @@ function ProfileDialog({
                                 : "Add analyzer profile"}
                         </DialogTitle>
                         <DialogDescription className="font-normal">
-                            Choose a registered driver and provide its connection settings.
+                            Choose a registered driver. The form adapts to show exactly what that driver needs.
                         </DialogDescription>
                     </DialogHeader>
 
                     <FieldGroup className="py-5">
+
                         {/* Display Name (Optional) */}
-                        <Field
-                            data-invalid={Boolean(form.formState.errors.name)}
-                        >
+                        <Field>
                             <FieldLabel htmlFor="profile-name" className="font-normal">
                                 Display name{" "}
-                                <span className="text-xs font-normal text-muted-foreground ml-1">
-                                    (optional)
-                                </span>
+                                <span className="text-xs text-muted-foreground ml-1">(optional)</span>
                             </FieldLabel>
                             <Input
                                 id="profile-name"
-                                aria-invalid={Boolean(form.formState.errors.name)}
                                 placeholder="Main chemistry analyzer"
                                 className="font-normal"
-                                {...form.register("name")}
+                                value={form.name}
+                                onChange={(e) => dispatch({ type: "SET_NAME", value: e.target.value })}
                             />
-                            <FieldError className="font-normal">
-                                {form.formState.errors.name?.message}
-                            </FieldError>
                         </Field>
 
-                        {/* Driver (Required *) */}
-                        <Controller
-                            control={form.control}
-                            name="driverId"
-                            render={({ field, fieldState }) => {
-                                const selectValue =
-                                    drivers.find((driver) =>
-                                        driver.id === field.value
-                                    )?.brand ||
-                                    drivers.find((driver) =>
-                                        driver.id === field.value
-                                    )?.id ||
-                                    "Choose a driver";
+                        {/* Driver selector */}
+                        <Field data-invalid={Boolean(form.errors.driverId)}>
+                            <FieldLabel className="font-normal">
+                                Driver <span className="text-destructive ml-0.5">*</span>
+                            </FieldLabel>
+                            <Select
+                                value={form.driverId}
+                                onValueChange={(v) => v && handleDriverChange(v)}>
+                                <SelectTrigger className="w-full font-normal" aria-invalid={Boolean(form.errors.driverId)}>
+                                    <SelectValue className="font-normal">
+                                        {selectedDriver?.brand || selectedDriver?.id || "Choose a driver"}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {drivers.map((d) => (
+                                            <SelectItem key={d.id} value={d.id} className="font-normal">
+                                                {d.brand || d.id}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <FieldError className="font-normal">{form.errors.driverId}</FieldError>
+                        </Field>
 
+
+                        {/* Dynamic config fields */}
+                        {(selectedDriver?.configFields ?? []).map((field) => {
+                            const val = form.values[field.key] ?? "";
+                            const err = form.errors[field.key];
+                            const fieldId = `profile-config-${field.key}`;
+
+                            if (field.type === "select" && field.options) {
                                 return (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel className="font-normal">
-                                            Driver{" "}
-                                            <span className="text-destructive ml-0.5">
-                                                *
-                                            </span>
+                                    <Field key={field.key} data-invalid={Boolean(err)}>
+                                        <FieldLabel htmlFor={fieldId} className="font-normal">
+                                            {field.label}
+                                            {field.required && <span className="text-destructive ml-0.5">*</span>}
                                         </FieldLabel>
                                         <Select
-                                            value={field.value}
-                                            onValueChange={(value) => field.onChange(value ?? "")}
+                                            value={val}
+                                            onValueChange={(v) => v !== null && dispatch({ type: "SET_FIELD", key: field.key, value: v })}
                                         >
-                                            <SelectTrigger
-                                                className="w-full font-normal"
-                                                aria-invalid={fieldState.invalid}
-                                            >
-                                                <SelectValue className="font-normal">
-                                                    {selectValue}
-                                                </SelectValue>
+                                            <SelectTrigger id={fieldId} className="w-full font-normal" aria-invalid={Boolean(err)}>
+                                                <SelectValue className="font-normal" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectGroup>
-                                                    {drivers.map((driver) => (
-                                                        <SelectItem
-                                                            key={driver.id}
-                                                            value={driver.id}
-                                                            className="font-normal"
-                                                        >
-                                                            {driver.brand || driver.id}
+                                                    {field.options.map((opt) => (
+                                                        <SelectItem key={opt.value} value={opt.value} className="font-normal">
+                                                            {opt.label}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
+                                        {field.hint && <FieldDescription className="font-normal">{field.hint}</FieldDescription>}
+                                        <FieldError className="font-normal">{err}</FieldError>
                                     </Field>
                                 );
-                            }}
-                        />
+                            }
 
-                        {/* Config JSON (Required *) */}
-                        <Field
-                            data-invalid={Boolean(form.formState.errors.config)}
-                        >
-                            <FieldLabel htmlFor="profile-config" className="font-normal">
-                                Configuration JSON{" "}
-                                <span className="text-destructive ml-0.5">
-                                    *
-                                </span>
-                            </FieldLabel>
-                            <Textarea
-                                id="profile-config"
-                                aria-invalid={Boolean(form.formState.errors.config)}
-                                rows={7}
-                                className="font-normal text-xs"
-                                {...form.register("config")}
+                            if (field.type === "boolean") {
+                                return (
+                                    <Field key={field.key} orientation="horizontal">
+                                        <div className="flex flex-1 flex-col gap-1">
+                                            <FieldLabel htmlFor={fieldId} className="font-normal">{field.label}</FieldLabel>
+                                            {field.hint && <FieldDescription className="font-normal">{field.hint}</FieldDescription>}
+                                        </div>
+                                        <Switch
+                                            id={fieldId}
+                                            checked={val === "true"}
+                                            onCheckedChange={(checked) => dispatch({ type: "SET_FIELD", key: field.key, value: String(checked) })}
+                                        />
+                                    </Field>
+                                );
+                            }
+
+                            return (
+                                <Field key={field.key} data-invalid={Boolean(err)}>
+                                    <FieldLabel htmlFor={fieldId} className="font-normal">
+                                        {field.label}
+                                        {field.required && <span className="text-destructive ml-0.5">*</span>}
+                                    </FieldLabel>
+                                    <Input
+                                        id={fieldId}
+                                        type={field.type === "number" ? "number" : "text"}
+                                        className="font-normal"
+                                        aria-invalid={Boolean(err)}
+                                        value={val}
+                                        onChange={(e) => dispatch({ type: "SET_FIELD", key: field.key, value: e.target.value })}
+                                    />
+                                    {field.hint && <FieldDescription className="font-normal">{field.hint}</FieldDescription>}
+                                    <FieldError className="font-normal">{err}</FieldError>
+                                </Field>
+                            );
+                        })}
+
+
+                        {/* Enable immediately */}
+                        <Field orientation="horizontal">
+                            <div className="flex flex-1 flex-col gap-1">
+                                <FieldLabel htmlFor="profile-enabled" className="font-normal">
+                                    Start immediately{" "}
+                                    <span className="text-xs text-muted-foreground ml-1">(optional)</span>
+                                </FieldLabel>
+                                <FieldDescription className="font-normal">Enable the profile after it is saved.</FieldDescription>
+                            </div>
+                            <Switch
+                                id="profile-enabled"
+                                checked={form.enabled}
+                                onCheckedChange={(v) => dispatch({ type: "SET_ENABLED", value: v })}
                             />
-                            <FieldDescription className="font-normal">
-                                The selected driver validates these values before starting.
-                            </FieldDescription>
-                            <FieldError className="font-normal">
-                                {form.formState.errors.config?.message}
-                            </FieldError>
                         </Field>
 
-                        {/* Enable Immediately (Optional) */}
-                        <Controller
-                            control={form.control}
-                            name="enabled"
-                            render={({ field }) => (
-                                <Field orientation="horizontal">
-                                    <div className="flex flex-1 flex-col gap-1">
-                                        <FieldLabel htmlFor="profile-enabled" className="font-normal">
-                                            Start immediately{" "}
-                                            <span className="text-xs font-normal text-muted-foreground ml-1">
-                                                (optional)
-                                            </span>
-                                        </FieldLabel>
-                                        <FieldDescription className="font-normal">
-                                            Enable the profile after it is saved.
-                                        </FieldDescription>
-                                    </div>
-                                    <Switch
-                                        id="profile-enabled"
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </Field>
-                            )}
-                        />
-
-                        {/* Bulleted Error Alert Box */}
-                        {formattedErrorList.length > 0 ? (
+                        {/* Root error */}
+                        {form.rootError && (
                             <Alert variant="destructive" className="mt-2">
                                 <AlertTitle className="font-normal">Profile not saved</AlertTitle>
-                                <AlertDescription className="mt-2 text-xs leading-relaxed font-normal">
-                                    <ul className="list-disc pl-4 space-y-1">
-                                        {formattedErrorList.map((errItem, idx) => (
-                                            <li key={idx}>{errItem}</li>
-                                        ))}
-                                    </ul>
-                                </AlertDescription>
+                                <AlertDescription className="font-normal text-xs">{form.rootError}</AlertDescription>
                             </Alert>
-                        ) : null}
+                        )}
                     </FieldGroup>
 
                     <DialogFooter>
@@ -708,7 +652,7 @@ function ProfileDialog({
                             type="button"
                             variant="outline"
                             className="font-normal"
-                            onClick={() => setOpen(false)}
+                            onClick={() => handleOpenChange(false)}
                         >
                             Cancel
                         </Button>

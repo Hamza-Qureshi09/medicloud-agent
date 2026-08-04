@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import type { MachineOrder, MachineProfile, OrderStatus } from "@/types/api";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
@@ -214,7 +214,7 @@ export function OrdersPage() {
                                 <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
                                     {/* Clickable Underlined Sample ID navigating to Order Details */}
                                     <TableCell className="font-normal">
-                                        <Link 
+                                        <Link
                                             to={`/dashboard/orders/${order.id}`}
                                             className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1 font-normal text-foreground"
                                         >
@@ -227,7 +227,7 @@ export function OrdersPage() {
 
                                     {/* Clickable Analyzer Machine ID navigating to Profile */}
                                     <TableCell className="tabular-nums font-mono text-xs font-normal">
-                                        <Link 
+                                        <Link
                                             to={`/dashboard/profiles/${order.machineId}`}
                                             className="hover:underline hover:text-primary text-muted-foreground transition-colors font-normal"
                                         >
@@ -257,7 +257,7 @@ export function OrdersPage() {
                                                     onSaved={orderMutate}
                                                 />
                                             ) : null}
-                                            
+
                                             {(order.status === "failed" || order.status === "pending") && (
                                                 <Button
                                                     variant="ghost"
