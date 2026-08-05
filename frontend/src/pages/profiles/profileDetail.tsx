@@ -134,7 +134,7 @@ export function ProfileDetailPage() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="w-fit gap-1.5 text-muted-foreground hover:text-foreground p-0 hover:bg-transparent font-normal cursor-pointer"
+                        className="w-fit gap-1.5 text-muted-foreground hover:text-foreground p-0 hover:bg-transparent font-normal"
                         onClick={() => navigate("/dashboard/profiles")}
                     >
                         <ArrowLeftIcon className="h-4 w-4" />
@@ -156,7 +156,7 @@ export function ProfileDetailPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="font-normal text-sm cursor-pointer"
+                                        className="font-normal text-sm"
                                         onClick={() => handleLifecycleAction(() => api.profiles.stop(Number(profileRecord.id)))}
                                     >
                                         <StopIcon className="h-4 w-4 mr-1.5" />
@@ -165,7 +165,7 @@ export function ProfileDetailPage() {
                                 ) : (
                                     <Button
                                         size="sm"
-                                        className="font-normal text-sm cursor-pointer"
+                                        className="font-normal text-sm"
                                         onClick={() => handleLifecycleAction(() => api.profiles.start(Number(profileRecord.id)))}
                                     >
                                         <PlayIcon className="h-4 w-4 mr-1.5" />
@@ -183,7 +183,7 @@ export function ProfileDetailPage() {
 
                                 <ConfirmAction
                                     trigger={
-                                        <Button variant="destructive" size="sm" className="font-normal text-sm cursor-pointer">
+                                        <Button variant="destructive" size="sm" className="font-normal text-sm">
                                             <TrashIcon className="h-4 w-4 mr-1.5" />
                                             <span>Delete</span>
                                         </Button>

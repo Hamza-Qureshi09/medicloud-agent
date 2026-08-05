@@ -318,9 +318,9 @@ export function ProfilesPage() {
                                             </div>
                                         </div>
 
-                                        {/* Fully aligned action buttons container in a single line on desktop */}
+                                        {/* Fully aligned action buttons container */}
                                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-border/30 mt-1">
-                                            <div className="flex-1 w-full sm:w-auto">
+                                            <div className="w-full sm:flex-1">
                                                 <ProfileForm
                                                     drivers={driversData?.drivers ?? []}
                                                     profile={profile}
@@ -332,7 +332,7 @@ export function ProfilesPage() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
+                                                    className="w-full sm:flex-1 font-normal"
                                                     onClick={() =>
                                                         void runProfileLifecycleAction(
                                                             () => api.profiles.stop(profile.id)
@@ -345,7 +345,7 @@ export function ProfilesPage() {
                                             ) : (
                                                 <Button
                                                     size="sm"
-                                                    className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
+                                                    className="w-full sm:flex-1 font-normal"
                                                     onClick={() =>
                                                         void runProfileLifecycleAction(
                                                             () => api.profiles.start(profile.id)
@@ -362,7 +362,7 @@ export function ProfilesPage() {
                                                     <Button
                                                         variant="destructive"
                                                         size="sm"
-                                                        className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
+                                                        className="w-full sm:flex-1 font-normal"
                                                     >
                                                         <TrashIcon className="h-4 w-4 mr-1.5" />
                                                         Delete
