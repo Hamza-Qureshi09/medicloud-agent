@@ -1,9 +1,9 @@
 import { PageSection } from "@/components/common/pageSection";
 import {
-  PageLoading,
-  RefreshButton,
-  ResourceEmpty,
-  ResourceError,
+    PageLoading,
+    RefreshButton,
+    ResourceEmpty,
+    ResourceError,
 } from "@/components/common/resourceState";
 import { useHealth } from "@/contexts/health-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -13,28 +13,27 @@ import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowRightIcon,
-  CpuIcon,
-  DotsThreeIcon,
-  PlayIcon,
-  StopIcon,
-  TrashIcon,
+    ArrowRightIcon,
+    CpuIcon,
+    DotsThreeIcon,
+    PlayIcon,
+    StopIcon,
+    TrashIcon,
 } from "@phosphor-icons/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { ConnectionBadge } from "@/components/common/statusBadge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { Container } from "@/components/common/container";
@@ -42,377 +41,409 @@ import { ITEMS_PER_PAGE } from "@/lib/global";
 import { Pagination } from "@/components/common/pagination";
 import { ProfileForm } from "./profleForm";
 import {
-  ProfileEndpointBadge,
-  ProfileInterfaceBadge,
+    ProfileEndpointBadge,
+    ProfileInterfaceBadge,
 } from "@/components/common/profileConfigView";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 export function ProfilesPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const { data: healthData, mutate: healthMutate } = useHealth();
+    const [currentPage, setCurrentPage] = useState(1);
+    const { data: healthData, mutate: healthMutate } = useHealth();
 
-  const {
-    data: profileCount,
-    error: countError,
-    mutate: profileCountMutate,
-  } = useSWR(api.profiles.countKey, () => api.profiles.count(), {});
+    const {
+        data: profileCount,
+        error: countError,
+        mutate: profileCountMutate
+    } = useSWR(
+        api.profiles.countKey,
+        () => api.profiles.count(),
+        {}
+    )
 
-  const count = profileCount?.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(count / ITEMS_PER_PAGE));
-
-  const profileQuery = React.useMemo(
-    () => ({
-      limit: ITEMS_PER_PAGE,
-      offset: (currentPage - 1) * ITEMS_PER_PAGE,
-    }),
-    [currentPage],
-  );
-
-  const {
-    data: profilesData,
-    isValidating: profileIsValidating,
-    mutate: profilesMutate,
-  } = useSWR(
-    api.profiles.listKey(profileQuery),
-    () => api.profiles.list(profileQuery),
-    {},
-  );
-
-  const {
-    data: driversData,
-    error: profilesError,
-    mutate: driversMutate,
-  } = useSWR(api.drivers.listKey(), () => api.drivers.list());
-
-  const running = React.useMemo(() => {
-    return new Map(
-      (healthData?.running_machines ?? []).map((item) => [
-        item.profile.id,
-        item.machine,
-      ]),
+    const count = profileCount?.count ?? 0;
+    const totalPages = Math.max(
+        1,
+        Math.ceil(count / ITEMS_PER_PAGE)
     );
-  }, [healthData]);
 
-  const driversById = React.useMemo(
-    () =>
-      new Map(
-        (driversData?.drivers ?? []).map((driver) => [driver.id, driver]),
-      ),
-    [driversData],
-  );
+    const profileQuery = React.useMemo(() => ({
+        limit: ITEMS_PER_PAGE,
+        offset: (currentPage - 1) * ITEMS_PER_PAGE,
+    }), [currentPage]);
 
-  const profileAction = useAsyncAction("Analyzer action failed.");
+    const {
+        data: profilesData,
+        isValidating: profileIsValidating,
+        mutate: profilesMutate,
+    } = useSWR(
+        api.profiles.listKey(profileQuery),
+        () => api.profiles.list(profileQuery),
+        {},
+    );
 
-  async function runHardRefresh() {
-    await Promise.all([
-      healthMutate(),
-      driversMutate(),
-      profileCountMutate(),
-      profilesMutate(),
-    ]);
-  }
+    const {
+        data: driversData,
+        error: profilesError,
+        mutate: driversMutate,
+    } = useSWR(
+        api.drivers.listKey(),
+        () => api.drivers.list(),
+    );
 
-  async function runProfileLifecycleAction(action: () => Promise<unknown>) {
-    await profileAction
-      .execute(async () => {
-        await action();
-        await runHardRefresh();
-      })
-      .catch(() => undefined);
-  }
+    const running = React.useMemo(() => {
+        return new Map(
+            (healthData?.running_machines ?? []).map((item) => [
+                item.profile.id,
+                item.machine,
+            ]),
+        );
+    }, [healthData]);
 
-  if (!profilesData && !profilesError) return <PageLoading />;
-  if (profilesError || countError) {
+    const driversById = React.useMemo(
+        () =>
+            new Map(
+                (driversData?.drivers ?? []).map(driver => [
+                    driver.id,
+                    driver,
+                ])
+            ),
+        [driversData]
+    );
+
+    const profileAction = useAsyncAction("Analyzer action failed.");
+    async function runHardRefresh() {
+        await Promise.all([
+            healthMutate(),
+            driversMutate(),
+            profileCountMutate(),
+            profilesMutate(),
+        ]);
+    }
+    async function runProfileLifecycleAction(
+        action: () => Promise<unknown>,
+    ) {
+        await profileAction.execute(async () => {
+            await action();
+            await runHardRefresh();
+        }).catch(() => undefined);
+    }
+
+
+    if (!profilesData && !profilesError) return <PageLoading />;
+    if (profilesError || countError) {
+        return (
+            <ResourceError
+                error={profilesError ?? countError}
+                onRetry={runHardRefresh}
+            />
+        );
+    }
+
+
     return (
-      <ResourceError
-        error={profilesError ?? countError}
-        onRetry={runHardRefresh}
-      />
+        <Container>
+            <PageSection
+                eyebrow="Configuration"
+                title="Analyzer profiles"
+                description="Each profile connects one stored machine configuration to a registered SDK driver."
+                actions={
+                    <>
+                        <RefreshButton
+                            isLoading={profileIsValidating}
+                            onRefresh={runHardRefresh}
+                        />
+                        <ProfileForm
+                            drivers={driversData?.drivers ?? []}
+                            onCreated={runHardRefresh}
+                        />
+                    </>
+                }
+            />
+
+            {profileAction.error ? (
+                <Alert variant="destructive">
+                    <AlertTitle className="font-normal">Analyzer action failed</AlertTitle>
+                    <AlertDescription className="font-normal">
+                        {profileAction.error}
+                    </AlertDescription>
+                </Alert>
+            ) : null}
+
+            {profilesData?.profiles.length ? (
+                <div className="flex flex-col gap-6">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                        {profilesData?.profiles.map((profile) => {
+                            const machine = running.get(profile.id);
+                            const matchedDriver = driversById.get(profile.driverId);
+
+                            return (
+                                <Card
+                                    key={profile.id}
+                                    className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between border-border bg-card"
+                                >
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between gap-0.5">
+                                            {/* left side */}
+                                            <CardTitle className="flex flex-col">
+                                                <Link
+                                                    to={`/dashboard/profiles/${profile.id}`}
+                                                    className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base text-foreground"
+                                                >
+
+                                                    <span className="min-w-0 flex-1 truncate text-base font-normal">
+                                                        {profile.name || `Analyzer ${profile.id}`}
+                                                    </span>
+
+                                                    <ArrowRightIcon className="h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
+                                                </Link>
+                                                <p className="inline-flex items-center gap-1 font-normal text-xs text-muted-foreground">
+                                                    <CpuIcon className="h-3.5 w-3.5" />
+                                                    {profile.driverId}
+                                                </p>
+                                            </CardTitle>
+
+                                            {/* right side */}
+                                            <div className="flex flex-col">
+                                                {/* First Row */}
+                                                <div className="flex items-center justify-end">
+                                                    <ConnectionBadge
+                                                        connected={machine?.connected ?? false}
+                                                        running={machine?.running ?? profile.enabled}
+                                                    />
+
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            render={
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon-sm"
+                                                                    aria-label={`Actions for ${profile.name || profile.id}`}
+                                                                />
+                                                            }
+                                                        >
+                                                            <DotsThreeIcon weight="bold" />
+                                                        </DropdownMenuTrigger>
+
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuGroup>
+                                                                <DropdownMenuItem
+                                                                    className="font-normal"
+                                                                    onClick={() =>
+                                                                        void runProfileLifecycleAction(() =>
+                                                                            api.profiles.start(profile.id)
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <PlayIcon />
+                                                                    Start
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuItem
+                                                                    className="font-normal"
+                                                                    onClick={() =>
+                                                                        void runProfileLifecycleAction(() =>
+                                                                            api.profiles.stop(profile.id)
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <StopIcon />
+                                                                    Stop
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuGroup>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+
+                                                {/* Second Row */}
+                                                <div className="flex items-center">
+                                                    <ProfileInterfaceBadge
+                                                        config={profile.config}
+                                                        driver={matchedDriver}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+
+                                    </CardHeader>
+
+                                    <CardContent className="flex flex-col gap-4">
+                                        {/* 2 cards  */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <InfoCard
+                                                topLabel="Profile ID"
+                                                topValue={
+                                                    <span className="tabular-nums">
+                                                        #{profile.id}
+                                                    </span>
+                                                }
+                                                bottomLabel="Driver Brand"
+                                                bottomValue={
+                                                    <span className="truncate">
+                                                        {matchedDriver?.brand ?? "Generic"}
+                                                    </span>
+                                                }
+                                            />
+
+                                            <InfoCard
+                                                topLabel="Endpoint"
+                                                topValue={
+                                                    <ProfileEndpointBadge
+                                                        config={profile.config}
+                                                        driver={matchedDriver}
+                                                    />
+                                                }
+                                                bottomLabel="Updated"
+                                                bottomValue={new Date(
+                                                    profile.updatedAt ?? profile.createdAt
+                                                ).toLocaleDateString()}
+                                            />
+                                        </div>
+
+                                        {/* config */}
+                                        <div className="space-y-1">
+                                            <p className="text-[11px] font-normal text-muted-foreground uppercase tracking-wider">
+                                                Connection Settings:
+                                            </p>
+
+                                            <pre className="rounded-2xl bg-muted p-3 text-xs font-normal text-foreground">
+                                                <ScrollArea className={`h-22`}>
+                                                    {JSON.stringify(profile.config, null, 2)}
+                                                </ScrollArea>
+                                            </pre>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            {profile.enabled ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full sm:w-fit"
+                                                    onClick={() =>
+                                                        void runProfileLifecycleAction(
+                                                            () => api.profiles.stop(profile.id)
+                                                        )
+                                                    }
+                                                >
+                                                    <StopIcon data-icon="inline-start" />
+                                                    Stop analyzer
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    className="w-full sm:w-fit"
+                                                    onClick={() =>
+                                                        void runProfileLifecycleAction(
+                                                            () => api.profiles.start(profile.id)
+                                                        )
+                                                    }
+                                                >
+                                                    <PlayIcon data-icon="inline-start" />
+                                                    Start analyzer
+                                                </Button>
+                                            )}
+                                            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-fit">
+                                                <ProfileForm
+                                                    drivers={driversData?.drivers ?? []}
+                                                    profile={profile}
+                                                    onCreated={runHardRefresh}
+                                                />
+
+                                                <ConfirmAction
+                                                    trigger={
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="w-full sm:flex-1"
+                                                        >
+                                                            <TrashIcon data-icon="inline-start" />
+                                                            Delete
+                                                        </Button>
+                                                    }
+                                                    title="Delete analyzer profile?"
+                                                    description="Profiles referenced by orders, results, or statistics cannot be deleted."
+                                                    actionLabel="Delete profile"
+                                                    onConfirm={() =>
+                                                        runProfileLifecycleAction(
+                                                            () => api.profiles.remove(profile.id)
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="pt-2 flex justify-center">
+
+                            <Pagination
+                                page={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <ResourceEmpty
+                    title="No analyzer profiles"
+                    description="Add a profile to connect one of the registered machine drivers."
+                    action={
+                        <ProfileForm
+                            drivers={driversData?.drivers ?? []}
+                            onCreated={runHardRefresh}
+                        />
+                    }
+                />
+            )}
+        </Container>
     );
-  }
+}
 
-  return (
-    <Container>
-      <PageSection
-        eyebrow="Configuration"
-        title="Analyzer profiles"
-        description="Each profile connects one stored machine configuration to a registered SDK driver."
-        actions={
-          <>
-            <RefreshButton
-              isLoading={profileIsValidating}
-              onRefresh={runHardRefresh}
-            />
-            <ProfileForm
-              drivers={driversData?.drivers ?? []}
-              onCreated={runHardRefresh}
-            />
-          </>
-        }
-      />
 
-      {profileAction.error ? (
-        <Alert variant="destructive">
-          <AlertTitle className="font-normal">
-            Analyzer action failed
-          </AlertTitle>
-          <AlertDescription className="font-normal">
-            {profileAction.error}
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
-      {profilesData?.profiles.length ? (
-        <div className="flex flex-col gap-6">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {profilesData?.profiles.map((profile) => {
-              const machine = running.get(profile.id);
-              const matchedDriver = driversById.get(profile.driverId);
+interface InfoCardProps {
+    topLabel: string;
+    topValue: React.ReactNode;
+    bottomLabel: string;
+    bottomValue: React.ReactNode;
+    className?: string;
+}
 
-              return (
-                <Card
-                  key={profile.id}
-                  className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between border-border bg-card "
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <CardTitle>
-                          <Link
-                            to={`/dashboard/profiles/${profile.id}`}
-                            className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base text-foreground truncate"
-                          >
-                            {profile.name || `Analyzer ${profile.id}`}
-                            <ArrowRightIcon className="size-4 opacity-50 transition-opacity group-hover:opacity-100 shrink-0" />
-                          </Link>
-                        </CardTitle>
-
-                        <CardDescription className="flex items-center qap-2">
-                          <CpuIcon className="size-3.5 shrink-0" />
-                          <span className="truncate">{profile.driverId}</span>
-                        </CardDescription>
-                      </div>
-
-                      {/* right side */}
-                      <div className="flex flex-col">
-                        {/* First Row */}
-                        <div className="flex items-center justify-end">
-                          <ConnectionBadge
-                            connected={machine?.connected ?? false}
-                            running={machine?.running ?? profile.enabled}
-                          />
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  aria-label={`Actions for ${profile.name || profile.id}`}
-                                />
-                              }
-                            >
-                              <DotsThreeIcon weight="bold" />
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuGroup>
-                                <DropdownMenuItem
-                                  className="font-normal"
-                                  onClick={() =>
-                                    void runProfileLifecycleAction(() =>
-                                      api.profiles.start(profile.id),
-                                    )
-                                  }
-                                >
-                                  <PlayIcon />
-                                  Start
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem
-                                  className="font-normal"
-                                  onClick={() =>
-                                    void runProfileLifecycleAction(() =>
-                                      api.profiles.stop(profile.id),
-                                    )
-                                  }
-                                >
-                                  <StopIcon />
-                                  Stop
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        {/* Second Row */}
-                        <div className="flex items-center">
-                          <ProfileInterfaceBadge
-                            config={profile.config}
-                            driver={matchedDriver}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl bg-muted/50 p-3 flex flex-col justify-between">
-                        <div className="mb-2">
-                          <span className="text-xs text-muted-foreground font-normal block">
-                            Profile ID
-                          </span>
-                          <span className="font-normal tabular-nums text-sm text-foreground">
-                            #{profile.id}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted-foreground font-normal block">
-                            Driver Brand
-                          </span>
-                          <span className="font-normal text-sm truncate block text-foreground">
-                            {matchedDriver?.brand || "Generic"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-muted/50 p-3 flex flex-col justify-between">
-                        <div className="mb-2">
-                          <span className="text-xs text-muted-foreground font-normal block">
-                            Endpoint
-                          </span>
-                          <ProfileEndpointBadge
-                            config={profile.config}
-                            driver={matchedDriver}
-                            className="mt-0.5"
-                          />
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted-foreground font-normal block">
-                            Updated
-                          </span>
-                          <span className="font-normal text-xs block text-foreground">
-                            {new Date(
-                              profile.updatedAt || profile.createdAt,
-                            ).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Configuration Payload Inspector Box */}
-                    <div className="space-y-1.5 rounded-2xl bg-muted/30 border border-border/50 p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-normal text-muted-foreground uppercase tracking-wider block">
-                          Configuration Payload
-                        </span>
-                        <Link
-                          to={`/dashboard/profiles/${profile.id}`}
-                          className="text-[11px] text-primary hover:underline font-normal inline-flex items-center gap-1"
-                        >
-                          <span>View details</span>
-                          <ArrowRightIcon className="h-3 w-3" />
-                        </Link>
-                      </div>
-                      <div className="max-h-28 overflow-y-auto rounded-xl bg-muted/50 p-2.5 font-mono text-[11px] text-foreground leading-relaxed [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                        <pre className="whitespace-pre-wrap break-all">
-                          {JSON.stringify(profile.config, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-
-                    {/* Fully aligned action buttons container */}
-                    <div className="flex flex-col xl:flex-row items-center gap-2 pt-2 border-t border-border/30 mt-1">
-    <div className="flex flex-row items-center gap-2 w-full xl:w-auto xl:flex-1">
-        <div className="flex-1 w-1/2 [&>button]:w-full">
-            <ProfileForm
-                drivers={driversData?.drivers ?? []}
-                profile={profile}
-                onCreated={runHardRefresh}
-            />
-        </div>
-
-        {profile.enabled ? (
-            <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 w-1/2 font-normal"
-                onClick={() =>
-                    void runProfileLifecycleAction(() =>
-                        api.profiles.stop(profile.id),
-                    )
-                }
-            >
-                <StopIcon className="size-4 shrink-0" />
-                <span className="truncate">Stop analyzer</span>
-            </Button>
-        ) : (
-            <Button
-                size="sm"
-                className="flex-1 w-1/2 font-normal"
-                onClick={() =>
-                    void runProfileLifecycleAction(() =>
-                        api.profiles.start(profile.id),
-                    )
-                }
-            >
-                <PlayIcon className="size-4 shrink-0" />
-                <span className="truncate">Start analyzer</span>
-            </Button>
-        )}
-    </div>
-
-    <div className="w-full xl:w-auto xl:flex-1">
-        <ConfirmAction
-            trigger={
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full font-normal"
-                >
-                    <TrashIcon className="size-4 shrink-0" />
-                    <span>Delete</span>
-                </Button>
-            }
-            title="Delete analyzer profile?"
-            description="Profiles referenced by orders, results, or statistics cannot be deleted."
-            actionLabel="Delete profile"
-            onConfirm={() =>
-                runProfileLifecycleAction(() =>
-                    api.profiles.remove(profile.id),
-                )
-            }
-        />
-    </div>
-</div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="pt-2 flex justify-center">
-              <Pagination
-                page={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
+function InfoCard({
+    topLabel,
+    topValue,
+    bottomLabel,
+    bottomValue,
+    className,
+}: InfoCardProps) {
+    return (
+        <div
+            className={cn(
+                "flex min-w-0 flex-col justify-between rounded-2xl bg-muted/50 p-3 text-xs! font-normal!",
+                className
+            )}
+        >
+            <div className="mb-2 min-w-0">
+                <p className="text-muted-foreground">{topLabel}</p>
+                <div className="min-w-0 max-w-full text-foreground">
+                    {topValue}
+                </div>
             </div>
-          )}
+
+            <div className="min-w-0">
+                <p className="text-muted-foreground">{bottomLabel}</p>
+                <div className="min-w-0 max-w-full text-foreground">
+                    {bottomValue}
+                </div>
+            </div>
         </div>
-      ) : (
-        <ResourceEmpty
-          title="No analyzer profiles"
-          description="Add a profile to connect one of the registered machine drivers."
-          action={
-            <ProfileForm
-              drivers={driversData?.drivers ?? []}
-              onCreated={runHardRefresh}
-            />
-          }
-        />
-      )}
-    </Container>
-  );
+    );
 }
