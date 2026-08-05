@@ -28,7 +28,7 @@ import {
     ArrowRightIcon
 } from "@phosphor-icons/react"
 
-import { ProfileConfigCard } from "@/components/common/profileConfigView"
+import { ProfileConfigDetailCard } from "@/components/common/profileConfigView"
 import { parseProfileConfig } from "@/lib/profile-config"
 import { ProfileForm } from "./profleForm"
 
@@ -307,7 +307,7 @@ export function ProfileDetailPage() {
 
                     {/* Right Connection Settings Card using ProfileConfigCard */}
                     <div className="lg:col-span-2">
-                        <ProfileConfigCard 
+                        <ProfileConfigDetailCard 
                             config={profileRecord.config} 
                             driver={matchedDriver} 
                             className="rounded-3xl shadow-sm overflow-hidden" 

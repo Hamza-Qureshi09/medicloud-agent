@@ -84,10 +84,7 @@ export function ProfileForm({
         >
             <DialogTrigger render={dialogTrigger} />
 
-            <DialogContent
-            // onOutsideClick={(e) => e.preventDefault()} // to prevent closing from outside
-
-            >
+            <DialogContent>
                 <form onSubmit={handleSubmit} noValidate className="font-normal!">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle >
