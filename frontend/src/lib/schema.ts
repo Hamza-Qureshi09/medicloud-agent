@@ -2,42 +2,6 @@ import { z } from "zod"
 
 const optionalText = z.string().trim().optional()
 
-// // profile schema
-// export const profileFormSchema = z.object({
-//     name: optionalText,
-//     driverId: z.string().trim().min(1, "Choose a machine driver."),
-//     enabled: z.boolean(),
-//     config: z
-//         .string()
-//         .trim()
-//         .min(1, "Configuration is required.")
-//         .refine((value) => {
-//             try {
-//                 const parsed: unknown = JSON.parse(value)
-//                 return Boolean(
-//                     parsed &&
-//                     typeof parsed === "object" &&
-//                     !Array.isArray(parsed),
-//                 )
-//             } catch {
-//                 return false
-//             }
-//         }, "Enter a valid JSON object."),
-// })
-// export type ProfileFormValues = z.input<typeof profileFormSchema>
-
-// // profile payload
-// export function profilePayload(values: ProfileFormValues) {
-//     return {
-//         name: values.name?.trim() || undefined,
-//         driverId: values.driverId,
-//         enabled: values.enabled,
-//         config: JSON.parse(values.config) as Record<string, unknown>,
-//     }
-// }
-// export type ProfilePayload = ReturnType<typeof profilePayload>
-
-// profile confg is driver-driven. the form builds the config object from the driver configField, so no static schema is needed here.
 export interface ProfilePayload {
     name?: string
     driverId: string

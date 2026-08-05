@@ -55,21 +55,20 @@ export function ProfileForm({
         handleSubmit,
     } = useProfileForm(drivers, onCreated, profile);
 
-
     const dialogTrigger = profile
         ? (
             <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 sm:flex-initial font-normal"
+                className="flex-1 sm:flex-initial font-normal cursor-pointer"
             >
-                <PencilSimpleIcon data-icon="inline-start" />
+                <PencilSimpleIcon className="h-4 w-4 mr-1.5" />
                 Edit profile
             </Button>
         )
         : (
-            <Button size={"sm"} >
-                <PlusIcon data-icon="inline-start" />
+            <Button size="sm" className="font-normal cursor-pointer">
+                <PlusIcon className="h-4 w-4 mr-1.5" />
                 Add analyzer
             </Button>
         );
@@ -78,41 +77,36 @@ export function ProfileForm({
         <Dialog
             open={open}
             onOpenChange={(nextOpen, eventDetails) => {
-                if (eventDetails.reason === "outside-press") return;
+                if (eventDetails?.reason === "outside-press") return;
                 handleOpenChange(nextOpen);
             }}
         >
             <DialogTrigger render={dialogTrigger} />
 
-            <DialogContent
-            // onOutsideClick={(e) => e.preventDefault()} // to prevent closing from outside
-
-            >
-                <form onSubmit={handleSubmit} noValidate className="font-normal!">
-                    <DialogHeader className="shrink-0 pb-2">
-                        <DialogTitle >
-                            {profile?.id
-                                ? "Edit analyzer profile"
-                                : "Add analyzer profile"}
+            <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-3xl">
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col h-full overflow-hidden">
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/45 shrink-0">
+                        <DialogTitle className="font-medium text-base">
+                            {profile?.id ? "Edit analyzer profile" : "Add analyzer profile"}
                         </DialogTitle>
-                        <DialogDescription >
+                        <DialogDescription className="font-normal text-xs">
                             Choose a registered driver. The form adapts to show exactly what that driver needs.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <ScrollArea className="h-[50dvh] min-h-0 ">
-                        <FieldGroup className="py-2">
+                    <ScrollArea className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        <FieldGroup className="space-y-4">
 
                             {/* Display Name (Optional) */}
                             <Field>
-                                <FieldLabel htmlFor="profile-name" >
+                                <FieldLabel htmlFor="profile-name" className="font-normal">
                                     Display name{" "}
-                                    <span className="field-optional-mark">(optional)</span>
+                                    <span className="text-xs font-normal text-muted-foreground ">(optional)</span>
                                 </FieldLabel>
                                 <Input
                                     id="profile-name"
                                     placeholder="Main chemistry analyzer"
-
+                                    className="font-normal"
                                     value={form.name}
                                     onChange={(e) => dispatch({ type: "SET_NAME", value: e.target.value })}
                                 />
@@ -120,30 +114,29 @@ export function ProfileForm({
 
                             {/* Driver selector */}
                             <Field data-invalid={Boolean(form.errors.driverId)}>
-                                <FieldLabel >
-                                    Driver <span className="field-required-mark">*</span>
+                                <FieldLabel className="font-normal">
+                                    Driver <span className="text-destructive ">*</span>
                                 </FieldLabel>
                                 <Select
                                     value={form.driverId}
                                     onValueChange={(v) => v && handleDriverChange(v)}>
-                                    <SelectTrigger className="w-full" aria-invalid={Boolean(form.errors.driverId)}>
-                                        <SelectValue >
+                                    <SelectTrigger className="w-full font-normal" aria-invalid={Boolean(form.errors.driverId)}>
+                                        <SelectValue className="font-normal">
                                             {selectedDriver?.brand || selectedDriver?.id || "Choose a driver"}
                                         </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
                                             {drivers.map((d) => (
-                                                <SelectItem key={d.id} value={d.id} >
+                                                <SelectItem key={d.id} value={d.id} className="font-normal">
                                                     {d.brand || d.id}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                <FieldError >{form.errors.driverId}</FieldError>
+                                <FieldError className="font-normal">{form.errors.driverId}</FieldError>
                             </Field>
-
 
                             {/* Dynamic config fields */}
                             {(selectedDriver?.configFields ?? []).map((field) => {
@@ -154,39 +147,39 @@ export function ProfileForm({
                                 if (field.type === "select" && field.options) {
                                     return (
                                         <Field key={field.key} data-invalid={Boolean(err)}>
-                                            <FieldLabel htmlFor={fieldId} >
+                                            <FieldLabel htmlFor={fieldId} className="font-normal">
                                                 {field.label}
-                                                {field.required && <span className="field-required-mark">*</span>}
+                                                {field.required && <span className="text-destructive ">*</span>}
                                             </FieldLabel>
                                             <Select
                                                 value={val}
                                                 onValueChange={(v) => v !== null && dispatch({ type: "SET_FIELD", key: field.key, value: v })}
                                             >
-                                                <SelectTrigger id={fieldId} className="w-full" aria-invalid={Boolean(err)}>
-                                                    <SelectValue />
+                                                <SelectTrigger id={fieldId} className="w-full font-normal" aria-invalid={Boolean(err)}>
+                                                    <SelectValue className="font-normal" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
                                                         {field.options.map((opt) => (
-                                                            <SelectItem key={opt.value} value={opt.value} >
+                                                            <SelectItem key={opt.value} value={opt.value} className="font-normal">
                                                                 {opt.label}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            {field.hint && <FieldDescription >{field.hint}</FieldDescription>}
-                                            <FieldError >{err}</FieldError>
+                                            {field.hint && <FieldDescription className="text-xs text-muted-foreground">{field.hint}</FieldDescription>}
+                                            <FieldError className="font-normal">{err}</FieldError>
                                         </Field>
                                     );
                                 }
 
                                 if (field.type === "boolean") {
                                     return (
-                                        <Field key={field.key} orientation="horizontal">
-                                            <div className="flex flex-1 flex-col gap-1">
-                                                <FieldLabel htmlFor={fieldId} >{field.label}</FieldLabel>
-                                                {field.hint && <FieldDescription >{field.hint}</FieldDescription>}
+                                        <Field key={field.key} orientation="horizontal" className="items-center justify-between rounded-2xl border border-border bg-muted/30 p-3">
+                                            <div className="flex flex-1 flex-col gap-0.5">
+                                                <FieldLabel htmlFor={fieldId} className="font-normal">{field.label}</FieldLabel>
+                                                {field.hint && <FieldDescription className="text-xs text-muted-foreground">{field.hint}</FieldDescription>}
                                             </div>
                                             <Switch
                                                 id={fieldId}
@@ -199,33 +192,32 @@ export function ProfileForm({
 
                                 return (
                                     <Field key={field.key} data-invalid={Boolean(err)}>
-                                        <FieldLabel htmlFor={fieldId} >
+                                        <FieldLabel htmlFor={fieldId} className="font-normal">
                                             {field.label}
-                                            {field.required && <span className="field-required-mark">*</span>}
+                                            {field.required && <span className="text-destructive ">*</span>}
                                         </FieldLabel>
                                         <Input
                                             id={fieldId}
                                             type={field.type === "number" ? "number" : "text"}
-
                                             aria-invalid={Boolean(err)}
+                                            className="font-normal"
                                             value={val}
                                             onChange={(e) => dispatch({ type: "SET_FIELD", key: field.key, value: e.target.value })}
                                         />
-                                        {field.hint && <FieldDescription >{field.hint}</FieldDescription>}
-                                        <FieldError >{err}</FieldError>
+                                        {field.hint && <FieldDescription className="text-xs text-muted-foreground">{field.hint}</FieldDescription>}
+                                        <FieldError className="font-normal">{err}</FieldError>
                                     </Field>
                                 );
                             })}
 
-
                             {/* Enable immediately */}
-                            <Field orientation="horizontal">
-                                <div className="flex flex-1 flex-col gap-1">
-                                    <FieldLabel htmlFor="profile-enabled" >
+                            <Field orientation="horizontal" className="items-center justify-between rounded-2xl border border-border bg-muted/30 p-3">
+                                <div className="flex flex-1 flex-col gap-0.5">
+                                    <FieldLabel htmlFor="profile-enabled" className="font-normal">
                                         Start immediately{" "}
-                                        <span className="field-optional-mark">(optional)</span>
+                                        <span className="text-xs font-normal text-muted-foreground ">(optional)</span>
                                     </FieldLabel>
-                                    <FieldDescription >Enable the profile after it is saved.</FieldDescription>
+                                    <FieldDescription className="text-xs text-muted-foreground">Enable the profile after it is saved.</FieldDescription>
                                 </div>
                                 <Switch
                                     id="profile-enabled"
@@ -237,7 +229,7 @@ export function ProfileForm({
                             {/* Root error */}
                             {form.rootError && (
                                 <Alert variant="destructive" className="mt-2">
-                                    <AlertTitle >Profile not saved</AlertTitle>
+                                    <AlertTitle className="font-normal">Profile not saved</AlertTitle>
                                     <AlertDescription className="font-normal text-xs">{form.rootError}</AlertDescription>
                                 </Alert>
                             )}
@@ -245,19 +237,17 @@ export function ProfileForm({
                     </ScrollArea>
 
                     {/* profile footer */}
-                    <DialogFooter className="shrink-0 pt-2">
+                    <DialogFooter className="px-6 py-4 border-t border-border/45 shrink-0 bg-muted/20">
                         <Button
                             type="button"
                             variant="outline"
-
+                            className="font-normal cursor-pointer"
                             onClick={() => handleOpenChange(false)}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={saveProfile.pending} >
-                            {saveProfile.pending
-                                ? <Spinner data-icon="inline-start" />
-                                : null}
+                        <Button type="submit" className="font-normal cursor-pointer" disabled={saveProfile.pending}>
+                            {saveProfile.pending ? <Spinner className="h-4 w-4 mr-1.5" /> : null}
                             {profile ? "Save changes" : "Save profile"}
                         </Button>
                     </DialogFooter>

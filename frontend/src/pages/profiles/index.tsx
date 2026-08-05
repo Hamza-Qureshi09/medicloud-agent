@@ -44,9 +44,7 @@ import { ProfileForm } from "./profleForm";
 import {
     ProfileEndpointBadge,
     ProfileInterfaceBadge,
-    ProfileConfigGrid
 } from "@/components/common/profileConfigView";
-
 
 export function ProfilesPage() {
     const [currentPage, setCurrentPage] = useState(1);
@@ -60,7 +58,7 @@ export function ProfilesPage() {
         api.profiles.countKey,
         () => api.profiles.count(),
         {}
-    )
+    );
 
     const count = profileCount?.count ?? 0;
     const totalPages = Math.max(
@@ -113,6 +111,7 @@ export function ProfilesPage() {
     );
 
     const profileAction = useAsyncAction("Analyzer action failed.");
+
     async function runHardRefresh() {
         await Promise.all([
             healthMutate(),
@@ -121,6 +120,7 @@ export function ProfilesPage() {
             profilesMutate(),
         ]);
     }
+
     async function runProfileLifecycleAction(
         action: () => Promise<unknown>,
     ) {
@@ -129,7 +129,6 @@ export function ProfilesPage() {
             await runHardRefresh();
         }).catch(() => undefined);
     }
-
 
     if (!profilesData && !profilesError) return <PageLoading />;
     if (profilesError || countError) {
@@ -140,7 +139,6 @@ export function ProfilesPage() {
             />
         );
     }
-
 
     return (
         <Container>
@@ -181,82 +179,77 @@ export function ProfilesPage() {
                             return (
                                 <Card
                                     key={profile.id}
-                                    className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between border-border bg-card"
+                                    className="group transition-all duration-200 hover:border-foreground/20 flex flex-col justify-between border-border bg-card rounded-3xl shadow-sm overflow-hidden"
                                 >
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="space-y-1.5 min-w-0 flex-1">
                                                 <CardTitle>
                                                     <Link
                                                         to={`/dashboard/profiles/${profile.id}`}
-                                                        className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base text-foreground"
+                                                        className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1.5 font-normal text-base text-foreground truncate"
                                                     >
-                                                        {profile.name ||
-                                                            `Analyzer ${profile.id}`}
-                                                        <ArrowRightIcon className="h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
+                                                        {profile.name || `Analyzer ${profile.id}`}
+                                                        <ArrowRightIcon className="h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100 shrink-0" />
                                                     </Link>
                                                 </CardTitle>
 
-                                                <CardDescription className="pt-1 flex items-center gap-2">
-                                                    <Link
-                                                        to={`/dashboard/profiles/${profile.id}`}
-                                                        className="inline-flex items-center gap-1 font-normal text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
-                                                    >
-                                                        <CpuIcon className="h-3.5 w-3.5" />
-                                                        {profile.driverId}
-                                                    </Link>
-                                                    <span className="text-muted-foreground/40">•</span>
-                                                    <ProfileInterfaceBadge
-                                                        config={profile.config}
-                                                        driver={matchedDriver}
-                                                    />
+                                                <CardDescription className="flex items-center gap-1.5 font-normal text-xs text-muted-foreground truncate">
+                                                    <CpuIcon className="h-3.5 w-3.5 shrink-0" />
+                                                    <span className="truncate">{profile.driverId}</span>
                                                 </CardDescription>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <ConnectionBadge
-                                                    connected={machine?.connected ?? false}
-                                                    running={machine?.running ?? profile.enabled}
+                                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    <ConnectionBadge
+                                                        connected={machine?.connected ?? false}
+                                                        running={machine?.running ?? profile.enabled}
+                                                    />
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            render={
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon-sm"
+                                                                    aria-label={`Actions for ${profile.name || profile.id}`}
+                                                                />
+                                                            }
+                                                        >
+                                                            <DotsThreeIcon weight="bold" />
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuGroup>
+                                                                <DropdownMenuItem
+                                                                    className="font-normal cursor-pointer"
+                                                                    onClick={() =>
+                                                                        void runProfileLifecycleAction(
+                                                                            () => api.profiles.start(profile.id)
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <PlayIcon className="h-4 w-4 mr-2" />
+                                                                    Start
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    className="font-normal cursor-pointer"
+                                                                    onClick={() =>
+                                                                        void runProfileLifecycleAction(
+                                                                            () => api.profiles.stop(profile.id)
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <StopIcon className="h-4 w-4 mr-2" />
+                                                                    Stop
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuGroup>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                                <ProfileInterfaceBadge
+                                                    config={profile.config}
+                                                    driver={matchedDriver}
                                                 />
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        render={
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                                aria-label={`Actions for ${profile.name || profile.id}`}
-                                                            />
-                                                        }
-                                                    >
-                                                        <DotsThreeIcon weight="bold" />
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuGroup>
-                                                            <DropdownMenuItem
-                                                                className="font-normal"
-                                                                onClick={() =>
-                                                                    void runProfileLifecycleAction(
-                                                                        () => api.profiles.start(profile.id)
-                                                                    )
-                                                                }
-                                                            >
-                                                                <PlayIcon />
-                                                                Start
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                className="font-normal"
-                                                                onClick={() =>
-                                                                    void runProfileLifecycleAction(
-                                                                        () => api.profiles.stop(profile.id)
-                                                                    )
-                                                                }
-                                                            >
-                                                                <StopIcon />
-                                                                Stop
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuGroup>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
                                             </div>
                                         </div>
                                     </CardHeader>
@@ -297,70 +290,81 @@ export function ProfilesPage() {
                                                     <span className="text-xs text-muted-foreground font-normal block">
                                                         Updated
                                                     </span>
-                                                    <span className="font-normal text-xs block text-foreground">
+                                                    <span className="font-normal text-xs block text-foreground font-mono">
                                                         {new Date(profile.updatedAt || profile.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-1">
-                                            <span className="text-[11px] font-normal text-muted-foreground uppercase tracking-wider block">
-                                                Runtime Configuration
-                                            </span>
-                                            <ProfileConfigGrid
-                                                config={profile.config}
-                                                driver={matchedDriver}
-                                                columns={2}
-                                            />
+                                        {/* Configuration Payload Inspector Box */}
+                                        <div className="space-y-1.5 rounded-2xl bg-muted/30 border border-border/50 p-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[11px] font-normal text-muted-foreground uppercase tracking-wider block">
+                                                    Configuration Payload
+                                                </span>
+                                                <Link 
+                                                    to={`/dashboard/profiles/${profile.id}`}
+                                                    className="text-[11px] text-primary hover:underline font-normal inline-flex items-center gap-1"
+                                                >
+                                                    <span>View details</span>
+                                                    <ArrowRightIcon className="h-3 w-3" />
+                                                </Link>
+                                            </div>
+                                            <div className="max-h-28 overflow-y-auto rounded-xl bg-muted/50 p-2.5 font-mono text-[11px] text-foreground leading-relaxed [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                                <pre className="whitespace-pre-wrap break-all">
+                                                    {JSON.stringify(profile.config, null, 2)}
+                                                </pre>
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/30 mt-1">
-                                            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1">
+                                        {/* Fully aligned action buttons container in a single line on desktop */}
+                                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-border/30 mt-1">
+                                            <div className="flex-1 w-full sm:w-auto">
                                                 <ProfileForm
                                                     drivers={driversData?.drivers ?? []}
                                                     profile={profile}
                                                     onCreated={runHardRefresh}
                                                 />
-
-                                                {profile.enabled ? (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="shrink-0 font-normal"
-                                                        onClick={() =>
-                                                            void runProfileLifecycleAction(
-                                                                () => api.profiles.stop(profile.id)
-                                                            )
-                                                        }
-                                                    >
-                                                        <StopIcon data-icon="inline-start" />
-                                                        Stop analyzer
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        className="shrink-0 font-normal"
-                                                        onClick={() =>
-                                                            void runProfileLifecycleAction(
-                                                                () => api.profiles.start(profile.id)
-                                                            )
-                                                        }
-                                                    >
-                                                        <PlayIcon data-icon="inline-start" />
-                                                        Start analyzer
-                                                    </Button>
-                                                )}
                                             </div>
+
+                                            {profile.enabled ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
+                                                    onClick={() =>
+                                                        void runProfileLifecycleAction(
+                                                            () => api.profiles.stop(profile.id)
+                                                        )
+                                                    }
+                                                >
+                                                    <StopIcon className="h-4 w-4 mr-1.5" />
+                                                    Stop analyzer
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
+                                                    onClick={() =>
+                                                        void runProfileLifecycleAction(
+                                                            () => api.profiles.start(profile.id)
+                                                        )
+                                                    }
+                                                >
+                                                    <PlayIcon className="h-4 w-4 mr-1.5" />
+                                                    Start analyzer
+                                                </Button>
+                                            )}
 
                                             <ConfirmAction
                                                 trigger={
                                                     <Button
                                                         variant="destructive"
                                                         size="sm"
-                                                        className="w-full sm:w-auto shrink-0 font-normal"
+                                                        className="flex-1 w-full sm:w-auto font-normal cursor-pointer"
                                                     >
-                                                        <TrashIcon data-icon="inline-start" />
+                                                        <TrashIcon className="h-4 w-4 mr-1.5" />
                                                         Delete
                                                     </Button>
                                                 }
@@ -382,7 +386,6 @@ export function ProfilesPage() {
 
                     {totalPages > 1 && (
                         <div className="pt-2 flex justify-center">
-
                             <Pagination
                                 page={currentPage}
                                 totalPages={totalPages}
