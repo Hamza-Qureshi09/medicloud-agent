@@ -36,7 +36,6 @@ export function ProfileDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const machineId = Number(id)
-    const [toastError, setToastError] = React.useState<string | null>(null)
 
     const { data: healthData, mutate: healthMutate } = useHealth()
 
@@ -46,89 +45,114 @@ export function ProfileDetailPage() {
         error: profileError,
         mutate: profileMutate,
     } = useSWR(
-        machineId && !isNaN(machineId) ? api.profiles.detailKey(machineId) : null,
+        machineId ? api.profiles.detailKey(machineId) : null,
         () => api.profiles.get(machineId)
     )
 
-    // Fetch Drivers Registry
-    const { data: driversData } = useSWR(
-        api.drivers.listKey(),
-        () => api.drivers.list()
-    )
+    // Match registered drivers list
+    const registeredDriversData = React.useMemo(() => healthData?.registered_drivers ?? [], [healthData?.registered_drivers])
+    const driversById = React.useMemo(() => {
+        return new Map(
+            registeredDriversData.map((driver) => [driver.id, driver])
+        );
+    }, [registeredDriversData])
 
-    const driversList = React.useMemo(() => driversData?.drivers ?? healthData?.registered_drivers ?? [], [driversData, healthData])
-    
-    const getRegisteredDriver = React.useMemo(() => {
-        return new Map(driversList.map((driver) => [driver.id, driver]))
-    }, [driversList])
-
-    // Fetch associated staged orders for this specific analyzer machine
+    // Fetch associated staged orders for worklist link
     const { data: ordersData } = useSWR(
-        machineId && !isNaN(machineId) ? api.orders.listKey({ machineId }) : null,
-        () => api.orders.list({ machineId })
+        machineId ? api.orders.listKey({ machineId, status: "pending" }) : null,
+        () => api.orders.list({ machineId, status: "pending" })
     )
 
     const profileAction = useAsyncAction("Lifecycle action failed.")
 
-    // Running machine health match
+    // Match running machine health state
     const runningMachine = React.useMemo(() => {
         return (healthData?.running_machines ?? []).find(
-            (m) => Number(m.profile.id) === machineId
+            (m) => m.profile.id === machineId
         )?.machine
     }, [healthData, machineId])
 
-    const profileRecord = profileData?.profile
+    // Active orders calculations
+    const activeOrdersCount = ordersData?.orders?.length ?? 0
+    const recentSampleId = ordersData?.orders[0]?.sampleId
+    const driverId = profileData?.profile?.driverId;
 
-    // Matched driver lookup
+    // Match driver metadata
     const matchedDriver = React.useMemo(() => {
-        if (!profileRecord?.driverId || !getRegisteredDriver.size) return undefined
-        return getRegisteredDriver.get(profileRecord.driverId)
-    }, [getRegisteredDriver, profileRecord?.driverId])
+        if (driverId === null || driverId === undefined) return undefined;
+        return driversById.get(driverId);
+    }, [driversById, driverId]);
 
-    // Parse configuration dynamically using parseProfileConfig helper
+    // Authoritative config parsing
     const parsedConfig = React.useMemo(() => {
-        return parseProfileConfig(profileRecord?.config, matchedDriver)
-    }, [profileRecord?.config, matchedDriver])
+        return parseProfileConfig(profileData?.profile?.config, matchedDriver)
+    }, [profileData?.profile?.config, matchedDriver])
 
     // Derived service status logic
     const serviceStatus = React.useMemo(() => {
-        const isRunning = runningMachine?.running ?? profileRecord?.enabled ?? false
+        const isRunning = runningMachine?.running ?? profileData?.profile?.enabled ?? false
         const isConnected = isRunning && (runningMachine?.connected ?? false)
-        return { isRunning, isConnected, endpointDisplay: parsedConfig.endpointDisplay }
-    }, [runningMachine, profileRecord?.enabled, parsedConfig.endpointDisplay])
 
-    const activeOrdersCount = ordersData?.orders?.length ?? 0
-    const recentSampleId = ordersData?.orders?.[0]?.sampleId
+        return { isRunning, isConnected, endpointDisplay: parsedConfig.endpointDisplay }
+    }, [runningMachine, profileData?.profile?.enabled, parsedConfig.endpointDisplay])
+
 
     if (!profileData && !profileError) return <PageLoading />
-    if (profileError || !profileRecord) {
+    if (profileError || !profileData?.profile) {
         return (
-            <Container>
-                <ResourceError
-                    error={profileError || new Error("Profile not found")}
-                    onRetry={() => profileMutate()}
-                />
-            </Container>
+            <ResourceError
+                error={profileError || new Error("Analyzer profile not found")}
+                onRetry={() => profileMutate()}
+            />
         )
     }
 
+    const profileRecord = profileData.profile
     async function handleLifecycleAction(action: () => Promise<unknown>) {
-        setToastError(null)
-        try {
-            await profileAction.execute(async () => {
-                await action()
-                await Promise.all([healthMutate(), profileMutate()])
-            })
-        } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : "Lifecycle action failed."
-            setToastError(errorMsg)
-        }
+        await profileAction.execute(async () => {
+            await action()
+            await Promise.all([healthMutate(), profileMutate()])
+        }).catch(() => undefined)
     }
+
+    const connectionStatus = !serviceStatus.isRunning
+        ? {
+            title: "Service Offline",
+            description:
+                'Analyzer listener is stopped. Click "Start Analyzer" to activate communications.',
+            icon: (
+                <XCircleIcon
+                    weight="fill"
+                    className="mt-0.5 size-5 shrink-0 text-muted-foreground"
+                />
+            ),
+            className: "bg-muted/40",
+        }
+        : serviceStatus.isConnected
+            ? {
+                title: "Active & Connected",
+                description: `Physical analyzer is connected and transmitting data on ${serviceStatus.endpointDisplay}.`,
+                icon: (
+                    <CheckCircleIcon
+                        weight="fill"
+                        className="mt-0.5 size-5 shrink-0 text-primary"
+                    />
+                ),
+                className: "bg-muted/50",
+            }
+            : {
+                title: "Listening for Analyzer",
+                description: `Service is listening on ${serviceStatus.endpointDisplay}. Waiting for the analyzer to establish a connection.`,
+                icon: (
+                    <RadioIcon className="mt-0.5 size-5 shrink-0 animate-pulse text-primary" />
+                ),
+                className: "bg-muted/50",
+            };
 
     return (
         <Container>
             <div className="flex flex-col gap-6 w-full">
-                
+
                 {/* Navigation and Header Section */}
                 <div className="flex flex-col gap-2">
                     <Button
@@ -212,7 +236,7 @@ export function ProfileDetailPage() {
 
                 {/* Content Layout Cards */}
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-start">
-                    
+
                     {/* Left Overview Card */}
                     <Card className="lg:col-span-1 border-border bg-card rounded-3xl shadow-sm overflow-hidden">
                         <CardHeader className="pb-3">
@@ -256,7 +280,7 @@ export function ProfileDetailPage() {
                                         {activeOrdersCount > 0 ? `${activeOrdersCount} order(s) routed` : "No queued orders"}
                                     </p>
                                 </div>
-                                <Link 
+                                <Link
                                     to={recentSampleId ? `/dashboard/orders?sampleId=${recentSampleId}` : "/dashboard/orders"}
                                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-normal"
                                 >
@@ -307,10 +331,10 @@ export function ProfileDetailPage() {
 
                     {/* Right Connection Settings Card using ProfileConfigCard */}
                     <div className="lg:col-span-2">
-                        <ProfileConfigDetailCard 
-                            config={profileRecord.config} 
-                            driver={matchedDriver} 
-                            className="rounded-3xl shadow-sm overflow-hidden" 
+                        <ProfileConfigDetailCard
+                            config={profileRecord.config}
+                            driver={matchedDriver}
+                            className="rounded-3xl shadow-sm overflow-hidden"
                         />
                     </div>
 
