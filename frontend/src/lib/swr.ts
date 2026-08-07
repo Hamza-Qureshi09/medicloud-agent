@@ -7,7 +7,7 @@ export const swrConfig: SWRConfiguration = {
   revalidateIfStale: true,
   keepPreviousData: true,
   dedupingInterval: 5_000,
-  refreshInterval: 30_000,
+  refreshInterval: 60_000, // 1 min
   errorRetryCount: 2,
   errorRetryInterval: 3_000,
   shouldRetryOnError: false,

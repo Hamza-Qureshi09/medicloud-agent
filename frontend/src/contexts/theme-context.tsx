@@ -6,6 +6,9 @@ interface ThemeContextValue {
     resolvedTheme: "light" | "dark"
     setTheme: (theme: Theme) => void
 }
+type ThemeProviderProps = {
+    children: ReactNode | ((theme: "light" | "dark") => ReactNode);
+};
 const STORAGE_KEY = "medicloud-agent-dashboard-theme"
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
@@ -15,7 +18,7 @@ function getSystemTheme(): "light" | "dark" {
         : "light"
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
     const [theme, setThemeState] = useState<Theme>(() => {
         const stored = localStorage.getItem(STORAGE_KEY)
         return stored === "light" || stored === "dark" || stored === "system"
@@ -48,7 +51,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         [theme, resolvedTheme, setTheme],
     )
 
-    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    return <ThemeContext.Provider value={value}>
+        {typeof children === "function" ? children(resolvedTheme) : children}
+    </ThemeContext.Provider>
 }
 
 

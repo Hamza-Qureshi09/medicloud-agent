@@ -53,3 +53,44 @@ export class ApiError extends Error {
 export function json(method: "POST" | "PATCH", body: unknown): RequestInit {
     return { method, body: JSON.stringify(body) }
 }
+
+
+// Extracts a clean, human-readable error message from any thrown value.
+export function extractApiError(error: unknown, fallback = "The action failed."): string {
+
+    if (error instanceof ApiError && error.body) {
+        const raw = error.body.detail || error.body.error
+        if (raw) return parseErrorString(raw)
+    }
+    if (error instanceof Error && error.message) {
+        return parseErrorString(error.message)
+    }
+
+    return fallback
+}
+
+// Normalises zod-serialised multi-error strings like
+function parseErrorString(raw: string): string {
+
+    // If it looks like a structured multi-error (contains ✖ or →), flatten it
+    if (/[✖×\u2716]/.test(raw) || raw.includes(" → ")) {
+        const lines = raw
+            .split(/\n/)
+            .map((l) => l.replace(/^[✖️×\u2716\s→]+/, "").trim())
+            .filter(Boolean)
+
+        // Merge pairs: "Invalid input" + "at dataBits" → "Invalid input at dataBits"
+        const merged: string[] = []
+        for (let i = 0; i < lines.length; i++) {
+            if (i < lines.length - 1 && lines[i + 1].startsWith("at ")) {
+                merged.push(`${lines[i]} ${lines[i + 1]}`)
+                i++
+            } else {
+                merged.push(lines[i])
+            }
+        }
+        return merged.join("; ").trim() || raw.trim()
+    }
+
+    return raw.trim()
+}
