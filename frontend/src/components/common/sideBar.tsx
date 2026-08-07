@@ -44,7 +44,7 @@ export function AppSidebar() {
         <Sidebar variant="floating" collapsible="icon" className="bg-background">
 
             {/* sidebar header */}
-            <SidebarHeader className="bg-background/50">
+            <SidebarHeader className="bg-background">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" tooltip="mediCloud machines">
@@ -63,7 +63,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             {/* sideBar content */}
-            <SidebarContent className="bg-background/50">
+            <SidebarContent className="bg-background">
                 <SidebarGroup>
                     <SidebarGroupLabel>Workspace</SidebarGroupLabel>
                     <SidebarGroupContent>
@@ -100,7 +100,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             {/* sidebar footer */}
-            <SidebarFooter className="bg-background/50">
+            <SidebarFooter className="bg-background">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Service health">

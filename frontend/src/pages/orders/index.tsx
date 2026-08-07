@@ -1,5 +1,5 @@
-import React from "react";
-import type { MachineOrder, MachineProfile, OrderStatus } from "@/types/api";
+import React, { useState } from "react";
+import type { OrderStatus } from "@/types/api";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import { PageLoading, RefreshButton, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
@@ -8,17 +8,6 @@ import useSWR from "swr";
 import { api } from "@/lib/api";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
     Select,
     SelectContent,
     SelectGroup,
@@ -26,7 +15,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import {
     Table,
     TableBody,
@@ -35,46 +23,27 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { orderFormSchema, orderPayload, type OrderFormValues } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
-import { ArrowCounterClockwiseIcon, PencilSimpleIcon, PlusIcon, TrashIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon, TrashIcon, ArrowRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import { OrderStatusBadge } from "@/components/common/statusBadge";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+import { OrderForm } from "./orderForm";
+import { ITEMS_PER_PAGE } from "@/lib/global";
+import { Pagination } from "@/components/common/pagination";
+import { TestBadgeList } from "@/components/common/testBadgeList";
 
 export function OrdersPage() {
+    const [currentPage, setCurrentPage] = useState(1);
     const [params, setParams] = useSearchParams();
+
     const status = (params.get("status") || "") as OrderStatus | "";
     const sampleId = params.get("sampleId") || "";
+
+    // local search state just for input
     const [search, setSearch] = React.useState(sampleId);
-
-    // Sync input field state when search parameter changes in URL
-    React.useEffect(() => {
-        setSearch(sampleId);
-    }, [sampleId]);
-
-    // Query state memoization using explicit React.useMemo
-    const orderQuery = React.useMemo(() => {
-        return {
-            status: status || undefined,
-            sampleId: sampleId || undefined,
-            limit: 100,
-        };
-    }, [status, sampleId]);
-
-    const {
-        data: ordersData,
-        isValidating: orderIsValidating,
-        mutate: orderMutate,
-        error: orderErrors,
-    } = useSWR(
-        api.orders.listKey(orderQuery),
-        () => api.orders.list(orderQuery),
-        {}
-    );
 
     const profileQuery = React.useMemo(() => ({ enabled: true }), []);
     const {
@@ -86,9 +55,36 @@ export function OrdersPage() {
         {}
     );
 
+    // Count for pagination
+    const { data: orderCount, mutate: orderCountMutate } = useSWR(
+        api.orders.countKey,
+        () => api.orders.count(),
+    );
+
+    const totalCount = orderCount?.count ?? 0;
+    const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+
+    // Query state memoization using explicit React.useMemo
+    const orderQuery = React.useMemo(() => ({
+        status: status || undefined,
+        sampleId: sampleId || undefined,
+        limit: ITEMS_PER_PAGE,
+        offset: (currentPage - 1) * ITEMS_PER_PAGE,
+    }), [status, sampleId, currentPage]);
+
+    const {
+        data: ordersData,
+        isValidating: orderIsValidating,
+        mutate: orderMutate,
+        error: orderErrors,
+    } = useSWR(
+        api.orders.listKey(orderQuery),
+        () => api.orders.list(orderQuery),
+    );
+
     const orderAction = useAsyncAction("Order action failed.");
 
-    // filters
+    // handle filters
     const updateFilter = React.useCallback(
         (key: string, value: string) => {
             const next = new URLSearchParams(params);
@@ -97,6 +93,7 @@ export function OrdersPage() {
             else next.delete(key);
 
             setParams(next, { replace: true });
+            setCurrentPage(1); // reset to first page on filter change
         },
         [params, setParams],
     );
@@ -104,11 +101,18 @@ export function OrdersPage() {
     const debouncedUpdateFilter = useDebounceCallback(updateFilter, 400);
 
     // Refresh handler: resets URL parameters, resets search state, and mutates data
-    const handleRefresh = React.useCallback(() => {
+    const hardRefresh = React.useCallback(async () => {
+        await Promise.all([orderMutate(), orderCountMutate(), profilesMutate()]);
+    }, [orderCountMutate, orderMutate, profilesMutate])
+
+    const handleRefresh = React.useCallback(async () => {
         setSearch("");
         setParams({}, { replace: true });
-        void orderMutate();
-    }, [setParams, orderMutate]);
+        setCurrentPage(1);
+
+        // hard refresh
+        void hardRefresh()
+    }, [setParams, hardRefresh]);
 
     if (!ordersData && !orderErrors) return <PageLoading />;
     if (orderErrors) {
@@ -119,33 +123,30 @@ export function OrdersPage() {
     async function runOrderMutation(action: () => Promise<unknown>) {
         await orderAction.execute(async () => {
             await action();
-            await Promise.all([orderMutate(), profilesMutate()]);
+            await hardRefresh();
         }).catch(() => undefined);
     }
 
     return (
         <Container>
 
-            {/* top page details */}
+            {/* Page header */}
             <PageSection
                 eyebrow="Worklist"
                 title="Orders in motion"
-                description="Search and filter state is stored in the URL, so operational views can be bookmarked and shared."
+                description="Search and filter state is stored in the URL — views can be bookmarked and shared."
                 actions={
                     <>
-                        <RefreshButton
-                            isLoading={orderIsValidating}
-                            onRefresh={handleRefresh}
-                        />
-                        <OrderDialog
-                            profiles={profilesData?.profiles.filter((profile) => profile.enabled) ?? []}
-                            onSaved={orderMutate}
+                        <RefreshButton isLoading={orderIsValidating} onRefresh={handleRefresh} />
+                        <OrderForm
+                            profiles={profilesData?.profiles.filter((p) => p.enabled) ?? []}
+                            onSaved={hardRefresh}
                         />
                     </>
                 }
             />
 
-            {/* search filter */}
+            {/* Filters */}
             <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
                 <Input
                     aria-label="Search by sample ID"
@@ -166,9 +167,7 @@ export function OrdersPage() {
                 >
                     <SelectTrigger className="w-full font-normal" aria-label="Filter by status">
                         <SelectValue className="font-normal">
-                            {status
-                                ? status.charAt(0).toUpperCase() + status.slice(1)
-                                : "All statuses"}
+                            {status ? status.charAt(0).toUpperCase() + status.slice(1) : "All statuses"}
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -183,9 +182,10 @@ export function OrdersPage() {
                 </Select>
             </div>
 
-            {/* error handling */}
+            {/* Action-level error */}
             {orderAction.error ? (
                 <Alert variant="destructive">
+                    <WarningCircleIcon className="size-4" />
                     <AlertTitle className="font-normal">Order action failed</AlertTitle>
                     <AlertDescription className="font-normal">{orderAction.error}</AlertDescription>
                 </Alert>
@@ -193,431 +193,135 @@ export function OrdersPage() {
 
             {/* order table */}
             {ordersData?.orders.length ? (
-                <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="font-normal">Sample ID</TableHead>
-                                <TableHead className="font-normal">Patient</TableHead>
-                                <TableHead className="font-normal">Analyzer</TableHead>
-                                <TableHead className="font-normal">Tests</TableHead>
-                                <TableHead className="font-normal">Status</TableHead>
-                                <TableHead className="font-normal">Expiry</TableHead>
-                                {/* Sticky right column for actions on smaller viewports */}
-                                <TableHead className="text-right font-normal sticky right-0 bg-card z-10 shadow-[-12px_0_12px_-4px_rgba(0,0,0,0.05)] border-l border-border/40">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {ordersData.orders.map((order) => (
-                                <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
-                                    {/* Clickable Underlined Sample ID navigating to Order Details */}
-                                    <TableCell className="font-normal">
-                                        <Link
-                                            to={`/dashboard/orders/${order.id}`}
-                                            className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1 font-normal text-foreground"
-                                        >
-                                            {order.sampleId}
-                                            <ArrowRightIcon className="h-3.5 w-3.5 opacity-40 hover:opacity-100" />
-                                        </Link>
-                                    </TableCell>
-
-                                    <TableCell className="font-normal">{order.patientName || order.patientId || "—"}</TableCell>
-
-                                    {/* Clickable Analyzer Machine ID navigating to Profile */}
-                                    <TableCell className="tabular-nums font-mono text-xs font-normal">
-                                        <Link
-                                            to={`/dashboard/profiles/${order.machineId}`}
-                                            className="hover:underline hover:text-primary text-muted-foreground transition-colors font-normal"
-                                        >
-                                            #{order.machineId}
-                                        </Link>
-                                    </TableCell>
-
-                                    <TableCell className="max-w-56 truncate font-normal">
-                                        {order.tests.join(", ")}
-                                    </TableCell>
-
-                                    <TableCell className="font-normal">
-                                        <OrderStatusBadge status={order.status} />
-                                    </TableCell>
-
-                                    <TableCell className="text-muted-foreground text-xs font-mono font-normal">
-                                        {new Date(order.expiresAt).toLocaleString()}
-                                    </TableCell>
-
-                                    {/* Sticky action buttons cell */}
-                                    <TableCell className="sticky right-0 bg-card z-10 shadow-[-12px_0_12px_-4px_rgba(0,0,0,0.05)] border-l border-border/40">
-                                        <div className="flex items-center justify-end gap-1">
-                                            {order.status !== "completed" ? (
-                                                <OrderDialog
-                                                    profiles={profilesData?.profiles ?? []}
-                                                    order={order}
-                                                    onSaved={orderMutate}
-                                                />
-                                            ) : null}
-
-                                            {(order.status === "failed" || order.status === "pending") && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-xs"
-                                                    aria-label={`Resend ${order.sampleId}`}
-                                                    onClick={() =>
-                                                        void runOrderMutation(
-                                                            () => api.orders.resend(order.id),
-                                                        )
-                                                    }
-                                                >
-                                                    <ArrowCounterClockwiseIcon />
-                                                </Button>
-                                            )}
-
-                                            {order.status !== "completed" ? (
-                                                <ConfirmAction
-                                                    trigger={
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon-xs"
-                                                            aria-label={`Delete ${order.sampleId}`}
-                                                        >
-                                                            <TrashIcon />
-                                                        </Button>
-                                                    }
-                                                    title="Delete this order?"
-                                                    description="Active orders are removed from the analyzer staging map before deletion. Completed orders remain immutable."
-                                                    actionLabel="Delete order"
-                                                    onConfirm={() =>
-                                                        runOrderMutation(
-                                                            () => api.orders.remove(order.id),
-                                                        )
-                                                    }
-                                                />
-                                            ) : null}
-                                        </div>
-                                    </TableCell>
+                <div className="flex flex-col gap-4">
+                    <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="font-normal">Sample ID</TableHead>
+                                    <TableHead className="font-normal">Patient</TableHead>
+                                    <TableHead className="font-normal">Analyzer</TableHead>
+                                    <TableHead className="font-normal">Tests</TableHead>
+                                    <TableHead className="font-normal">Status</TableHead>
+                                    <TableHead className="font-normal">Expiry</TableHead>
+                                    {/* Sticky right column for actions on smaller viewports */}
+                                    <TableHead className="text-center font-normal sticky right-0 bg-card z-10 shadow-[-12px_0_12px_-4px_rgba(0,0,0,0.05)] border-l border-border/40">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {ordersData.orders.map((order) => (
+                                    <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
+                                        <TableCell className="font-normal">
+                                            <Link
+                                                to={`/dashboard/orders/${order.id}`}
+                                                className="hover:underline hover:text-primary transition-colors inline-flex items-center gap-1 font-normal text-foreground"
+                                            >
+                                                {order.sampleId}
+                                                <ArrowRightIcon className="size-3.5 opacity-40 hover:opacity-100" />
+                                            </Link>
+                                        </TableCell>
+
+                                        <TableCell className="font-normal">
+                                            {order.patientName || order.patientId || "—"}
+                                        </TableCell>
+
+                                        <TableCell className="tabular-nums font-mono text-xs font-normal">
+                                            <Link
+                                                to={`/dashboard/profiles/${order.machineId}`}
+                                                className="hover:underline hover:text-primary text-muted-foreground transition-colors font-normal"
+                                            >
+                                                #{order.machineId}
+                                            </Link>
+                                        </TableCell>
+
+                                        <TableCell className="max-w-56 truncate font-normal">
+                                            <TestBadgeList tests={order.tests} maxVisible={2} />
+                                        </TableCell>
+
+                                        <TableCell className="font-normal">
+                                            <OrderStatusBadge status={order.status} />
+                                        </TableCell>
+
+                                        <TableCell className="text-muted-foreground text-xs font-mono font-normal">
+                                            {new Date(order.expiresAt).toLocaleString()}
+                                        </TableCell>
+
+                                        {/* Sticky action cell */}
+                                        <TableCell className="sticky right-0 bg-card z-10 shadow-[-12px_0_12px_-4px_rgba(0,0,0,0.05)] border-l border-border/40">
+                                            <div className="flex items-center justify-end gap-1">
+                                                {order.status !== "completed" ? (
+                                                    <OrderForm
+                                                        profiles={profilesData?.profiles ?? []}
+                                                        order={order}
+                                                        onSaved={hardRefresh}
+                                                    />
+                                                ) : null}
+
+                                                {(order.status === "failed" || order.status === "pending") && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        aria-label={`Resend ${order.sampleId}`}
+                                                        onClick={() =>
+                                                            void runOrderMutation(() => api.orders.resend(order.id))
+                                                        }
+                                                    >
+                                                        <ArrowCounterClockwiseIcon />
+                                                    </Button>
+                                                )}
+
+                                                {order.status !== "completed" ? (
+                                                    <ConfirmAction
+                                                        trigger={
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon-xs"
+                                                                aria-label={`Delete ${order.sampleId}`}
+                                                            >
+                                                                <TrashIcon />
+                                                            </Button>
+                                                        }
+                                                        title="Delete this order?"
+                                                        description="Active orders are removed from the analyzer staging map before deletion. Completed orders remain immutable."
+                                                        actionLabel="Delete order"
+                                                        onConfirm={() =>
+                                                            runOrderMutation(() => api.orders.remove(order.id))
+                                                        }
+                                                    />
+                                                ) : null}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center pt-2">
+                            <Pagination
+                                page={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
+                    )}
                 </div>
             ) : (
                 <ResourceEmpty
                     title="No matching orders"
                     description="Adjust the filters or create a new order for a running analyzer."
                     action={
-                        <OrderDialog
-                            profiles={profilesData?.profiles.filter((profile) => profile.enabled) ?? []}
-                            onSaved={orderMutate}
+                        <OrderForm
+                            profiles={profilesData?.profiles.filter((p) => p.enabled) ?? []}
+                            onSaved={hardRefresh}
                         />
                     }
                 />
             )}
         </Container>
-    );
-}
-
-function getOrderFormDefaults(defaultExpiry: string, profiles: MachineProfile[], order?: MachineOrder): OrderFormValues {
-    return {
-        machineId: String(order?.machineId ?? profiles[0]?.id ?? ""),
-        sampleId: order?.sampleId ?? "",
-        tests: order?.tests?.join(", ") ?? "",
-        patientId: order?.patientId ?? "",
-        patientName: order?.patientName ?? "",
-        sampleType: order?.sampleType ?? "",
-        rackPosition: order?.rackPosition ?? "",
-        expiresAt: order
-            ? new Date(order.expiresAt).toISOString().slice(0, 16)
-            : defaultExpiry.slice(0, 16),
-    };
-}
-
-function OrderDialog({
-    profiles,
-    order,
-    onSaved,
-}: {
-    profiles: MachineProfile[];
-    order?: MachineOrder;
-    onSaved: () => Promise<unknown>;
-}) {
-    const [open, setOpen] = React.useState(false);
-    const saveOrder = useAsyncAction("Order could not be saved.");
-    const [defaultExpiry] = React.useState(() => new Date(Date.now() + 86_400_000).toISOString());
-
-    const form = useForm<OrderFormValues>({
-        resolver: zodResolver(orderFormSchema),
-        defaultValues: getOrderFormDefaults(defaultExpiry, profiles, order),
-    });
-    const machineId = form.watch("machineId");
-
-    async function changeOpen(nextOpen: boolean) {
-        setOpen(nextOpen);
-
-        if (nextOpen) {
-            saveOrder.reset();
-            form.clearErrors();
-        }
-
-        if (nextOpen && !order?.id && !form.getValues("machineId") && profiles[0]) {
-            form.setValue("machineId", String(profiles[0].id));
-        }
-
-        if (nextOpen && order?.id) {
-            const { order: latestOrder } = await saveOrder.execute(
-                () => api.orders.get(order.id)
-            );
-            form.reset(getOrderFormDefaults(defaultExpiry, profiles, latestOrder));
-        }
-    }
-
-    const onSubmit: SubmitHandler<OrderFormValues> = async (data) => {
-        try {
-            await saveOrder.execute(async () => {
-                const input = orderPayload(data, Boolean(order?.id));
-
-                if (order?.id) await api.orders.update(order.id, input);
-                else await api.orders.create(input);
-
-                await onSaved();
-                setOpen(false);
-            });
-        } catch (error) {
-            form.setError("root", {
-                message:
-                    error instanceof Error ? error.message : "Order could not be saved.",
-        });
-        }
-    };
-
-    const dialogTrigger = order ? (
-        <Button variant="ghost" size="icon-xs" aria-label={`Edit ${order.sampleId}`}>
-            <PencilSimpleIcon />
-        </Button>
-    ) : (
-        <Button size="sm" className="font-normal">
-            <PlusIcon data-icon="inline-start" />
-            New order
-        </Button>
-    );
-
-    return (
-        <Dialog open={open} onOpenChange={(nextOpen) => void changeOpen(nextOpen)}>
-            <DialogTrigger render={dialogTrigger} />
-
-            {/* Guaranteed Outside Click & Esc Dismiss Prevention via Radix Primative Event Overrides */}
-            <DialogContent
-                onInteractOutside={(e) => e.preventDefault()}
-                onEscapeKeyDown={(e) => e.preventDefault()}
-            >
-                <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-                    <DialogHeader>
-                        <DialogTitle className="font-normal">{order?.id ? "Edit order" : "Create order"}</DialogTitle>
-                        <DialogDescription className="font-normal">
-                            Active orders are staged in the target analyzer after validation.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {!order?.id && profiles.length === 0 ? (
-                        <div className="py-5">
-                            <ResourceEmpty
-                                title="No running analyzer"
-                                description="Start an analyzer profile before creating a test order."
-                            />
-                        </div>
-                    ) : (
-                        <FieldGroup className="py-5">
-
-                            {/* select analyzer (Required *) */}
-                            {!order?.id ? (
-                                <Controller
-                                    control={form.control}
-                                    name="machineId"
-                                    render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel className="font-normal">
-                                                Analyzer profile <span className="text-destructive ml-0.5">*</span>
-                                            </FieldLabel>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={(value) => field.onChange(value ?? "")}
-                                            >
-                                                <SelectTrigger className="w-full font-normal" aria-invalid={fieldState.invalid}>
-                                                    <SelectValue className="font-normal">
-                                                        {profiles.find(
-                                                            (profile) => String(profile.id) === field.value,
-                                                        )?.name || "Choose an analyzer"}
-                                                    </SelectValue>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectGroup>
-                                                        {profiles.map((profile) => (
-                                                            <SelectItem
-                                                                key={profile.id}
-                                                                value={String(profile.id)}
-                                                                className="font-normal"
-                                                            >
-                                                                {profile.name || profile.driverId}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectGroup>
-                                                </SelectContent>
-                                            </Select>
-                                            <FieldError className="font-normal">{fieldState.error?.message}</FieldError>
-                                        </Field>
-                                    )}
-                                />
-                            ) : null}
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                {/* sampleID (Required *) */}
-                                <Field data-invalid={Boolean(form.formState.errors.sampleId)}>
-                                    <FieldLabel htmlFor="sample-id" className="font-normal">
-                                        Sample ID <span className="text-destructive ml-0.5">*</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="sample-id"
-                                        aria-invalid={Boolean(form.formState.errors.sampleId)}
-                                        placeholder="sample_id / barcode_id"
-                                        className="font-normal"
-                                        required
-                                        {...form.register("sampleId")}
-                                    />
-                                    <FieldError className="font-normal">
-                                        {form.formState.errors.sampleId?.message}
-                                    </FieldError>
-                                </Field>
-
-                                {/* Tests (Required *) */}
-                                <Field data-invalid={Boolean(form.formState.errors.tests)}>
-                                    <FieldLabel htmlFor="tests" className="font-normal">
-                                        Tests <span className="text-destructive ml-0.5">*</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="tests"
-                                        aria-invalid={Boolean(form.formState.errors.tests)}
-                                        placeholder="TSH, FT4"
-                                        className="font-normal"
-                                        required
-                                        {...form.register("tests")}
-                                    />
-                                    <FieldError className="font-normal">{form.formState.errors.tests?.message}</FieldError>
-                                </Field>
-
-                                {/* patient Id (Optional) */}
-                                <Field data-invalid={Boolean(form.formState.errors.patientId)}>
-                                    <FieldLabel htmlFor="patient-id" className="font-normal">
-                                        Patient ID <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="patient-id"
-                                        aria-invalid={Boolean(form.formState.errors.patientId)}
-                                        className="font-normal"
-                                        {...form.register("patientId")}
-                                    />
-                                    <FieldError className="font-normal">
-                                        {form.formState.errors.patientId?.message}
-                                    </FieldError>
-                                </Field>
-
-                                {/* patient name (Optional) */}
-                                <Field data-invalid={Boolean(form.formState.errors.patientName)}>
-                                    <FieldLabel htmlFor="patient-name" className="font-normal">
-                                        Patient name <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="patient-name"
-                                        aria-invalid={Boolean(form.formState.errors.patientName)}
-                                        className="font-normal"
-                                        {...form.register("patientName")}
-                                    />
-                                    <FieldError className="font-normal">
-                                        {form.formState.errors.patientName?.message}
-                                    </FieldError>
-                                </Field>
-
-                                {/* sample type (Optional) */}
-                                <Field data-invalid={Boolean(form.formState.errors.sampleType)}>
-                                    <FieldLabel htmlFor="sample-type" className="font-normal">
-                                        Sample type <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="sample-type"
-                                        aria-invalid={Boolean(form.formState.errors.sampleType)}
-                                        placeholder="SERUM"
-                                        className="font-normal"
-                                        {...form.register("sampleType")}
-                                    />
-                                    <FieldError className="font-normal">
-                                        {form.formState.errors.sampleType?.message}
-                                    </FieldError>
-                                </Field>
-
-                                {/* rack position (Optional) */}
-                                <Field data-invalid={Boolean(form.formState.errors.rackPosition)}>
-                                    <FieldLabel htmlFor="rack-position" className="font-normal">
-                                        Rack position <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
-                                    </FieldLabel>
-                                    <Input
-                                        id="rack-position"
-                                        aria-invalid={Boolean(form.formState.errors.rackPosition)}
-                                        placeholder="A1"
-                                        className="font-normal"
-                                        {...form.register("rackPosition")}
-                                    />
-                                    <FieldError className="font-normal">
-                                        {form.formState.errors.rackPosition?.message}
-                                    </FieldError>
-                                </Field>
-                            </div>
-
-                            {/* order expire date setup (Required *) */}
-                            <Field data-invalid={Boolean(form.formState.errors.expiresAt)}>
-                                <FieldLabel htmlFor="expires-at" className="font-normal">
-                                    Expires at <span className="text-destructive ml-0.5">*</span>
-                                </FieldLabel>
-                                <Input
-                                    id="expires-at"
-                                    type="datetime-local"
-                                    aria-invalid={Boolean(form.formState.errors.expiresAt)}
-                                    className="font-normal"
-                                    required
-                                    {...form.register("expiresAt")}
-                                />
-                                <FieldError className="font-normal">
-                                    {form.formState.errors.expiresAt?.message}
-                                </FieldError>
-                            </Field>
-
-                            {form.formState.errors.root?.message ? (
-                                <Alert variant="destructive">
-                                    <AlertTitle className="font-normal">Order not saved</AlertTitle>
-                                    <AlertDescription className="font-normal">
-                                        {form.formState.errors.root.message}
-                                    </AlertDescription>
-                                </Alert>
-                            ) : null}
-                        </FieldGroup>
-                    )}
-
-                    <DialogFooter>
-                        <Button type="button" variant="outline" className="font-normal" onClick={() => setOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="font-normal"
-                            disabled={
-                                saveOrder.pending ||
-                                (!order && (!profiles.length || !machineId))
-                            }
-                        >
-                            {saveOrder.pending ? <Spinner data-icon="inline-start" /> : null}
-                            {order ? "Save changes" : "Create order"}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
     );
 }

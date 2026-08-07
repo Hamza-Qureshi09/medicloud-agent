@@ -1,4 +1,5 @@
 import { useCallback, useReducer } from "react";
+import { extractApiError } from "@/lib/helpers";
 
 type AsyncActionState =
     | { status: "idle"; error: null }
@@ -45,7 +46,7 @@ export function useAsyncAction(defaultError = "The action failed.") {
         } catch (error) {
             dispatch({
                 type: "error",
-                error: errorMessage(error, defaultError)
+                error: extractApiError(error, defaultError)
             })
             throw error
         }
@@ -60,9 +61,4 @@ export function useAsyncAction(defaultError = "The action failed.") {
         execute,
         reset
     }
-}
-
-// helpers
-function errorMessage(error: unknown, fallback: string) {
-    return error instanceof Error ? error.message : fallback
 }

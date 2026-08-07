@@ -173,7 +173,7 @@ async function request<T>(
         const body = (await response.json().catch(() => ({}))) as ApiErrorBody
 
         throw new ApiError(
-            body.error || body.detail || `Request failed with status ${response.status}`,
+            body.detail || body.error || `Request failed with status ${response.status}`,
             response.status,
             body,
         )
