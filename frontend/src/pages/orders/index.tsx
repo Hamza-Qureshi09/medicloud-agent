@@ -237,7 +237,7 @@ export function OrdersPage() {
                                         </TableCell>
 
                                         <TableCell className="max-w-56 truncate font-normal">
-                                            <TestBadgeList tests={order.tests} maxVisible={2} />
+                                            <TestBadgeList tests={order.tests} maxVisible={2} /> 
                                         </TableCell>
 
                                         <TableCell className="font-normal">

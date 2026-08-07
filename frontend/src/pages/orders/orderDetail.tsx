@@ -11,16 +11,29 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { Container } from "@/components/common/container";
-import { 
-    ArrowLeftIcon, 
-    ArrowCounterClockwiseIcon, 
-    BarcodeIcon, 
-    CpuIcon, 
-    ClockIcon, 
+import {
+    ArrowLeftIcon,
+    ArrowCounterClockwiseIcon,
+    BarcodeIcon,
+    CpuIcon,
+    ClockIcon,
     TrashIcon,
     FlaskIcon,
-    CalendarCheckIcon
+    CalendarCheckIcon,
+    TestTubeIcon,
+    UserIcon,
+    PencilSimpleIcon,
+    DotsThreeVerticalIcon
 } from "@phosphor-icons/react";
+import { OrderForm } from "./orderForm";
+import { Badge } from "@/components/ui/badge";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function OrderDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -75,56 +88,132 @@ export function OrderDetailPage() {
     return (
         <Container>
             <div className="flex flex-col gap-6 w-full">
-                
+
                 {/* Navigation header and action toolbar */}
                 <div className="flex flex-col gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="w-fit gap-1.5 text-muted-foreground hover:text-foreground p-0 hover:bg-transparent font-normal"
+                        className="w-fit gap-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent font-normal"
                         onClick={() => navigate("/dashboard/orders")}
                     >
                         <ArrowLeftIcon className="h-4 w-4" />
-                        <span className="font-normal">Back to Worklist Orders</span>
+                        <span className="font-normal">Back to Orders</span>
                     </Button>
 
                     <PageSection
                         eyebrow={`SAMPLE BARCODE: ${order.sampleId}`}
-                        title={`Order Details - #${order.id}`}
+                        title={`Order Details #${order.id}`}
                         description="Staged laboratory test order specification, patient identity mapping, and analyzer routing status."
                         actions={
                             <div className="flex flex-wrap items-center gap-2">
                                 <OrderStatusBadge status={order.status} />
 
-                                {(order.status === "failed" || order.status === "pending") && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="font-normal"
-                                        onClick={() => handleOrderMutation(() => api.orders.resend(order.id))}
-                                    >
-                                        <ArrowCounterClockwiseIcon data-icon="inline-start" />
-                                        <span className="font-normal">Resend Order</span>
-                                    </Button>
-                                )}
+                                {/* Desktop action buttons */}
+                                <div className="hidden sm:flex items-center gap-2">
 
-                                {order.status !== "completed" && (
-                                    <ConfirmAction
+                                    {(order.status === "failed" || order.status === "pending") && (
+                                        <Button
+                                            size="sm"
+                                            className="font-normal"
+                                            onClick={() => handleOrderMutation(() => api.orders.resend(order.id))}
+                                        >
+                                            <ArrowCounterClockwiseIcon data-icon="inline-start" />
+                                            <span className="font-normal">Resend Order</span>
+                                        </Button>
+                                    )}
+
+                                    <OrderForm
+                                        profiles={profilesData?.profiles ?? []}
+                                        order={order}
+                                        onSaved={async () => { await orderMutate() }}
                                         trigger={
-                                            <Button variant="destructive" size="sm" className="font-normal">
-                                                <TrashIcon data-icon="inline-start" />
-                                                <span className="font-normal">Delete Order</span>
+                                            <Button variant="outline" size="sm" className="font-normal">
+                                                <PencilSimpleIcon data-icon="inline-start" />
+                                                <span className="font-normal">Edit Order</span>
                                             </Button>
                                         }
-                                        title="Delete this order?"
-                                        description="Active orders are removed from the analyzer staging map before deletion."
-                                        actionLabel="Delete order"
-                                        onConfirm={async () => {
-                                            await api.orders.remove(order.id);
-                                            navigate("/dashboard/orders");
-                                        }}
                                     />
-                                )}
+
+                                    {order.status !== "completed" && (
+                                        <ConfirmAction
+                                            trigger={
+                                                <Button variant="destructive" size="sm" className="font-normal">
+                                                    <TrashIcon data-icon="inline-start" />
+                                                    <span className="font-normal">Delete Order</span>
+                                                </Button>
+                                            }
+                                            title="Delete this order?"
+                                            description="Active orders are removed from the analyzer staging map before deletion."
+                                            actionLabel="Delete order"
+                                            onConfirm={async () => {
+                                                await api.orders.remove(order.id)
+                                                navigate("/dashboard/orders")
+                                            }}
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Mobile action buttons with Dropdown menu for extra/destructive actions */}
+                                <div className="sm:hidden flex items-center gap-2">
+                                    {(order.status === "failed" || order.status === "pending") && (
+                                        <Button
+                                            size="sm"
+                                            className="font-normal"
+                                            onClick={() => handleOrderMutation(() => api.orders.resend(order.id))}
+                                        >
+                                            <ArrowCounterClockwiseIcon data-icon="inline-start" />
+                                            <span className="font-normal">Resend</span>
+                                        </Button>
+                                    )}
+
+                                    <OrderForm
+                                        profiles={profilesData?.profiles ?? []}
+                                        order={order}
+                                        onSaved={async () => { await orderMutate() }}
+                                        trigger={
+                                            <Button variant="outline" size="sm" className="font-normal">
+                                                <PencilSimpleIcon data-icon="inline-start" />
+                                                <span className="font-normal">Edit</span>
+                                            </Button>
+                                        }
+                                    />
+
+                                    {order.status !== "completed" && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger
+                                                render={
+                                                    <Button variant="outline" size="icon-sm" aria-label="Order actions">
+                                                        <DotsThreeVerticalIcon weight="bold" />
+                                                    </Button>
+                                                }
+                                            />
+
+                                            <DropdownMenuContent align="end" className="min-w-44">
+                                                <DropdownMenuGroup>
+                                                    <ConfirmAction
+                                                        trigger={
+                                                            <DropdownMenuItem
+                                                                className="font-normal text-destructive focus:text-destructive"
+                                                                onSelect={(e) => e.preventDefault()}
+                                                            >
+                                                                <TrashIcon />
+                                                                Delete order
+                                                            </DropdownMenuItem>
+                                                        }
+                                                        title="Delete this order?"
+                                                        description="Active orders are removed from the analyzer staging map before deletion."
+                                                        actionLabel="Delete order"
+                                                        onConfirm={async () => {
+                                                            await api.orders.remove(order.id)
+                                                            navigate("/dashboard/orders")
+                                                        }}
+                                                    />
+                                                </DropdownMenuGroup>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
+                                </div>
                             </div>
                         }
                     />
@@ -139,108 +228,153 @@ export function OrderDetailPage() {
                 )}
 
                 {/* 2-Card responsive grid specification layout */}
-                <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-start">
-                    
-                    {/* Left Column: Sample identity card */}
-                    <Card className="lg:col-span-1 border-border bg-card">
-                        <CardHeader>
-                            <CardTitle className="text-base font-normal">Sample & Patient Identity</CardTitle>
-                            <CardDescription className="text-xs font-normal">Specimen barcode and patient demographics</CardDescription>
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 items-start">
+
+                    {/* Left Column: Sample & Patient Identity */}
+                    <Card className="lg:col-span-1 rounded-3xl overflow-hidden shadow-none">
+                        <CardHeader className="">
+                            <CardTitle className="text-sm font-normal">Sample & Patient Identity</CardTitle>
+                            <CardDescription className="text-xs font-normal">
+                                Specimen barcode & patient demographics
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="flex flex-col gap-4">
-                            <Card className="border-none bg-muted/50 shadow-none">
-                                <CardContent className="grid grid-cols-2 gap-3 p-3.5 text-sm">
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground font-normal">Sample ID</dt>
-                                        <dd className="font-mono text-xs flex items-center gap-1 mt-0.5 font-normal text-foreground">
-                                            <BarcodeIcon className="h-3.5 w-3.5 text-primary" />
-                                            {order.sampleId}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground font-normal">Sample Type</dt>
-                                        <dd className="text-xs mt-0.5 font-normal text-foreground">{order.sampleType || "SERUM"}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground font-normal">Patient Name</dt>
-                                        <dd className="text-xs mt-0.5 font-normal text-foreground">{order.patientName || "—"}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground font-normal">Patient ID</dt>
-                                        <dd className="font-mono text-xs mt-0.5 font-normal text-foreground">{order.patientId || "—"}</dd>
-                                    </div>
-                                </CardContent>
+                        <CardContent className="flex flex-col gap-3 pt-0">
+                            {/* Identity Spec List */}
+                            <Card className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/30 p-3 shadow-none">
+                                <div className="col-span-2">
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Sample Barcode
+                                    </dt>
+                                    <dd className="font-mono text-sm flex items-center gap-1.5 mt-0.5 font-normal text-foreground">
+                                        <BarcodeIcon className="h-4 w-4 text-primary shrink-0" />
+                                        <span>{order.sampleId}</span>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Sample Type
+                                    </dt>
+                                    <dd className="text-xs mt-0.5 font-normal text-foreground">
+                                        <Badge variant="outline" className="text-[10px] font-normal gap-1">
+                                            <TestTubeIcon className="size-3 text-muted-foreground" />
+                                            {order.sampleType || "SERUM"}
+                                        </Badge>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Patient ID
+                                    </dt>
+                                    <dd className="font-mono text-xs mt-0.5 font-normal text-foreground">
+                                        {order.patientId || "—"}
+                                    </dd>
+                                </div>
+
+                                <div className="col-span-2">
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Patient Name
+                                    </dt>
+                                    <dd className="text-xs mt-0.5 font-normal text-foreground flex items-center gap-1.5">
+                                        <UserIcon className="size-3.5 text-muted-foreground shrink-0" />
+                                        <span>{order.patientName || "—"}</span>
+                                    </dd>
+                                </div>
                             </Card>
 
-                            <Card className="border-none bg-muted/50 shadow-none">
-                                <CardContent className="p-3 flex items-center justify-between text-xs font-normal">
-                                    <span className="text-muted-foreground flex items-center gap-1.5 font-normal">
-                                        <ClockIcon className="h-3.5 w-3.5" />
-                                        Expires At
-                                    </span>
-                                    <span className="font-mono text-foreground font-normal">
-                                        {new Date(order.expiresAt).toLocaleString()}
-                                    </span>
-                                </CardContent>
-                            </Card>
-                        </CardContent>
-                    </Card>
-
-                    {/* Right Column: Target analyzer & test panel card */}
-                    <Card className="lg:col-span-2 border-border bg-card">
-                        <CardHeader>
-                            <CardTitle className="text-base font-normal">Target Analyzer & Requested Test Panel</CardTitle>
-                            <CardDescription className="text-xs font-normal">Assigned machine profile and requested test codes</CardDescription>
-                        </CardHeader>
-
-                        <CardContent className="flex flex-col gap-5">
-                            <Card className="border-none bg-muted/50 shadow-none">
-                                <CardContent className="grid grid-cols-2 gap-3 p-3.5 text-sm">
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground flex items-center gap-1.5 font-normal">
-                                            <CpuIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                            Assigned Machine
-                                        </dt>
-                                        <dd className="text-xs mt-1 font-normal">
-                                            <Link 
-                                                to={`/dashboard/profiles/${order.machineId}`}
-                                                className="hover:underline hover:text-primary transition-colors font-mono font-normal text-foreground"
-                                            >
-                                                {matchedProfile?.name || `Analyzer Profile #${order.machineId}`}
-                                            </Link>
-                                        </dd>
-                                    </div>
-
-                                    <div>
-                                        <dt className="text-xs text-muted-foreground flex items-center gap-1.5 font-normal">
-                                            <CalendarCheckIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                            Rack Position
-                                        </dt>
-                                        <dd className="font-mono text-xs mt-1 font-normal text-foreground">{order.rackPosition || "Auto Staged"}</dd>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="space-y-2">
-                                <span className="text-[11px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 font-normal">
-                                    <FlaskIcon className="h-3.5 w-3.5 text-primary" />
-                                    Requested Test Codes ({order.tests.length})
+                            {/* Expiry Timestamp info */}
+                            <Card className="bg-muted/30 p-3 flex-row items-center justify-between gap-1 text-xs font-normal shadow-none">
+                                <span className="text-muted-foreground flex items-center gap-1.5 font-normal">
+                                    <ClockIcon className="h-3.5 w-3.5" />
+                                    Expires At
                                 </span>
-                                <Card className="border-border bg-muted/50 shadow-none">
-                                    <CardContent className="flex flex-wrap gap-2 p-4">
-                                        {order.tests.map((test, idx) => (
-                                            <span 
-                                                key={idx}
-                                                className="font-mono text-xs px-2.5 py-1 rounded-lg bg-background border border-border text-foreground shadow-2xs font-normal"
-                                            >
-                                                {test}
-                                            </span>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </div>
+                                <span className="font-mono text-foreground font-normal">
+                                    {order.expiresAt ? new Date(order.expiresAt).toLocaleString() : "—"}
+                                </span>
+                            </Card>
                         </CardContent>
                     </Card>
+
+                    {/* Right Column: Analyzer Routing & Requested Test Panel */}
+                    <div className="lg:col-span-2 flex flex-col gap-4">
+                        {/* Target Analyzer Details */}
+                        <Card className="rounded-3xl overflow-hidden shadow-none">
+                            <CardHeader className="">
+                                <CardTitle className="text-sm font-normal">Target Analyzer & Routing</CardTitle>
+                                <CardDescription className="text-xs font-normal">
+                                    Assigned machine profile & rack staging position
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="rounded-2xl border border-border/50 bg-muted/30 p-3 flex flex-col gap-1">
+                                        <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider flex items-center gap-1">
+                                            <CpuIcon className="h-3.5 w-3.5 text-primary" />
+                                            Assigned Analyzer Profile
+                                        </dt>
+                                        <dd className="text-xs mt-0.5 font-normal">
+                                            <Link
+                                                to={`/dashboard/profiles/${order.machineId}`}
+                                                className="hover:underline text-primary transition-colors font-mono font-medium text-xs"
+                                            >
+                                                {matchedProfile?.name || `Profile #${order.machineId}`}
+                                            </Link>
+                                            {matchedProfile?.driverId && (
+                                                <span className="text-[11px] text-muted-foreground font-normal block mt-0.5">
+                                                    Driver: {matchedProfile.driverId}
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+
+                                    <div className="rounded-2xl border border-border/50 bg-muted/30 p-3 flex flex-col gap-1">
+                                        <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider flex items-center gap-1">
+                                            <CalendarCheckIcon className="h-3.5 w-3.5 text-primary" />
+                                            Rack Staging Position
+                                        </dt>
+                                        <dd className="font-mono text-xs mt-0.5 font-normal text-foreground">
+                                            {order.rackPosition || "Auto Staged"}
+                                        </dd>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Requested Test Panel */}
+                        <Card className="rounded-3xl overflow-hidden shadow-none">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div className="flex flex-col gap-0.5">
+                                    <CardTitle className="text-sm font-normal">Requested Test Panel</CardTitle>
+                                    <CardDescription className="text-xs font-normal">
+                                        Test codes staged for query by the analyzer
+                                    </CardDescription>
+                                </div>
+                                <Badge variant="secondary" className="font-normal text-xs gap-1">
+                                    <FlaskIcon className="size-3" />
+                                    {order.tests.length} tests
+                                </Badge>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <div className="flex flex-wrap gap-2 p-3 rounded-2xl border border-border/50 bg-muted/20 min-h-14 max-h-fit items-start">
+                                    {order.tests.length === 0 ? (
+                                        <span className="text-xs text-muted-foreground font-normal">No tests requested.</span>
+                                    ) : (
+                                        order.tests.map((test, idx) => (
+                                            <Badge
+                                                key={idx}
+                                                variant="outline"
+                                                className="gap-1.5 px-3 py-1 text-xs font-mono font-normal bg-background border-border/80 text-foreground"
+                                            >
+                                                <FlaskIcon className="size-3.5 text-primary shrink-0" />
+                                                <span>{test}</span>
+                                            </Badge>
+                                        ))
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                 </div>
             </div>

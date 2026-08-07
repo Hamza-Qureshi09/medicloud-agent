@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { FlaskIcon, PencilSimpleIcon, PlusIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react"
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -81,10 +82,12 @@ export function OrderForm({
     profiles,
     order,
     onSaved,
+    trigger,
 }: {
     profiles: MachineProfile[]
     order?: MachineOrder
     onSaved: () => Promise<unknown>
+    trigger?: React.ReactElement
 }) {
 
     const [state, dispatch] = useReducer(dialogReducer, {
@@ -182,7 +185,7 @@ export function OrderForm({
         }
     }
 
-    const dialogTrigger = order ? (
+    const dialogTrigger = trigger ?? (order ? (
         <Button variant="ghost" size="icon-xs" aria-label={`Edit ${order.sampleId}`}>
             <PencilSimpleIcon />
         </Button>
@@ -191,7 +194,7 @@ export function OrderForm({
             <PlusIcon data-icon="inline-start" />
             New order
         </Button>
-    )
+    ))
 
 
     return (
@@ -402,6 +405,7 @@ export function OrderForm({
                         </ScrollArea>
                     )}
 
+                    {/* footer */}
                     <DialogFooter>
                         <Button
                             type="button"
@@ -467,7 +471,6 @@ function TestSelector({
     onSelectAll: (tests: string[]) => void
     error?: string
 }) {
-    const [pickerOpen, setPickerOpen] = React.useState(false)
     const [query, setQuery] = React.useState("")
 
     const { data: catalogData, isLoading } = useSWR(
@@ -547,8 +550,8 @@ function TestSelector({
                     <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 text-[10px] font-normal text-muted-foreground hover:text-destructive hover:bg-transparent"
+                        size="xs"
+                        className="p-0 text-[10px] font-normal text-muted-foreground hover:text-destructive hover:bg-transparent"
                         onClick={onClearAll}
                     >
                         Clear all ({selectedTests.length})
@@ -558,46 +561,50 @@ function TestSelector({
 
             {/* Selected badges display */}
             {selectedTests.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1 border border-border/50 rounded-xl bg-muted/20">
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 border border-border/50 rounded-xl bg-muted/20">
                     {selectedTests.map((test) => (
                         <Badge key={test} variant="secondary" className="gap-1 pr-1 font-normal h-6">
                             <FlaskIcon className="size-3 shrink-0" />
                             <span className="max-w-36 truncate text-xs">{test}</span>
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="icon-xs"
                                 aria-label={`Remove ${test}`}
                                 onClick={() => onRemove(test)}
-                                className="ml-0.5 size-4 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                className="ml-0.5 rounded-full hover:bg-transparent text-muted-foreground hover:text-foreground"
                             >
                                 <XIcon className="size-3" />
-                            </button>
+                            </Button>
                         </Badge>
                     ))}
                 </div>
             )}
 
-            {/* Modal Trigger Button */}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPickerOpen(true)}
-                className="w-full justify-between font-normal text-xs h-9 border-border bg-background hover:bg-muted/50"
-            >
-                <span className="flex items-center gap-2 truncate">
-                    <FlaskIcon className="size-4 text-muted-foreground shrink-0" />
-                    {selectedTests.length > 0
-                        ? `Add / edit tests (${selectedTests.length} selected)`
-                        : `Select tests from catalog (${allTests.length} available)`}
-                </span>
-                <Badge variant="outline" className="text-[10px] font-normal ml-2 shrink-0">
-                    {selectedTests.length} / {allTests.length}
-                </Badge>
-            </Button>
-
-            <FieldError className="font-normal">{error}</FieldError>
-
             {/* Dedicated Test Picker Modal */}
-            <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+            <Dialog >
+
+                {/* dialog trigger */}
+                <DialogTrigger
+                    render={
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-between font-normal text-xs h-9 border-border bg-background hover:bg-muted/50"
+                        >
+                            <span className="flex items-center gap-2 truncate">
+                                <FlaskIcon className="size-4 text-muted-foreground shrink-0" />
+                                {selectedTests.length > 0
+                                    ? `Add / edit tests (${selectedTests.length} selected)`
+                                    : `Select tests from catalog (${allTests.length} available)`}
+                            </span>
+                            <Badge variant="outline" className="text-[10px] font-normal ml-2 shrink-0">
+                                {selectedTests.length} / {allTests.length}
+                            </Badge>
+                        </Button>
+                    }
+                />
+
                 <DialogContent className="max-w-md sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="font-normal">Select Catalog Tests</DialogTitle>
@@ -645,11 +652,13 @@ function TestSelector({
                                         if (!name) return
                                         const isSelected = selectedSet.has(name)
                                         return (
-                                            <button
+                                            <Button
                                                 key={name}
                                                 type="button"
+                                                variant={isSelected ? "default" : "outline"}
+                                                size="sm"
                                                 onClick={() => onToggle(name)}
-                                                className={`flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs text-left transition-all cursor-pointer ${isSelected
+                                                className={`justify-between gap-1.5 px-2.5 text-xs font-normal text-left transition-all ${isSelected
                                                     ? "bg-primary text-primary-foreground border-primary font-medium"
                                                     : "bg-background text-foreground border-border/60 hover:bg-muted/80"
                                                     }`}
@@ -657,10 +666,10 @@ function TestSelector({
                                                 <span className="truncate">{name}</span>
                                                 <Checkbox
                                                     checked={isSelected}
-                                                    className={`size-3.5 shrink-0 ${isSelected ? "border-primary-foreground data-state=checked:bg-primary-foreground data-state=checked:text-primary" : ""}`}
+                                                    className={`size-3.5 shrink-0 pointer-events-none ${isSelected ? "border-primary-foreground data-state=checked:bg-primary-foreground data-state=checked:text-primary" : ""}`}
                                                     tabIndex={-1}
                                                 />
-                                            </button>
+                                            </Button>
                                         )
                                     })
                                 )}
@@ -669,16 +678,18 @@ function TestSelector({
                     </div>
 
                     <DialogFooter>
-                        <Button
-                            type="button"
-                            className="font-normal w-full sm:w-auto"
-                            onClick={() => setPickerOpen(false)}
-                        >
-                            Done ({selectedTests.length} selected)
-                        </Button>
+                        <DialogClose
+                            render={
+                                <Button type="button" className="font-normal w-full sm:w-auto">
+                                    Done ({selectedTests.length} selected)
+                                </Button>
+                            }
+                        />
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <FieldError className="font-normal">{error}</FieldError>
         </Field>
     )
 
