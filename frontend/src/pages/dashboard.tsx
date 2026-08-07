@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { OrderStatusBadge } from "@/components/common/statusBadge"
 import { Container } from "@/components/common/container"
+import { TestBadgeList } from "@/components/common/testBadgeList"
 
 
 
@@ -47,7 +48,7 @@ export function DashboardPage() {
     } = useHealth()
 
     // Rqst #1 (order)
-    const orderQuery = React.useMemo(() => ({ limit: 50 }), [])
+    const orderQuery = React.useMemo(() => ({ limit: 100 }), [])
     const {
         data: ordersData,
         isValidating: orderIsValidating,
@@ -255,7 +256,7 @@ export function DashboardPage() {
                                 <Button
                                     variant="outline"
                                     nativeButton={false}
-                                    render={<Link to="/profiles" />}
+                                    render={<Link to="/dashboard/profiles" />}
                                 >
                                     Open analyzers
                                 </Button>
@@ -277,7 +278,7 @@ export function DashboardPage() {
                             variant="outline"
                             size="sm"
                             nativeButton={false}
-                            render={<Link to="/orders" />}
+                            render={<Link to="/dashboard/orders" />}
                         >
                             View all
                         </Button>
@@ -302,7 +303,8 @@ export function DashboardPage() {
                                     <TableRow key={order.id}>
                                         <TableCell className="font-medium">{order.sampleId}</TableCell>
                                         <TableCell>{order.patientName || "Not provided"}</TableCell>
-                                        <TableCell>{order.tests.join(", ")}</TableCell>
+                                        <TableCell><TestBadgeList tests={order.tests} maxVisible={2} /></TableCell>
+
                                         <TableCell>
                                             <OrderStatusBadge status={order.status} />
                                         </TableCell>
