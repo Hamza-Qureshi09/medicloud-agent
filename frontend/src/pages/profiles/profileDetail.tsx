@@ -30,7 +30,6 @@ import { parseProfileConfig } from "@/lib/profile-config"
 import { ProfileForm } from "./profleForm"
 import { toast } from "sonner"
 import { extractApiError } from "@/lib/helpers"
-import { Separator } from "@/components/ui/separator"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -150,7 +149,7 @@ export function ProfileDetailPage() {
                 onClick={() => navigate("/dashboard/profiles")}
             >
                 <ArrowLeftIcon className="size-4" />
-                <span>Analyzer profiles</span>
+                <span>Back to Profiles</span>
             </Button>
 
             {/* Page header with actions */}
@@ -371,8 +370,6 @@ export function ProfileDetailPage() {
                             </div>
                         </dl>
 
-                        <Separator />
-
                         {/* Live status indicator */}
                         <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-start gap-2.5">
                             {statusBlock.icon}
@@ -408,7 +405,6 @@ export function ProfileDetailPage() {
                         </div>
                     </CardContent>
                 </Card>
-
 
                 {/* right side full config cards */}
                 <div className="lg:col-span-2">
