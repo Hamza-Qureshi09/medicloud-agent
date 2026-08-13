@@ -30,7 +30,6 @@ import { parseProfileConfig } from "@/lib/profile-config"
 import { ProfileForm } from "./profleForm"
 import { toast } from "sonner"
 import { extractApiError } from "@/lib/helpers"
-import { Separator } from "@/components/ui/separator"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -150,7 +149,7 @@ export function ProfileDetailPage() {
                 onClick={() => navigate("/dashboard/profiles")}
             >
                 <ArrowLeftIcon className="size-4" />
-                <span>Analyzer profiles</span>
+                <span>Back to Profiles</span>
             </Button>
 
             {/* Page header with actions */}
@@ -358,6 +357,17 @@ export function ProfileDetailPage() {
                                 </div>
                             ) : null}
 
+                            {matchedDriver?.protocol && (
+                                <div className="col-span-2">
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Protocol
+                                    </dt>
+                                    <dd className="font-normal text-xs text-foreground mt-0.5">
+                                        {matchedDriver.protocol.name} · {matchedDriver.protocol.version}
+                                    </dd>
+                                </div>
+                            )}
+
                             <div className="col-span-2">
                                 <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider flex items-center gap-1">
                                     <CalendarIcon className="size-3" />
@@ -370,8 +380,6 @@ export function ProfileDetailPage() {
                                 </dd>
                             </div>
                         </dl>
-
-                        <Separator />
 
                         {/* Live status indicator */}
                         <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-start gap-2.5">
@@ -408,7 +416,6 @@ export function ProfileDetailPage() {
                         </div>
                     </CardContent>
                 </Card>
-
 
                 {/* right side full config cards */}
                 <div className="lg:col-span-2">

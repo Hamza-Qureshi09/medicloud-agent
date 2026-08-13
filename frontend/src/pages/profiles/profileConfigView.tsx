@@ -45,7 +45,7 @@ export function ProfileInterfaceBadge({
     className
 }: ProfileConfigProps) {
     const { interfaceType, interfaceLabel } = useProfileConfig(config, driver)
-    const variant =  "secondary" 
+    const variant = "secondary"
 
     return (
         <Badge variant={variant} className={cn("gap-1 font-normal text-xs shrink-0", className)}>
@@ -199,7 +199,7 @@ export function ProfileConfigGrid({
                                 </Badge>
                             ) : (
                                 <span className="font-mono text-sm font-normal text-foreground tracking-tight truncate">
-                                    {field.formattedValue || "—"}
+                                    {field.formattedValue || "-"}
                                 </span>
                             )}
                             <p className="text-[11px] text-muted-foreground font-normal leading-relaxed line-clamp-2">
@@ -224,7 +224,7 @@ export function ProfileConfigDetailCard({
 }: ProfileConfigProps) {
     return (
         <div className={cn("flex flex-col gap-3 lg:col-span-2", className)}>
-            {/* Top parameter cards — flex-wrap evenly fills available width */}
+            {/* Top parameter cards - flex-wrap evenly fills available width */}
             <ProfileConfigGrid config={config} driver={driver} limit={4} />
 
             {/* Tight Accordion card for Full JSON Config */}
