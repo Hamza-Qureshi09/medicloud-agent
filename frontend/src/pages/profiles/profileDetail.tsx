@@ -357,6 +357,17 @@ export function ProfileDetailPage() {
                                 </div>
                             ) : null}
 
+                            {matchedDriver?.protocol && (
+                                <div className="col-span-2">
+                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                        Protocol
+                                    </dt>
+                                    <dd className="font-normal text-xs text-foreground mt-0.5">
+                                        {matchedDriver.protocol.name} · {matchedDriver.protocol.version}
+                                    </dd>
+                                </div>
+                            )}
+
                             <div className="col-span-2">
                                 <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider flex items-center gap-1">
                                     <CalendarIcon className="size-3" />
