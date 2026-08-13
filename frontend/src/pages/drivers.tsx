@@ -53,6 +53,9 @@ export function DriversPage() {
                             <CardDescription>{driver.id}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex flex-wrap gap-2">
+                            <Badge variant="outline">
+                                {driver.protocol.name} · {driver.protocol.version}
+                            </Badge>
                             {driver.models.length ? (
                                 driver.models.map((model) => (
                                     <Badge key={model} variant="secondary">
