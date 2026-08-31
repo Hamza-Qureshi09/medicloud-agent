@@ -14,6 +14,7 @@ import { api } from "@/lib/api";
 export function ControlPage() {
     const { data, error } = useSWR(api.agent.slavesKey, api.agent.slaves, {
         revalidateOnFocus: false,
+        refreshInterval: 25000,
     });
 
     // If API fails, fallback to static data. Otherwise use fetched data (or static while loading initially).
@@ -31,7 +32,7 @@ export function ControlPage() {
             return acc;
         }
     }, 0);
-
+    
     return (
         <Container>
             <PageSection
