@@ -43,18 +43,9 @@ export function buildProfilePayload(
 export const orderFormSchema = z.object({
     machineId: z.string().trim().min(1, "Choose a running analyzer."),
     sampleId: z.string().trim().min(1, "Sample ID is required."),
-    tests: z
-        .string()
-        .trim()
-        .min(1, "Enter at least one test.")
-        .refine(
-            (value) =>
-                value
-                    .split(",")
-                    .map((test) => test.trim())
-                    .filter(Boolean).length > 0,
-            "Enter at least one valid test code.",
-        ),
+    // Fixed-panel analyzers may leave this blank. the form validates the
+    // selected driver's metadata before submission.
+    tests: z.string().trim(),
     patientId: optionalText,
     patientName: optionalText,
     sampleType: optionalText,
@@ -71,17 +62,18 @@ export type OrderFormValues = z.input<typeof orderFormSchema>
 
 // order payload
 export function orderPayload(values: OrderFormValues, editing: boolean) {
+    const tests = [
+        ...new Set(
+            values.tests
+                .split(",")
+                .map((test) => test.trim())
+                .filter(Boolean),
+        ),
+    ]
     return {
         ...(!editing ? { machineId: Number(values.machineId) } : {}),
         sampleId: values.sampleId.trim(),
-        tests: [
-            ...new Set(
-                values.tests
-                    .split(",")
-                    .map((test) => test.trim())
-                    .filter(Boolean),
-            ),
-        ],
+        ...(tests.length > 0 ? { tests } : {}),
         patientId: values.patientId?.trim() || undefined,
         patientName: values.patientName?.trim() || undefined,
         sampleType: values.sampleType?.trim() || undefined,

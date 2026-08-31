@@ -19,6 +19,7 @@ export interface Driver {
   brand?: string
   models: string[]
   protocol: { name: string; version: string }
+  defaultOrderTests: string[]
   configFields: DriverConfigField[]
   transportType?: DriverTransportType
 }
