@@ -2,7 +2,6 @@
 data/
 
 # env
-.env*
 
 # frontend dependencies
 frontend/node_modules/
@@ -11,6 +10,5 @@ frontend/node_modules/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-
-# node modules
+config.bat
 node_modules
