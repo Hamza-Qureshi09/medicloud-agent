@@ -1,4 +1,4 @@
-import type { ApiErrorBody, CatalogDetail, CatalogSummary, Driver, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
+import type { AgentHealthyResponse, SlaveRecord, ApiErrorBody, CatalogDetail, CatalogSummary, Driver, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
 import { ApiError, json } from "./helpers"
 import type { OrderPayload, ProfilePayload } from "./schema"
 
@@ -32,6 +32,14 @@ export interface StatisticQuery extends Query {
 
 // api registry for all requests
 export const api = {
+    agent: {
+        healthyKey: "agent.healthy",
+        healthy: () => request<AgentHealthyResponse>("/healthy"),
+        
+        slavesKey: "agent.slaves",
+        slaves: () => request<{ slaves: SlaveRecord[] }>("/slaves"),
+    },
+
     health: {
         detailKey: "health",
         get: () => request<HealthResponse>("/health"),

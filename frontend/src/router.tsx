@@ -64,6 +64,12 @@ export const router = createBrowserRouter([
                 }),
             },
             {
+                path: "control",
+                lazy: async () => ({
+                    Component: (await import("@/pages/control/index.tsx")).ControlPage,
+                }),
+            },
+            {
                 path: "drivers",
                 lazy: async () => ({
                     Component: (await import("@/pages/drivers")).DriversPage,

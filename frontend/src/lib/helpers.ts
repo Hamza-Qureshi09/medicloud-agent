@@ -27,10 +27,15 @@ export const pageMeta: Record<string, { title: string; description: string }> = 
         title: "Test catalogs",
         description: "Browse assays supported by each registered analyzer driver.",
     },
+     "/control": {
+        title: "Control Center",
+        description: "Monitor and manage connected slave agents and their capabilities.",
+    },
     "/drivers": {
         title: "Machine drivers",
         description: "Review the analyzer integrations available to this service.",
-    },
+    }
+   
 }
 
 

@@ -1,4 +1,3 @@
-
 import { NavLink, useLocation } from "react-router-dom";
 import {
     Sidebar,
@@ -22,6 +21,7 @@ import {
     MicroscopeIcon,
     TestTubeIcon,
     UsersThreeIcon,
+    ShareNetworkIcon
 } from "@phosphor-icons/react"
 import { useHealth } from "@/contexts/health-context";
 
@@ -32,6 +32,7 @@ const navigation = [
     { to: "/dashboard/results", label: "Results", icon: TestTubeIcon },
     { to: "/dashboard/statistics", label: "Turnaround", icon: ChartLineUpIcon },
     { to: "/dashboard/catalogs", label: "Test catalogs", icon: FlaskIcon },
+    { to: "/dashboard/control", label: "Control", icon: ShareNetworkIcon },
     { to: "/dashboard/drivers", label: "Drivers", icon: UsersThreeIcon },
 ]
 
@@ -69,10 +70,10 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {navigation.map((item) => (
-                                <SidebarMenuItem key={item.to}>
-                                    <SidebarMenuButton
-                                        render={<NavLink to={item.to} />}
-                                        isActive={
+                                    <SidebarMenuItem key={item.to}>
+                                        <SidebarMenuButton
+                                            render={<NavLink to={item.to} />}
+                                            isActive={
                                             location.pathname === item.to // this will not help in nested paths matching
                                             /**
                                              * Allow this kind of nested isActive path.
@@ -82,17 +83,17 @@ export function AppSidebar() {
                                             // item.to === "/"
                                             //     ? location.pathname === "/"
                                             //     : location.pathname.startsWith(item.to)
-                                        }
-                                        tooltip={item.label}
-                                        size={"sm"}
-                                        variant={"default"}
-                                        disabled={false}
-                                        className=""
-                                    >
-                                        <item.icon />
-                                        <span>{item.label}</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                            }
+                                            tooltip={item.label}
+                                            size={"sm"}
+                                            variant={"default"}
+                                            disabled={false}
+                                            className=""
+                                        >
+                                            <item.icon />
+                                            <span>{item.label}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
                             ))}
                         </SidebarMenu>
                     </SidebarGroupContent>

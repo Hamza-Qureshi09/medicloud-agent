@@ -2,13 +2,23 @@ import { Hono } from "@hono/hono";
 import { serveStatic } from "@hono/hono/deno";
 import { env } from "../lib/env.ts";
 
+import type { SlaveRegistry } from "../flow/master/slaveRegistry.ts";
 
-export function registerDashboardRoutes(app: Hono): void {
+export function registerDashboardRoutes(app: Hono, slaveRegistry?: SlaveRegistry): void {
 
     // Health check - used by load balancers, monitoring, and slave-sync clients.
     app.get("/healthy", (c) =>
         c.json({ status: "ok", mode: env.AGENT_MODE, version: "1.0.0" })
     );
+
+    // List all registered slaves (master mode only)
+    app.get("/slaves", async (c) => {
+        if (!slaveRegistry) {
+            return c.json({ slaves: [] });
+        }
+        const slaves = await slaveRegistry.listAll();
+        return c.json({ slaves });
+    });
 
     // Serve pre-built frontend assets under /dashboard/*
     app.use(

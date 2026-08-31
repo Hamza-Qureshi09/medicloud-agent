@@ -4,7 +4,10 @@
     "jsr:@hono/hono@^4.12.32": "4.13.5",
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "jsr:@zod/zod@^4.4.3": "4.4.3"
+    "jsr:@zod/zod@^4.4.3": "4.5.4",
+    "npm:@libsql/client@~0.17.4": "0.17.4",
+    "npm:drizzle-kit@1.0.0-rc.4": "1.0.0-rc.4",
+    "npm:drizzle-orm@1.0.0-rc.4": "1.0.0-rc.4_@libsql+client@0.17.4"
   },
   "jsr": {
     "@hono/hono@4.13.5": {
@@ -19,61 +22,405 @@
     "@std/internal@1.0.14": {
       "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
-    "@zod/zod@4.4.3": {
-      "integrity": "4712ac0967efaa718b37c36eaffb4e1d4457e1a266aef6efb3ab36f54a6fefe4"
+    "@zod/zod@4.5.4": {
+      "integrity": "bf0da80e42232d5f9f485d37b5c980e0d88f07fe04b9b1f2bd9012c008404df4"
+    }
+  },
+  "npm": {
+    "@drizzle-team/brocli@0.12.0": {
+      "integrity": "sha512-mlUE+rZ8CatQekLhnaiN91Iemdd+e2gFKooGlnRB3oPTL3VghLfX24dx7HrzMNeC1JrIB/0kpsfyty3f5HNfxQ=="
+    },
+    "@esbuild/aix-ppc64@0.25.12": {
+      "integrity": "sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==",
+      "os": ["aix"],
+      "cpu": ["ppc64"]
+    },
+    "@esbuild/android-arm64@0.25.12": {
+      "integrity": "sha512-6AAmLG7zwD1Z159jCKPvAxZd4y/VTO0VkprYy+3N2FtJ8+BQWFXU+OxARIwA46c5tdD9SsKGZ/1ocqBS/gAKHg==",
+      "os": ["android"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/android-arm@0.25.12": {
+      "integrity": "sha512-VJ+sKvNA/GE7Ccacc9Cha7bpS8nyzVv0jdVgwNDaR4gDMC/2TTRc33Ip8qrNYUcpkOHUT5OZ0bUcNNVZQ9RLlg==",
+      "os": ["android"],
+      "cpu": ["arm"]
+    },
+    "@esbuild/android-x64@0.25.12": {
+      "integrity": "sha512-5jbb+2hhDHx5phYR2By8GTWEzn6I9UqR11Kwf22iKbNpYrsmRB18aX/9ivc5cabcUiAT/wM+YIZ6SG9QO6a8kg==",
+      "os": ["android"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/darwin-arm64@0.25.12": {
+      "integrity": "sha512-N3zl+lxHCifgIlcMUP5016ESkeQjLj/959RxxNYIthIg+CQHInujFuXeWbWMgnTo4cp5XVHqFPmpyu9J65C1Yg==",
+      "os": ["darwin"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/darwin-x64@0.25.12": {
+      "integrity": "sha512-HQ9ka4Kx21qHXwtlTUVbKJOAnmG1ipXhdWTmNXiPzPfWKpXqASVcWdnf2bnL73wgjNrFXAa3yYvBSd9pzfEIpA==",
+      "os": ["darwin"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/freebsd-arm64@0.25.12": {
+      "integrity": "sha512-gA0Bx759+7Jve03K1S0vkOu5Lg/85dou3EseOGUes8flVOGxbhDDh/iZaoek11Y8mtyKPGF3vP8XhnkDEAmzeg==",
+      "os": ["freebsd"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/freebsd-x64@0.25.12": {
+      "integrity": "sha512-TGbO26Yw2xsHzxtbVFGEXBFH0FRAP7gtcPE7P5yP7wGy7cXK2oO7RyOhL5NLiqTlBh47XhmIUXuGciXEqYFfBQ==",
+      "os": ["freebsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/linux-arm64@0.25.12": {
+      "integrity": "sha512-8bwX7a8FghIgrupcxb4aUmYDLp8pX06rGh5HqDT7bB+8Rdells6mHvrFHHW2JAOPZUbnjUpKTLg6ECyzvas2AQ==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/linux-arm@0.25.12": {
+      "integrity": "sha512-lPDGyC1JPDou8kGcywY0YILzWlhhnRjdof3UlcoqYmS9El818LLfJJc3PXXgZHrHCAKs/Z2SeZtDJr5MrkxtOw==",
+      "os": ["linux"],
+      "cpu": ["arm"]
+    },
+    "@esbuild/linux-ia32@0.25.12": {
+      "integrity": "sha512-0y9KrdVnbMM2/vG8KfU0byhUN+EFCny9+8g202gYqSSVMonbsCfLjUO+rCci7pM0WBEtz+oK/PIwHkzxkyharA==",
+      "os": ["linux"],
+      "cpu": ["ia32"]
+    },
+    "@esbuild/linux-loong64@0.25.12": {
+      "integrity": "sha512-h///Lr5a9rib/v1GGqXVGzjL4TMvVTv+s1DPoxQdz7l/AYv6LDSxdIwzxkrPW438oUXiDtwM10o9PmwS/6Z0Ng==",
+      "os": ["linux"],
+      "cpu": ["loong64"]
+    },
+    "@esbuild/linux-mips64el@0.25.12": {
+      "integrity": "sha512-iyRrM1Pzy9GFMDLsXn1iHUm18nhKnNMWscjmp4+hpafcZjrr2WbT//d20xaGljXDBYHqRcl8HnxbX6uaA/eGVw==",
+      "os": ["linux"],
+      "cpu": ["mips64el"]
+    },
+    "@esbuild/linux-ppc64@0.25.12": {
+      "integrity": "sha512-9meM/lRXxMi5PSUqEXRCtVjEZBGwB7P/D4yT8UG/mwIdze2aV4Vo6U5gD3+RsoHXKkHCfSxZKzmDssVlRj1QQA==",
+      "os": ["linux"],
+      "cpu": ["ppc64"]
+    },
+    "@esbuild/linux-riscv64@0.25.12": {
+      "integrity": "sha512-Zr7KR4hgKUpWAwb1f3o5ygT04MzqVrGEGXGLnj15YQDJErYu/BGg+wmFlIDOdJp0PmB0lLvxFIOXZgFRrdjR0w==",
+      "os": ["linux"],
+      "cpu": ["riscv64"]
+    },
+    "@esbuild/linux-s390x@0.25.12": {
+      "integrity": "sha512-MsKncOcgTNvdtiISc/jZs/Zf8d0cl/t3gYWX8J9ubBnVOwlk65UIEEvgBORTiljloIWnBzLs4qhzPkJcitIzIg==",
+      "os": ["linux"],
+      "cpu": ["s390x"]
+    },
+    "@esbuild/linux-x64@0.25.12": {
+      "integrity": "sha512-uqZMTLr/zR/ed4jIGnwSLkaHmPjOjJvnm6TVVitAa08SLS9Z0VM8wIRx7gWbJB5/J54YuIMInDquWyYvQLZkgw==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/netbsd-arm64@0.25.12": {
+      "integrity": "sha512-xXwcTq4GhRM7J9A8Gv5boanHhRa/Q9KLVmcyXHCTaM4wKfIpWkdXiMog/KsnxzJ0A1+nD+zoecuzqPmCRyBGjg==",
+      "os": ["netbsd"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/netbsd-x64@0.25.12": {
+      "integrity": "sha512-Ld5pTlzPy3YwGec4OuHh1aCVCRvOXdH8DgRjfDy/oumVovmuSzWfnSJg+VtakB9Cm0gxNO9BzWkj6mtO1FMXkQ==",
+      "os": ["netbsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/openbsd-arm64@0.25.12": {
+      "integrity": "sha512-fF96T6KsBo/pkQI950FARU9apGNTSlZGsv1jZBAlcLL1MLjLNIWPBkj5NlSz8aAzYKg+eNqknrUJ24QBybeR5A==",
+      "os": ["openbsd"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/openbsd-x64@0.25.12": {
+      "integrity": "sha512-MZyXUkZHjQxUvzK7rN8DJ3SRmrVrke8ZyRusHlP+kuwqTcfWLyqMOE3sScPPyeIXN/mDJIfGXvcMqCgYKekoQw==",
+      "os": ["openbsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/openharmony-arm64@0.25.12": {
+      "integrity": "sha512-rm0YWsqUSRrjncSXGA7Zv78Nbnw4XL6/dzr20cyrQf7ZmRcsovpcRBdhD43Nuk3y7XIoW2OxMVvwuRvk9XdASg==",
+      "os": ["openharmony"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/sunos-x64@0.25.12": {
+      "integrity": "sha512-3wGSCDyuTHQUzt0nV7bocDy72r2lI33QL3gkDNGkod22EsYl04sMf0qLb8luNKTOmgF/eDEDP5BFNwoBKH441w==",
+      "os": ["sunos"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/win32-arm64@0.25.12": {
+      "integrity": "sha512-rMmLrur64A7+DKlnSuwqUdRKyd3UE7oPJZmnljqEptesKM8wx9J8gx5u0+9Pq0fQQW8vqeKebwNXdfOyP+8Bsg==",
+      "os": ["win32"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/win32-ia32@0.25.12": {
+      "integrity": "sha512-HkqnmmBoCbCwxUKKNPBixiWDGCpQGVsrQfJoVGYLPT41XWF8lHuE5N6WhVia2n4o5QK5M4tYr21827fNhi4byQ==",
+      "os": ["win32"],
+      "cpu": ["ia32"]
+    },
+    "@esbuild/win32-x64@0.25.12": {
+      "integrity": "sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA==",
+      "os": ["win32"],
+      "cpu": ["x64"]
+    },
+    "@js-temporal/polyfill@0.5.1": {
+      "integrity": "sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==",
+      "dependencies": [
+        "jsbi"
+      ]
+    },
+    "@libsql/client@0.17.4": {
+      "integrity": "sha512-lYayFWasDV78A+TjlEhr6ubb3odBV6OHjb+wdp8VQcyWWAEIjuwbCHaraEUS4m4yWoo0BvZo96It4VdzZRmRWw==",
+      "dependencies": [
+        "@libsql/core",
+        "@libsql/hrana-client",
+        "js-base64",
+        "libsql",
+        "promise-limit"
+      ]
+    },
+    "@libsql/core@0.17.4": {
+      "integrity": "sha512-LqF9gIvnJ38nmAH1y/ChizHqDO/MO1wLgA96XrraulEEbqXxLjleSH92YWTolbuJKgPUmGu4aJk9W3UnAcxLOQ==",
+      "dependencies": [
+        "js-base64"
+      ]
+    },
+    "@libsql/darwin-arm64@0.5.29": {
+      "integrity": "sha512-K+2RIB1OGFPYQbfay48GakLhqf3ArcbHqPFu7EZiaUcRgFcdw8RoltsMyvbj5ix2fY0HV3Q3Ioa/ByvQdaSM0A==",
+      "os": ["darwin"],
+      "cpu": ["arm64"]
+    },
+    "@libsql/darwin-x64@0.5.29": {
+      "integrity": "sha512-OtT+KFHsKFy1R5FVadr8FJ2Bb1mghtXTyJkxv0trocq7NuHntSki1eUbxpO5ezJesDvBlqFjnWaYYY516QNLhQ==",
+      "os": ["darwin"],
+      "cpu": ["x64"]
+    },
+    "@libsql/hrana-client@0.10.0": {
+      "integrity": "sha512-OoA4EMqRAC7kn7V2P6EQqRcpZf2W+AjsNIyCizBg339Tq/aMC7sRnzs3SklderhmQWAqEzvv8A2vhxVmWpkVvw==",
+      "dependencies": [
+        "@libsql/isomorphic-ws",
+        "js-base64"
+      ]
+    },
+    "@libsql/isomorphic-ws@0.1.5": {
+      "integrity": "sha512-DtLWIH29onUYR00i0GlQ3UdcTRC6EP4u9w/h9LxpUZJWRMARk6dQwZ6Jkd+QdwVpuAOrdxt18v0K2uIYR3fwFg==",
+      "dependencies": [
+        "@types/ws",
+        "ws"
+      ]
+    },
+    "@libsql/linux-arm-gnueabihf@0.5.29": {
+      "integrity": "sha512-CD4n4zj7SJTHso4nf5cuMoWoMSS7asn5hHygsDuhRl8jjjCTT3yE+xdUvI4J7zsyb53VO5ISh4cwwOtf6k2UhQ==",
+      "os": ["linux"],
+      "cpu": ["arm"]
+    },
+    "@libsql/linux-arm-musleabihf@0.5.29": {
+      "integrity": "sha512-2Z9qBVpEJV7OeflzIR3+l5yAd4uTOLxklScYTwpZnkm2vDSGlC1PRlueLaufc4EFITkLKXK2MWBpexuNJfMVcg==",
+      "os": ["linux"],
+      "cpu": ["arm"]
+    },
+    "@libsql/linux-arm64-gnu@0.5.29": {
+      "integrity": "sha512-gURBqaiXIGGwFNEaUj8Ldk7Hps4STtG+31aEidCk5evMMdtsdfL3HPCpvys+ZF/tkOs2MWlRWoSq7SOuCE9k3w==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@libsql/linux-arm64-musl@0.5.29": {
+      "integrity": "sha512-fwgYZ0H8mUkyVqXZHF3mT/92iIh1N94Owi/f66cPVNsk9BdGKq5gVpoKO+7UxaNzuEH1roJp2QEwsCZMvBLpqg==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@libsql/linux-x64-gnu@0.5.29": {
+      "integrity": "sha512-y14V0vY0nmMC6G0pHeJcEarcnGU2H6cm21ZceRkacWHvQAEhAG0latQkCtoS2njFOXiYIg+JYPfAoWKbi82rkg==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@libsql/linux-x64-musl@0.5.29": {
+      "integrity": "sha512-gquqwA/39tH4pFl+J9n3SOMSymjX+6kZ3kWgY3b94nXFTwac9bnFNMffIomgvlFaC4ArVqMnOZD3nuJ3H3VO1w==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@libsql/win32-x64-msvc@0.5.29": {
+      "integrity": "sha512-4/0CvEdhi6+KjMxMaVbFM2n2Z44escBRoEYpR+gZg64DdetzGnYm8mcNLcoySaDJZNaBd6wz5DNdgRmcI4hXcg==",
+      "os": ["win32"],
+      "cpu": ["x64"]
+    },
+    "@neon-rs/load@0.0.4": {
+      "integrity": "sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw=="
+    },
+    "@types/node@26.4.0": {
+      "integrity": "sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
+    "@types/ws@8.18.1": {
+      "integrity": "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==",
+      "dependencies": [
+        "@types/node"
+      ]
+    },
+    "detect-libc@2.0.2": {
+      "integrity": "sha512-UX6sGumvvqSaXgdKGUsgZWqcUyIXZ/vZTrlRT/iobiKhGL0zL4d3osHj3uqllWJK+i+sixDS/3COVEOFbupFyw=="
+    },
+    "drizzle-kit@1.0.0-rc.4": {
+      "integrity": "sha512-KZCpjRyu+oYHLj/UJogfFlOkWhHVkaEI2EOT1U3NDVXUzLoTyPjqwFxwOrlQxsY6jzRyxcz4EacqboGfhEeYrA==",
+      "dependencies": [
+        "@drizzle-team/brocli",
+        "@js-temporal/polyfill",
+        "esbuild",
+        "get-tsconfig",
+        "jiti"
+      ],
+      "bin": true
+    },
+    "drizzle-orm@1.0.0-rc.4_@libsql+client@0.17.4": {
+      "integrity": "sha512-BT+pf+qoiYHqltoA88Jmf6ilGMXPlpfE0hEJKc2adRtMCAl25Swk/t5gXcWxZNAwdtf3F5gCd2FpeOyP/pT0Hw==",
+      "dependencies": [
+        "@libsql/client"
+      ],
+      "optionalPeers": [
+        "@libsql/client"
+      ]
+    },
+    "esbuild@0.25.12": {
+      "integrity": "sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==",
+      "optionalDependencies": [
+        "@esbuild/aix-ppc64",
+        "@esbuild/android-arm",
+        "@esbuild/android-arm64",
+        "@esbuild/android-x64",
+        "@esbuild/darwin-arm64",
+        "@esbuild/darwin-x64",
+        "@esbuild/freebsd-arm64",
+        "@esbuild/freebsd-x64",
+        "@esbuild/linux-arm",
+        "@esbuild/linux-arm64",
+        "@esbuild/linux-ia32",
+        "@esbuild/linux-loong64",
+        "@esbuild/linux-mips64el",
+        "@esbuild/linux-ppc64",
+        "@esbuild/linux-riscv64",
+        "@esbuild/linux-s390x",
+        "@esbuild/linux-x64",
+        "@esbuild/netbsd-arm64",
+        "@esbuild/netbsd-x64",
+        "@esbuild/openbsd-arm64",
+        "@esbuild/openbsd-x64",
+        "@esbuild/openharmony-arm64",
+        "@esbuild/sunos-x64",
+        "@esbuild/win32-arm64",
+        "@esbuild/win32-ia32",
+        "@esbuild/win32-x64"
+      ],
+      "scripts": true,
+      "bin": true
+    },
+    "get-tsconfig@4.14.3": {
+      "integrity": "sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==",
+      "dependencies": [
+        "resolve-pkg-maps"
+      ]
+    },
+    "jiti@2.7.0": {
+      "integrity": "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==",
+      "bin": true
+    },
+    "js-base64@3.9.3": {
+      "integrity": "sha512-uwYQp+VJ38FVvtim6qNbit6e9uT6dwWQ4Y1+H9TxhW5hcHjpHwoxlR0nMpqUmIFOmu4VqMxwdJA88gIVuZJQ/g=="
+    },
+    "jsbi@4.3.2": {
+      "integrity": "sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew=="
+    },
+    "libsql@0.5.29": {
+      "integrity": "sha512-8lMP8iMgiBzzoNbAPQ59qdVcj6UaE/Vnm+fiwX4doX4Narook0a4GPKWBEv+CR8a1OwbfkgL18uBfBjWdF0Fzg==",
+      "dependencies": [
+        "@neon-rs/load",
+        "detect-libc"
+      ],
+      "optionalDependencies": [
+        "@libsql/darwin-arm64",
+        "@libsql/darwin-x64",
+        "@libsql/linux-arm-gnueabihf",
+        "@libsql/linux-arm-musleabihf",
+        "@libsql/linux-arm64-gnu",
+        "@libsql/linux-arm64-musl",
+        "@libsql/linux-x64-gnu",
+        "@libsql/linux-x64-musl",
+        "@libsql/win32-x64-msvc"
+      ],
+      "os": ["darwin", "linux", "win32"],
+      "cpu": ["x64", "arm64", "wasm32", "arm"]
+    },
+    "promise-limit@2.7.0": {
+      "integrity": "sha512-7nJ6v5lnJsXwGprnGXga4wx6d1POjvi5Qmf1ivTRxTjH4Z/9Czja/UCMLVmB9N93GeWOU93XaFaEt6jbuoagNw=="
+    },
+    "resolve-pkg-maps@1.0.0": {
+      "integrity": "sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw=="
+    },
+    "undici-types@8.3.0": {
+      "integrity": "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ=="
+    },
+    "ws@8.21.3": {
+      "integrity": "sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw=="
     }
   },
   "remote": {
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseMachine.ts": "53ac83bc24ec8fe2e099a17c66d8067be559b56b476f73fbfe028059f508aa58",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseProtocol.ts": "e1fde65dfe527ba48ee61cd30e4e42a72d6c2d93f50439ac212e176cd8125848",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/abstracts/baseStore.ts": "bcfcf24e9bde63b234d46564bc869d853493dfeeb69cf6cc6f1d183bdcf7b79b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/db/sqLite.ts": "7ecfcb0e35bb7acb5d900809db07883eef74390c1a6c616359407071cfc77a13",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/orders.routes.ts": "457953f37d64ac903d8ee678d0f811ac9946177952f2a5740e8adcc73f7cb225",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/profile.routes.ts": "3022dbebaf1603a95406f6b5a0ca3bddcfeecc62f6814694c62f426d563372d2",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/results.routes.ts": "427c4334418397b9255c3df6d090e4b468c90622015c4c7a557e7764f8d53467",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/routes.ts": "1c6f0a2da2385ec7ac43d73c7945ba79d5b26bc72bbd7e67a00c508ecf4650fc",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/testStatistics.routes.ts": "572a07dc496ea6e8d74f9c46c32be0a929298b9889414b4a53c3b49763bcdffb",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/utils.ts": "4006a123baf6a2bd153f6ed01d28a1ef841d6835c4ec4e70c26fc07a501c77c8",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/http/validation.ts": "359a336afef87b416ff435d4760b46bc6217ab45f3b508a50079453930d2925b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/logger.ts": "72a058e233043335f6de297a5e064d0e89e7f91d74348cb25f774f00b5cd9aea",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/lib/utils.ts": "ab06ac22e8968f3ad10a0d2465d638433c723830646422be04e6f268beb38e03",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machineManager.ts": "8f3d4f2585547a064e20966325803f1fd72ae954b01eac28148e94d82eb248fe",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/astm.ts": "15e39910ad43e625732c5b6ebead1664116d4e373ce8442b9d1f1fc33f7665d9",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/catalog.ts": "31b2646df05f165f204bd78305b2a255bdfb302231457ffd1bb5eb2205ef1592",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/iFlash3000.ts": "9f15386cafa332ce33a8ed4d00b1f64c2561d4bc54720c8a2590dfd81dfa74df",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/inbound.ts": "4d702cb3f8b7f0ee0a28ab07ec42f9420476bcb3ee2b46b8bbdbb1db10a9b679",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/iflash/outbound.ts": "e6ceddacd45124e6311616a04efb0f1c33c1769cf1f34cf875e650b7f8343aaa",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/astm.ts": "9676d867e28f8cae56fb7cfc7f899e40bdaebdf1c0246a2c7714cbb34bae795f",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/catalog.ts": "ea9f7feb9314e1652629f03f2b35211cb7cb0caddddd4b3ac646744cbd2e7fec",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/inbound.ts": "72d408302568b01117a6e702d562bc3a99271b3a5c29650b19e146191dc2985b",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/maglumi800.ts": "09ab248ca7fe2276ff8c76348d02d03b7578126c279b380e7ce358ce8007a7e7",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/maglumi800/outbound.ts": "09eb89c5abca76d893c9661a098edb8b328649b02b508b20b3ad4afbabbe1232",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/mod.ts": "c1fbe9e0c1c9505fa5262c5571a7226048493df439c31d3a3398d47ebff78742",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/astm.ts": "eab22c737362c0c80a73e561958a3e12c084c1fec2f7ec85db0cfa73d4aaafd9",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/catalog.ts": "dc92e09543e86a2a318f56e7cd366e174aee74e42c8c398d63999f5ba46dbcf1",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/inbound.ts": "0efd352982d9d628abbe2889afc3c0975974324fd45048e59681491d0b79ab1c",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/outbound.ts": "f8d66a2745beeed1bb36a8352ecb654358ef606a0eca722f4aeb550301a0dc6f",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/machines/rocheCobasC111/rocheCobasC111.ts": "2bd4fb9759a4685a691ebe3cd739b3b17fb296d1011917e6a0c05247b01ee045",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/checksum.ts": "a78810d892d6d6322e6b2337055cf982a84044f5b7ea0c112b7cee53e60d3dd2",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/constants.ts": "0123d0ebd1e4b4773738493c99660cf90ea92afc2018025e4c8ada2932ae3917",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/link.ts": "36b64374fd480ac16e58944d1302412a73491170fcb7e74005ae8b169014b11e",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/records.ts": "7412f206214601f876c3262fd66967c49340060f3f32c001e1e49967b715cb5e",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/protocols/astm/variants/cobasC111Serial.ts": "2a495df951a19d7fa65b90ce5b5dcbca557dfc0818778b83f1b56c2d68e8263e",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/registry.ts": "95a9ae42af63e833d80f067624298593012f93c2c7c5517f0e3fe61a76355266",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/schema.ts": "3fccfe30ad9b3e4618291f7d39523895b2313dcf56bbe5fa58f0625a3b036392",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/orderStore.ts": "f2cf9173762c90faa1bfab46adbb047114b282277504016456369861303f5abf",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/profileStore.ts": "f40e1bfb1eba9114b866ea6ea7af690a7d3b2b263b3621f697f6b90a8ff8c3f3",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/resultStore.ts": "a5666fcee30759748ec26d322e8a5aa4ab5eadc7951c44aa21e0b6f9ff688afa",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/store/testStatisticStore.ts": "6ba72e4314008fa931d6fcf4c81f94af62bc5a996e5ef105e2a72a2bc1040a73",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/machineCom.ts": "6c29c2be480f2f65a4b1f8ee43bb762f27196d0f52824a3d8e621cd8ebf61687",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/transports/serialConn.ts": "74593a920b43361e823bae02214ad6917c9cc2613007a5ae2135cf74f46e8490",
-    "https://raw.githubusercontent.com/Hamza-Qureshi09/machine-sdk/master/types.ts": "08f107ae3ccc92adb39f6d211ef44c04354ba05aeab9fa69ee4e6a9ae259ea34"
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/abstracts/baseMachine.ts": "33771f65ac06a3c1f50b153dc2484991feaf7b4f5e4bf36ac91cd4258e30c631",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/abstracts/baseProtocol.ts": "c36949686e8b2448799cb6b4c0c2eb12797af075ea9972f9e9bbe9dddb26cb83",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/abstracts/baseStore.ts": "0d0ccebb0957cde42ba6905283be6314ef12cf48783d681f12f3bca199d51a6a",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/db/sqLite.ts": "c5b21d19413cb114b8b9def275040b0e2a244b63d6417ffb5b965da8bf2fbe58",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/orders.routes.ts": "dec33d0494cd78328b1bed59463f3cc8f097b62a9e65b4833c3409331c6d7f66",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/profile.routes.ts": "1cb267562bcb42e2f72432e41b5f984149d6cedbc1440594b4458ba8a3e61f1a",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/results.routes.ts": "c43a324e58a36400042abeea707be127932e6d4f7a1a08fa62a24446c4efa799",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/routes.ts": "720f60fb3f9073156ac7feb832be6f9f0c5a88b4d5b74ab9e3d696d19ae6cef9",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/testStatistics.routes.ts": "eafcfe3d289ca2c594077fa14e90a953d5f18a12d406e3c0e98eca8410be9e3f",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/utils.ts": "1ae6e98f48e5bed88ac2815a30ed49b88053a399f4d55e59cf9862d5c060cf71",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/validation.ts": "742ad0dc984863e51b5a290315cb785af8619090d28c9b1d8f3fb47f896d1e21",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/logger.ts": "cbf5932db7597972e0b13299a37f44d13b61d3a157c3bc4a79c2a13b5a3fb597",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/utils.ts": "ccba4acac6d4124765aad461d52bcd643adfa68e2cdc5076742fec44eece352b",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machineManager.ts": "92feb8e387772dc0072762babfa8ffb54ade3de2811cab3fa3874ca16e102ac2",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/iflash/astm.ts": "9e017cc838e9310d14936745a44da4892eee43b4b986ee779fa85493ec021d6c",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/iflash/catalog.ts": "6aadfd3d8c40145a426dbe742a63c32e05dd7f72bf88905e9f07180e2106aac6",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/iflash/inbound.ts": "2d4a082dd362a6a4c53dab71708cb9cbaf18bbfff82533519eaffc91b0ebbde8",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/iflash/index.ts": "991f3fd13ca4ab641038b3de837239dc8d529684db37211601d5a37981636bec",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/iflash/outbound.ts": "fe763c40dd411425ccb96e5a99adfab8274d01fed829f7339f4e36d0969afd79",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/astm.ts": "2f5797b5691fa3871dc2d7392680cdca9f8bc0ffdd40a669a312a2b74de53f35",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/catalog.ts": "2534d2bbb25af98f4e532303dc5c450c99baa42c4a23d68a49aff4a117c8df85",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/inbound.ts": "232d34fea1183c2a2df790572ff0f3ed3937b35a88d989ea6d174434911f87c4",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/index.ts": "f841b94209b7447dd4a471c8d3bab9800081bb50358b6f190d049f0fa0f444fa",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/outbound.ts": "cc96433a4190e643b693aff6011aebd7e1d1b73cac80dc88c5a3f6a7ee217e89",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/mod.ts": "d1000949a8c1cc2906c06d6641405c1a16e89e6c51e1ddd6b6f35c75dc62b4e5",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/astm.ts": "2f04292ed58a6ed18ded51859b2af5d97ffa94e34c95d469d5313bc491ebc5f4",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/catalog.ts": "373347053477707405655bc36f349f37ee75c497519987f74fa2b6121e4cdcdd",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/inbound.ts": "e08e7d6f91352457b8653c716a1d376cafab4bc6a28e7cfe4f1bfa8ee418e7cd",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/index.ts": "9314e74d9160883c98ca3c0cc1337e3a03028e5d5b6fc9b9834d1f9f8c888b2e",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/outbound.ts": "1c9d4e9f69650799dadeb943861c7abc169b0fb53f96111cba977cfe7eb8aa59",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/sysmexKx21n/astm.ts": "83e98e7cdf0d242ba4c0f945f99d50bbc0477c693dfe474b1254f795dcc6f4f3",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/sysmexKx21n/catalog.ts": "0b084735a7267d3cf59a148aba25f3c76fe14c6a479eeb70d364647af2108030",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/sysmexKx21n/inbound.ts": "174e9635dcd61d4918b4a8d14c350b0cd1a6b12ba03d4c432dd9cd42b173e69e",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/sysmexKx21n/index.ts": "6949f492b41d018b4d511e572c5c604a743ec29362e21ac5a66bfe129a5ed55b",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/sysmexKx21n/resultMetadata.ts": "a0f139da382012c6316e48f8186a2b86c0c9e9b1bdfe9e3a40ba5b342b7c76bb",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/checksum.ts": "338e84877dae024b49e27ad315cb1c53e4aaf1a22bb0a18926ba3586303a70b7",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/constants.ts": "ba89e2ddb6626eac4feb1152fc181efacca0cf059330747bd969266713e9e139",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/link.ts": "61d0e22be3b758aa1a19b994ae5d1c689e28339b4b3dc36f229b807b9bc2d780",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/records.ts": "43ded02932dc7ef35cb91d652fd4060c9144f2e8d48ec48d1ebe444f86ecf252",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/cobasC111Serial.ts": "e635d4b3ed63dbab92a755a5a93882b5b1fa7622ecd19eeabba988d1ca1b6ab1",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/sysmexKx21n.ts": "bb4958507196da0c35f317805c0ee3bb47ecdbf153bee5ab16c3a82d32367d4c",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts": "e4748bf350972b90c479be11c7a0d6f6a085427e5a10b3d6f56b07155371b7dd",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/schema.ts": "90b4ce41425553c38529e71b363b1e937b0442a2cbbd5739188f3e69a42c47b8",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/orderStore.ts": "cd96cd51bc5f4a0cac371c236b29f966538607e0a64a133cdc302914286af816",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/profileStore.ts": "38f00789beaa896ac1cdf7a70b0ea46f0e95f7c6db33ec3ae3f8ee3fef1d7c1d",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/resultStore.ts": "4fe6f255282dc107d22c0fca05afb73073ffcfae4e8bdc1af85683a487f148cd",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/testStatisticStore.ts": "8792c573dc272669f8c1541da73e83437ac612f724d08e01ef2d450742d37f3b",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/transports/machineCom.ts": "48df0678b4d449a7e3a7bad2aa3c955c05cca8f3fa41a345015986d409b47cef",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/transports/serialConn.ts": "83be05ba8c33a55d16499f9c13cf06bc3f95a6050ecfb8f81a362590348ace87",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/types.ts": "cf9d0ce51d6f5bdfc0e5401d94d1e6ca0e835a665df145302b6682de9c5a442a"
   },
   "workspace": {
     "dependencies": [
       "jsr:@hono/hono@^4.12.32",
       "jsr:@std/assert@1",
-      "jsr:@zod/zod@^4.4.3"
+      "jsr:@zod/zod@^4.4.3",
+      "npm:@libsql/client@~0.17.4",
+      "npm:drizzle-kit@1.0.0-rc.4",
+      "npm:drizzle-orm@1.0.0-rc.4"
     ]
   }
 }

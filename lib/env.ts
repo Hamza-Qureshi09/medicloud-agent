@@ -28,5 +28,5 @@ export const env = {
   SLAVE_BOOTSTRAP_SECRET: Deno.env.get("SLAVE_BOOTSTRAP_SECRET") ?? "",
 
   // Agent Medicloud DB (separate from machines.db)
-  MEDICLOUD_DB_PATH: Deno.env.get("MEDICLOUD_DB_PATH") ?? "./data/medicloud.db",
+  MEDICLOUD_DB_PATH: Deno.env.get("MEDICLOUD_DB_PATH") ?? "./data/agentMedicloud.db",
 };

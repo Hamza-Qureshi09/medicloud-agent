@@ -82,6 +82,25 @@ export class SlaveRegistry {
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
     }
 
+    /** Returns all slaves (active and inactive) for the dashboard. */
+    async listAll() {
+        // Omitting secretHash for safety
+        const all = await db.select({
+            id: slaveRegistry.id,
+            slaveId: slaveRegistry.slaveId,
+            instanceId: slaveRegistry.instanceId,
+            host: slaveRegistry.host,
+            port: slaveRegistry.port,
+            machinesJson: slaveRegistry.machinesJson,
+            lastPingAt: slaveRegistry.lastPingAt,
+            isActive: slaveRegistry.isActive,
+            createdAt: slaveRegistry.createdAt,
+            updatedAt: slaveRegistry.updatedAt,
+        }).from(slaveRegistry);
+        
+        return all;
+    }
+
 
     /** Marks a slave as inactive (e.g. after a failed heartbeat or explicit disconnect). */
     async markInactive(slaveId: string): Promise<void> {
