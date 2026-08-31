@@ -10,74 +10,6 @@ import type { SlaveRecord } from "@/types/api";
 import useSWR from "swr";
 import { api } from "@/lib/api";
 
-// Static mock data for slave agents
-const STATIC_SLAVES: SlaveRecord[] = [
-    {
-        id: 1,
-        slaveId: "slv-a1b2c3d4e5f6",
-        instanceId: "inst-11112222",
-        host: "192.168.1.105",
-        port: 5001,
-        machinesJson: JSON.stringify([
-            {
-                profileKey: "sysmex-x1",
-                localProfileId: 10,
-                driverId: "sysmex",
-                name: "Sysmex XN-1000",
-                catalogTests: ["WBC", "RBC", "HGB"],
-                running: true,
-                connected: true,
-                isSlaveOwned: true
-            }
-        ]),
-        lastPingAt: new Date(Date.now() - 30 * 1000).toISOString(), // 30s ago
-        isActive: true,
-        createdAt: "2026-08-30T10:00:00.000Z"
-    },
-    {
-        id: 2,
-        slaveId: "slv-9z8y7x6w5v4u",
-        instanceId: "inst-33334444",
-        host: "192.168.1.106",
-        port: 5001,
-        machinesJson: JSON.stringify([
-            {
-                profileKey: "roche-c1",
-                localProfileId: 11,
-                driverId: "roche",
-                name: "Roche Cobas 6000",
-                catalogTests: ["GLU", "ALT", "AST"],
-                running: true,
-                connected: false,
-                isSlaveOwned: true
-            },
-            {
-                profileKey: "abbott-i1",
-                localProfileId: 12,
-                driverId: "abbott",
-                name: "Abbott Architect i1000sr",
-                catalogTests: ["TSH", "FT4"],
-                running: false,
-                connected: false,
-                isSlaveOwned: true
-            }
-        ]),
-        lastPingAt: new Date(Date.now() - 45 * 1000).toISOString(), // 45s ago
-        isActive: true,
-        createdAt: "2026-08-30T11:00:00.000Z"
-    },
-    {
-        id: 3,
-        slaveId: "slv-m1n2o3p4q5r6",
-        instanceId: "inst-55556666",
-        host: "192.168.1.107",
-        port: 5001,
-        machinesJson: JSON.stringify([]),
-        lastPingAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5m ago
-        isActive: false,
-        createdAt: "2026-08-29T09:00:00.000Z"
-    }
-];
 
 export function ControlPage() {
     const { data, error } = useSWR(api.agent.slavesKey, api.agent.slaves, {
@@ -85,7 +17,7 @@ export function ControlPage() {
     });
 
     // If API fails, fallback to static data. Otherwise use fetched data (or static while loading initially).
-    const slaves = error ? STATIC_SLAVES : (data?.slaves ?? STATIC_SLAVES);
+    const slaves = data?.slaves;
 
     const totalSlaves = slaves.length;
     const activeSlaves = slaves.filter(s => s.isActive).length;
