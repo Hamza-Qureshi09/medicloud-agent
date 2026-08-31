@@ -1,10 +1,9 @@
-import React, { useEffect, useReducer } from "react"
+import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAsyncAction } from "@/hooks/use-async-action"
 import type { CatalogTest, MachineOrder, MachineProfile } from "@/types/api"
 import { Controller, useForm, useWatch, type SubmitHandler } from "react-hook-form"
 import { orderFormSchema, orderPayload, type OrderFormValues } from "@/lib/schema"
-// import { toast } from "sonner"
 import { extractApiError } from "@/lib/helpers"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -40,43 +39,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 
 
-type DialogState = {
-    open: boolean
-    selectedTests: string[]
-}
-
-type DialogAction =
-    | { type: "OPEN" }
-    | { type: "CLOSE" }
-    | { type: "SET_TESTS"; tests: string[] }
-    | { type: "TOGGLE_TEST"; test: string }
-    | { type: "REMOVE_TEST"; test: string }
-    | { type: "CLEAR_ALL" }
-    | { type: "SELECT_ALL"; tests: string[] }
-
-function dialogReducer(state: DialogState, action: DialogAction): DialogState {
-    switch (action.type) {
-        case "OPEN":
-            return { ...state, open: true }
-        case "CLOSE":
-            return { ...state, open: false }
-        case "SET_TESTS":
-            return { ...state, selectedTests: action.tests }
-        case "TOGGLE_TEST": {
-            const exists = state.selectedTests.includes(action.test)
-            const next = exists
-                ? state.selectedTests.filter((t) => t !== action.test)
-                : [...state.selectedTests, action.test]
-            return { ...state, selectedTests: next }
-        }
-        case "REMOVE_TEST":
-            return { ...state, selectedTests: state.selectedTests.filter((t) => t !== action.test) }
-        case "CLEAR_ALL":
-            return { ...state, selectedTests: [] }
-        case "SELECT_ALL":
-            return { ...state, selectedTests: action.tests }
-    }
-}
 
 export function OrderForm({
     profiles,
@@ -89,12 +51,7 @@ export function OrderForm({
     onSaved: () => Promise<unknown>
     trigger?: React.ReactElement
 }) {
-
-    const [state, dispatch] = useReducer(dialogReducer, {
-        open: false,
-        selectedTests: order?.tests ?? [],
-    })
-
+    const [open, setOpen] = React.useState(false)
     const saveOrder = useAsyncAction("Order could not be saved.")
 
     const form = useForm<OrderFormValues>({
@@ -102,70 +59,86 @@ export function OrderForm({
         defaultValues: getOrderFormDefaults(profiles, order),
     })
 
+    const { data: driverData, isLoading: driversLoading, } = useSWR(
+        api.drivers.listKey(),
+        () => api.drivers.list(),
+        { revalidateOnFocus: false },
+    )
+
     const machineId = useWatch({ control: form.control, name: "machineId" })
-    const selectedProfile = React.useMemo(() => profiles.find((p) => String(p.id) === machineId), [machineId, profiles])
+    const testsValue = useWatch({ control: form.control, name: "tests" }) ?? ""
 
-    // Sync selected tests -> form field
-    useEffect(() => {
-        form.setValue("tests", state.selectedTests.join(", "), { shouldValidate: true })
-    }, [state.selectedTests, form])
+    const selectedTests = React.useMemo(() => parseTests(testsValue), [testsValue])
 
-    // handle test methods and events
-    const handleToggle = React.useCallback((test: string) => {
-        dispatch({ type: "TOGGLE_TEST", test })
-    }, [])
+    const profilesById = React.useMemo(
+        () => new Map(profiles.map((profile) => [String(profile.id), profile])),
+        [profiles])
 
-    const handleRemove = React.useCallback((test: string) => {
-        dispatch({ type: "REMOVE_TEST", test })
-    }, [])
+    const driversById = React.useMemo(
+        () => new Map(driverData?.drivers.map((driver) => [driver.id, driver]) ?? []),
+        [driverData?.drivers])
 
-    const handleClearAll = React.useCallback(() => {
-        dispatch({ type: "CLEAR_ALL" })
-    }, [])
+    const selectedProfile = profilesById.get(machineId)
+    const selectedDriver = selectedProfile
+        ? driversById.get(selectedProfile.driverId)
+        : undefined
 
-    const handleSelectAll = React.useCallback((tests: string[]) => {
-        if (!tests?.length) return
-        dispatch({ type: "SELECT_ALL", tests })
-    }, [])
+    const defaultOrderTests = selectedDriver?.defaultOrderTests ?? []
+    const usesDefaultTests = defaultOrderTests.length > 0
+
+
+    // test change handling
+    const handleTestsChange = React.useCallback(
+        (value: string) => {
+            form.setValue("tests", value, {
+                shouldValidate: true,
+                shouldDirty: true,
+            })
+        },
+        [form],
+    )
 
     // Open/close handler
-    async function changeOpen(nextOpen: boolean) {
-        saveOrder.reset()
-        form.clearErrors()
-
-        const initialTests = order?.tests ?? []
-        form.reset(getOrderFormDefaults(profiles, order))
-        dispatch({ type: "SET_TESTS", tests: initialTests })
-
-
+    function changeOpen(nextOpen: boolean) {
         if (nextOpen) {
+            saveOrder.reset()
+            form.clearErrors()
+            form.reset(getOrderFormDefaults(profiles, order))
 
-            if (!order?.id && !form.getValues("machineId") && profiles[0]) {
-                form.setValue("machineId", String(profiles[0].id))
-            }
 
-            // // fetch latest info by calling api
+            // // fetch latest info by calling api before showing prefilled fields
             // if (order?.id) {
             //     try {
             //         const { order: latestOrderData } = await saveOrder.execute(() => api.orders.get(order.id))
             //         form.reset(getOrderFormDefaults(profiles, latestOrderData))
-            //         dispatch({ type: "SET_TESTS", tests: latestOrderData.tests ?? [] })
+            // handleTestsChange(latestOrderData.tests??[])
             //     } catch (err) {
             //         toast.error(extractApiError(err, "Could not load order details."))
             //     }
             // } else {
             //     dispatch({ type: "SET_TESTS", tests: [] })
             // }
-
-            dispatch({ type: "OPEN" })
-        } else {
-            dispatch({ type: "CLOSE" })
         }
+        setOpen(nextOpen)
     }
 
     // submit handler
     const onSubmit: SubmitHandler<OrderFormValues> = async (data) => {
         try {
+            let hasAutomaticTests = usesDefaultTests
+
+            if (selectedTests.length === 0 && !selectedDriver && selectedProfile) {
+                const response = await api.drivers.list({ id: selectedProfile.driverId })
+                hasAutomaticTests = (response.drivers[0]?.defaultOrderTests.length ?? 0) > 0
+            }
+
+            if (!hasAutomaticTests && selectedTests.length === 0) {
+                form.setError("tests", {
+                    message: "Select at least one test.",
+                })
+                return
+            }
+
             await saveOrder.execute(async () => {
                 const input = orderPayload(data, Boolean(order?.id))
 
@@ -179,7 +152,6 @@ export function OrderForm({
             })
         } catch (err) {
             const msg = extractApiError(err, "Order could not be saved.")
-            console.log(msg, "error")
             toast.error(msg)
             form.setError("root", { message: msg })
         }
@@ -199,7 +171,7 @@ export function OrderForm({
 
     return (
         <Dialog
-            open={state.open}
+            open={open}
             onOpenChange={(nextOpen, eventDetails) => {
                 if (eventDetails.reason === "outside-press") return
                 changeOpen(nextOpen)
@@ -236,29 +208,59 @@ export function OrderForm({
                                         control={form.control}
                                         name="machineId"
                                         render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
+                                            <Field data-invalid={fieldState.invalid} >
                                                 <FieldLabel className="font-normal">
                                                     Analyzer profile{" "}
                                                     <span className="text-destructive ml-0.5">*</span>
                                                 </FieldLabel>
                                                 <Select
                                                     value={field.value}
-                                                    onValueChange={(v) => {
-                                                        field.onChange(v)
-                                                        dispatch({ type: "SET_TESTS", tests: [] })
-                                                        form.setValue("tests", "")
+                                                    disabled={driversLoading}
+                                                    onValueChange={(machineId) => {
+                                                        if (machineId === null) return
+
+                                                        field.onChange(machineId)
+
+                                                        const profile = profilesById.get(machineId)
+
+                                                        if (!profile) {
+                                                            handleTestsChange("")
+                                                            return
+                                                        }
+
+                                                        const driver = driversById.get(profile.driverId)
+
+                                                        if (driver) {
+                                                            handleTestsChange(
+                                                                driver.defaultOrderTests.join(", "),
+                                                            )
+                                                            return
+                                                        }
+
+                                                        if (!driversLoading) {
+                                                            handleTestsChange("")
+                                                        }
                                                     }}
                                                 >
-                                                    <SelectTrigger className="w-full font-normal" aria-invalid={fieldState.invalid}>
+                                                    <SelectTrigger
+                                                        className="w-full font-normal"
+                                                        aria-invalid={fieldState.invalid}
+                                                    >
                                                         <SelectValue className="font-normal">
-                                                            {profiles.find((p) => String(p.id) === field.value)?.name || "Choose an analyzer"}
+                                                            {profilesById.get(field.value)?.name ||
+                                                                "Choose an analyzer"}
                                                         </SelectValue>
                                                     </SelectTrigger>
+
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            {profiles.map((p) => (
-                                                                <SelectItem key={p.id} value={String(p.id)} className="font-normal">
-                                                                    {p.name || p.driverId}
+                                                            {profiles.map((profile) => (
+                                                                <SelectItem
+                                                                    key={profile.id}
+                                                                    value={String(profile.id)}
+                                                                    className="font-normal"
+                                                                >
+                                                                    {profile.name || profile.driverId}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectGroup>
@@ -293,11 +295,9 @@ export function OrderForm({
                                     {/* Test multi-select */}
                                     <TestSelector
                                         driverId={selectedProfile?.driverId}
-                                        selectedTests={state.selectedTests}
-                                        onToggle={handleToggle}
-                                        onRemove={handleRemove}
-                                        onClearAll={handleClearAll}
-                                        onSelectAll={handleSelectAll}
+                                        value={testsValue}
+                                        onChange={handleTestsChange}
+                                        usesDefaultTests={usesDefaultTests}
                                         error={form.formState.errors.tests?.message}
                                     />
                                 </Field>
@@ -430,60 +430,40 @@ export function OrderForm({
     )
 }
 
-
-// default form values setup
-function getOrderFormDefaults(
-    profiles: MachineProfile[],
-    order?: MachineOrder,
-): OrderFormValues {
-    return {
-        machineId: String(order?.machineId ?? profiles[0]?.id ?? ""),
-        sampleId: order?.sampleId ?? "",
-        tests: order?.tests?.join(", ") ?? "",
-        patientId: order?.patientId ?? "",
-        patientName: order?.patientName ?? "",
-        sampleType: order?.sampleType ?? "",
-        rackPosition: order?.rackPosition ?? "",
-        expiresAt: order
-            ? new Date(order.expiresAt).toISOString().slice(0, 16)
-            : new Date(Date.now() + 86_400_000).toISOString().slice(0, 16), // 24 hours = 1 day
-    }
-}
-
 // sub component
-function resolveTestName(test: CatalogTest): string | undefined {
-    return test.name || test.code
-}
 function TestSelector({
     driverId,
-    selectedTests,
-    onToggle,
-    onRemove,
-    onClearAll,
-    onSelectAll,
+    value,
+    onChange,
+    usesDefaultTests,
     error,
 }: {
     driverId: string | undefined
-    selectedTests: string[]
-    onToggle: (test: string) => void
-    onRemove: (test: string) => void
-    onClearAll: () => void
-    onSelectAll: (tests: string[]) => void
+    value: string
+    onChange: (value: string) => void
+    usesDefaultTests: boolean
     error?: string
 }) {
     const [query, setQuery] = React.useState("")
 
     const { data: catalogData, isLoading } = useSWR(
-        driverId ? api.catalogs.detailKey(driverId) : null,
+        (driverId && !usesDefaultTests) ? api.catalogs.detailKey(driverId) : null,
         () => api.catalogs.get({ driver: driverId! }),
         { revalidateOnFocus: false }
     )
 
+    const selectedTests = React.useMemo(() => parseTests(value), [value])
+    const selectedSet = React.useMemo(() => new Set(selectedTests), [selectedTests])
+
     // Resolve names once, memoised
     const allTests = React.useMemo(() =>
-        (catalogData?.tests ?? [])
-            .map((t) => resolveTestName(t))
-            .filter((value: string | undefined): value is string => value !== undefined),
+        Array.from(
+            new Set(
+                (catalogData?.tests ?? [])
+                    .map(resolveTestCode)
+                    .filter((test): test is string => Boolean(test)),
+            ),
+        ),
         [catalogData?.tests]
     )
 
@@ -494,7 +474,50 @@ function TestSelector({
     }, [allTests, query])
 
     const hasTests = allTests.length > 0
-    const selectedSet = React.useMemo(() => new Set(selectedTests), [selectedTests])
+    const isAllSelected = React.useMemo(() => hasTests && allTests.every((test) => selectedSet.has(test)), [hasTests, allTests, selectedSet])
+
+    const updateSelectedTests = (tests: string[]) => {
+        onChange(Array.from(new Set(tests)).join(", "))
+    }
+
+    const toggleTest = (test: string) => {
+        updateSelectedTests(
+            selectedSet.has(test)
+                ? selectedTests.filter((selectedTest) => selectedTest !== test)
+                : [...selectedTests, test],
+        )
+    }
+
+
+    // early return in case of tests are set from backend driver
+    if (usesDefaultTests) {
+        return (
+            <Field>
+                <FieldLabel className="font-normal">
+                    Tests
+                </FieldLabel>
+
+                <FieldDescription className="font-normal">
+                    This analyzer uses its default tests automatically.
+                </FieldDescription>
+
+                {selectedTests.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {selectedTests.map((test) => (
+                            <Badge
+                                key={test}
+                                variant="secondary"
+                                className="font-normal"
+                            >
+                                <FlaskIcon className="size-3" />
+                                {test}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+            </Field>
+        )
+    }
 
 
     // loading 
@@ -502,7 +525,7 @@ function TestSelector({
         return (
             <Field data-invalid={Boolean(error)}>
                 <FieldLabel className="font-normal">
-                    Tests <span className="text-destructive ml-0.5">*</span>
+                    Tests {!usesDefaultTests && <span className="text-destructive ml-0.5">*</span>}
                 </FieldLabel>
                 <Skeleton className="h-9 w-full rounded-lg" />
                 <FieldError className="font-normal">{error}</FieldError>
@@ -515,36 +538,33 @@ function TestSelector({
         return (
             <Field data-invalid={Boolean(error)}>
                 <FieldLabel className="font-normal">
-                    Tests <span className="text-destructive ml-0.5">*</span>
+                    Tests {!usesDefaultTests && <span className="text-destructive ml-0.5">*</span>}
                 </FieldLabel>
                 <FieldDescription className="font-normal">
-                    No catalog for this analyzer. Enter test names separated by commas.
+                    {usesDefaultTests
+                        ? "usesDefaultTests for this analyzer, its fixed panel is assigned automatically."
+                        : "No catalog for this analyzer. Enter test codes separated by commas."}
                 </FieldDescription>
                 <Input
                     id="tests-fallback"
                     aria-invalid={Boolean(error)}
                     placeholder="e.g. TSH, FT4, Troponin-I"
                     className="font-normal"
-                    value={selectedTests.join(", ")}
-                    onChange={(e) => {
-                        const vals = e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
-                        selectedTests.forEach((t) => onRemove(t))
-                        vals.forEach((t) => { if (!selectedSet.has(t)) onToggle(t) })
-                    }}
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    onBlur={() => updateSelectedTests(selectedTests)} // it is not required for state synchronization. It is only useful for cleaning the free-text fallback.
                 />
                 <FieldError className="font-normal">{error}</FieldError>
             </Field>
         )
     }
 
-    const isAllSelected = allTests.length > 0 && selectedTests.length === allTests.length
-
     // multi-select
     return (
         <Field data-invalid={Boolean(error)}>
             <div className="flex items-center justify-between gap-2">
                 <FieldLabel className="font-normal">
-                    Tests <span className="text-destructive ml-0.5">*</span>
+                    Tests {!usesDefaultTests && <span className="text-destructive ml-0.5">*</span>}
                 </FieldLabel>
                 {selectedTests.length > 0 && (
                     <Button
@@ -552,12 +572,13 @@ function TestSelector({
                         variant="ghost"
                         size="xs"
                         className="p-0 text-[10px] font-normal text-muted-foreground hover:text-destructive hover:bg-transparent"
-                        onClick={onClearAll}
+                        onClick={() => updateSelectedTests([])}
                     >
                         Clear all ({selectedTests.length})
                     </Button>
                 )}
             </div>
+
 
             {/* Selected badges display */}
             {selectedTests.length > 0 && (
@@ -571,7 +592,9 @@ function TestSelector({
                                 variant="ghost"
                                 size="icon-xs"
                                 aria-label={`Remove ${test}`}
-                                onClick={() => onRemove(test)}
+                                onClick={() =>
+                                    updateSelectedTests(selectedTests.filter((selectedTest) => selectedTest !== test))
+                                }
                                 className="ml-0.5 rounded-full hover:bg-transparent text-muted-foreground hover:text-foreground"
                             >
                                 <XIcon className="size-3" />
@@ -628,13 +651,7 @@ function TestSelector({
                                 variant="outline"
                                 size="sm"
                                 className="h-8 text-xs font-normal shrink-0"
-                                onClick={() => {
-                                    if (isAllSelected) {
-                                        onClearAll()
-                                    } else {
-                                        onSelectAll(allTests)
-                                    }
-                                }}
+                                onClick={() => updateSelectedTests(isAllSelected ? [] : allTests)}
                             >
                                 {isAllSelected ? "Deselect all" : "Select all"}
                             </Button>
@@ -648,22 +665,22 @@ function TestSelector({
                                         No tests found for &ldquo;{query}&rdquo;
                                     </span>
                                 ) : (
-                                    filteredTests.map((name) => {
-                                        if (!name) return
-                                        const isSelected = selectedSet.has(name)
+                                    filteredTests.map((test) => {
+                                        if (!test) return
+                                        const isSelected = selectedSet.has(test)
                                         return (
                                             <Button
-                                                key={name}
+                                                key={test}
                                                 type="button"
                                                 variant={isSelected ? "default" : "outline"}
                                                 size="sm"
-                                                onClick={() => onToggle(name)}
+                                                onClick={() => toggleTest(test)}
                                                 className={`justify-between gap-1.5 px-2.5 text-xs font-normal text-left transition-all ${isSelected
                                                     ? "bg-primary text-primary-foreground border-primary font-medium"
                                                     : "bg-background text-foreground border-border/60 hover:bg-muted/80"
                                                     }`}
                                             >
-                                                <span className="truncate">{name}</span>
+                                                <span className="truncate">{test}</span>
                                                 <Checkbox
                                                     checked={isSelected}
                                                     className={`size-3.5 shrink-0 pointer-events-none ${isSelected ? "border-primary-foreground data-state=checked:bg-primary-foreground data-state=checked:text-primary" : ""}`}
@@ -693,4 +710,50 @@ function TestSelector({
         </Field>
     )
 
+}
+
+
+// helpers
+// default form values setup
+function toLocalDateTimeInputValue(date: Date): string {
+    const offset = date.getTimezoneOffset() * 60_000
+
+    return new Date(date.getTime() - offset)
+        .toISOString()
+        .slice(0, 16)
+}
+
+function getOrderFormDefaults(
+    profiles: MachineProfile[],
+    order?: MachineOrder,
+): OrderFormValues {
+    const expiresAt = order
+        ? new Date(order.expiresAt)
+        : new Date(Date.now() + 86_400_000) // 24 hours = 1 day
+
+    return {
+        machineId: String(order?.machineId ?? profiles[0]?.id ?? ""),
+        sampleId: order?.sampleId ?? "",
+        tests: order?.tests?.join(", ") ?? "",
+        patientId: order?.patientId ?? "",
+        patientName: order?.patientName ?? "",
+        sampleType: order?.sampleType ?? "",
+        rackPosition: order?.rackPosition ?? "",
+        expiresAt: toLocalDateTimeInputValue(expiresAt)
+    }
+}
+
+function resolveTestCode(test: CatalogTest): string | undefined {
+    return test.code || test.name
+}
+
+function parseTests(value: string): string[] {
+    return Array.from(
+        new Set(
+            value
+                .split(",")
+                .map((test) => test.trim())
+                .filter(Boolean),
+        ),
+    )
 }
