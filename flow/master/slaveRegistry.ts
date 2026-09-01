@@ -77,17 +77,57 @@ export class SlaveRegistry {
     /** Returns all slaves that have pinged within the last 2 minutes. */
     async listActive() {
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
-        const all = await db.select().from(slaveRegistry)
+        const all = await db.select({
+            id: slaveRegistry.id,
+            slaveId: slaveRegistry.slaveId,
+            instanceId: slaveRegistry.instanceId,
+            host: slaveRegistry.host,
+            port: slaveRegistry.port,
+            machinesJson: slaveRegistry.machinesJson,
+            lastPingAt: slaveRegistry.lastPingAt,
+            isActive: slaveRegistry.isActive,
+            createdAt: slaveRegistry.createdAt,
+            updatedAt: slaveRegistry.updatedAt,
+        }).from(slaveRegistry)
             .where(eq(slaveRegistry.isActive, true));
+            
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
+    }
+
+    /** Returns all slaves (active and inactive) for the dashboard. */
+    async listAll() {
+        // Omitting secretHash for safety
+        const all = await db.select({
+            id: slaveRegistry.id,
+            slaveId: slaveRegistry.slaveId,
+            instanceId: slaveRegistry.instanceId,
+            host: slaveRegistry.host,
+            port: slaveRegistry.port,
+            machinesJson: slaveRegistry.machinesJson,
+            lastPingAt: slaveRegistry.lastPingAt,
+            isActive: slaveRegistry.isActive,
+            createdAt: slaveRegistry.createdAt,
+            updatedAt: slaveRegistry.updatedAt,
+        }).from(slaveRegistry);
+        
+        return all;
     }
 
 
     /** Marks a slave as inactive (e.g. after a failed heartbeat or explicit disconnect). */
-    async markInactive(slaveId: string): Promise<void> {
+    async markInactive(slaveId: string): Promise<boolean> {
+        const existing = await db.select({ id: slaveRegistry.id })
+            .from(slaveRegistry)
+            .where(eq(slaveRegistry.slaveId, slaveId))
+            .limit(1);
+            
+        if (existing.length === 0) return false;
+
         await db.update(slaveRegistry)
             .set({ isActive: false, updatedAt: new Date().toISOString() })
             .where(eq(slaveRegistry.slaveId, slaveId));
+            
+        return true;
     }
 
 

@@ -35,13 +35,36 @@ async function readJson(c: Context, read: () => Promise<unknown>) {
     }
 }
 
+import type { SlaveRegistry } from "../flow/master/slaveRegistry.ts";
 
-export function registerDashboardRoutes(app: Hono): void {
+export function registerDashboardRoutes(app: Hono, slaveRegistry?: SlaveRegistry): void {
 
     // Health check - used by load balancers, monitoring, and slave-sync clients.
     app.get("/healthy", (c) =>
         c.json({ status: "ok", mode: env.AGENT_MODE, version: "1.0.0" })
-    );
+);
+
+    // List all registered slaves (master mode only)
+    app.get("/slaves", async (c) => {
+        if (!slaveRegistry) {
+            return c.json({ slaves: [] });
+        }
+        const slaves = await slaveRegistry.listActive();
+        return c.json({ slaves });
+    });
+
+    // Mark a slave as inactive
+    app.post("/slaves/:slaveId/inactive", async (c) => {
+        if (!slaveRegistry) return c.json({ success: false }, 400);
+        const slaveId = c.req.param("slaveId");
+        const found = await slaveRegistry.markInactive(slaveId);
+        
+        if (!found) {
+            return c.json({ error: "Slave not found" }, 404);
+        }
+        
+        return c.json({ success: true });
+    });
 
     // External orders - paged view of the agent's syncOrderInbox table.
     app.get("/external-orders", (c) =>

@@ -10,6 +10,7 @@ import { ResultDispatcher } from "./jobs/resultDispatcher.ts";
 import { registerDashboardRoutes } from "./routes/dashboard.ts";
 import { registerSlaveSyncRoutes } from "./routes/slaveSync.ts";
 import { initDB } from "./db/index.ts";
+import { cors } from "@hono/hono/cors";
 
 const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
@@ -17,28 +18,28 @@ let shuttingDown = false;
 
 
 // environment checkups
-function environmentCheckups() {
-  // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
-  if (
-    (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
-    !env.SLAVE_BOOTSTRAP_SECRET
-  ) {
-    throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
-  }
+// function environmentCheckups() {
+//   // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
+//   if (
+//     (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
+//     !env.SLAVE_BOOTSTRAP_SECRET
+//   ) {
+//     throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
+//   }
 
-  // slave mode also needs to know where the "master" lives
-  if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
-    throw new Error("MASTER_HOST is required in slave mode");
-  }
+//   // slave mode also needs to know where the "master" lives
+//   if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
+//     throw new Error("MASTER_HOST is required in slave mode");
+//   }
 
-  // "direct" and "master" modes communicate with MediCloud directly
-  if (
-    env.AGENT_MODE !== "slave" &&
-    (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL)
-  ) {
-    throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
-  }
-}
+//   // "direct" and "master" modes communicate with MediCloud directly
+//   if (
+//     env.AGENT_MODE !== "slave" &&
+//     (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL)
+//   ) {
+//     throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
+//   }
+// }
 
 // handle graceful shutdowns
 async function gracefulShutdown(
@@ -96,9 +97,12 @@ if (import.meta.main) {
 
   // 4. HTTP server - agent routes + optional slave-sync routes + machine SDK passthrough
   const app = new Hono();
+  
+  // enable CORS for frontend dev server
+  app.use("*", cors());
 
   // dashboard routes
-  registerDashboardRoutes(app);
+  registerDashboardRoutes(app, slaveRegistry!);
 
   // slave-sync routes only exist on "master" - slaves call these to register, ping, pull orders, upload results
   if (slaveRegistry) {

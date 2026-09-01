@@ -178,6 +178,28 @@ export type TTestStatisticQuery = {
   offset?: number | undefined;
 }
 
+// agent mode
+export type AgentMode = "direct" | "master" | "slave"
+
+// agent healthy endpoint response
+export interface AgentHealthyResponse {
+  status: string
+  mode: AgentMode
+  version: string
+}
+
+// slave record
+export interface SlaveRecord {
+  id: number
+  slaveId: string
+  instanceId: string
+  host: string
+  port: number
+  machinesJson: string
+  lastPingAt: string
+  isActive: boolean
+  createdAt: string
+}
 // external order (syncOrderInbox) types
 // The DB column is plain text with no constraint, so consumers must tolerate
 // values outside this union.

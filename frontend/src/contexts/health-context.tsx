@@ -1,5 +1,5 @@
 import React from "react"
-import type { HealthResponse } from "@/types/api"
+import type { AgentMode, HealthResponse } from "@/types/api"
 import useSWR, { type KeyedMutator } from "swr"
 import { api } from "@/lib/api"
 
@@ -11,6 +11,7 @@ type HealthContextType = {
     connected: number
     mutate: KeyedMutator<HealthResponse>
     isValidating: boolean
+    mode: AgentMode | undefined
 }
 
 const HealthContext = React.createContext<HealthContextType | null>(null)
@@ -28,6 +29,16 @@ export function HealthProvider({
         }
     )
 
+    // Fetch agent mode from /healthy endpoint
+    const { data: agentHealthy } = useSWR(
+        api.agent.healthyKey,
+        api.agent.healthy,
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60_000,
+        }
+    )
+
     const connected = React.useMemo(() => {
         return (
             data?.running_machines.filter(
@@ -35,6 +46,9 @@ export function HealthProvider({
             ).length ?? 0
         )
     }, [data])
+
+    const mode = agentHealthy?.mode
+        ?? (import.meta.env.VITE_AGENT_MODE as AgentMode | undefined)
 
     return (
         <HealthContext.Provider
@@ -44,7 +58,8 @@ export function HealthProvider({
                 isLoading,
                 connected,
                 mutate,
-                isValidating
+                isValidating,
+                mode,
             }}
         >
             {children}
