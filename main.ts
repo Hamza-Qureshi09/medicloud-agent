@@ -70,8 +70,8 @@ async function gracefulShutdown(
 
 if (import.meta.main) {
 
-  // 1. environment validation
-  environmentCheckups();
+  // // 1. environment validation
+  // environmentCheckups();
 
   // 2. Agent db + instance identity
   await initDB();
@@ -118,9 +118,9 @@ if (import.meta.main) {
   }, app.fetch);
 
   // 5. start background workers
-  heartbeatWorker.start();
-  orderPullWorker.start();
-  resultDispatcher.startRetryLoop();
+  // heartbeatWorker.start();
+  // orderPullWorker.start();
+  // resultDispatcher.startRetryLoop();
 
   // 6. graceful shutdown
   Deno.addSignalListener("SIGINT",
