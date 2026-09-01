@@ -26,7 +26,7 @@ export async function getLocalMachineCapabilities(): Promise<SyncMachineCapabili
         profiles.map(async (profile): Promise<SyncMachineCapability> => {
 
             // Match the profile to a running machine (may be undefined if not started).
-            const active = runningMachines.find((item) => item.profile.id === profile.id);
+            const active = runningMachines.running_machines.find((item) => item.profile.id === profile.id);
 
             // Fetch the tests this driver supports.
             const catalogTests = await fetchDriverCatalog(profile.driverId);

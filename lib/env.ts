@@ -15,7 +15,7 @@ export const env = {
   MEDICLOUD_AGENT_ID: Deno.env.get("MEDICLOUD_AGENT_ID") ?? "",
   MEDICLOUD_AGENT_SECRET: Deno.env.get("MEDICLOUD_AGENT_SECRET") ?? "",
   MEDICLOUD_ACCOUNT_ID: Deno.env.get("MEDICLOUD_ACCOUNT_ID") ?? "",
-  AGENT_PUBLIC_URL: Deno.env.get("AGENT_PUBLIC_URL") ?? "",
+  AGENT_PUBLIC_URL: Deno.env.get("AGENT_PUBLIC_URL") || `http://127.0.0.1:${Deno.env.get("MEDICLOUD_AGENT_HTTP_PORT") ?? 5001}`,
   MEDICLOUD_API_URL: Deno.env.get("MEDICLOUD_API_URL") ?? "",
   MEDICLOUD_PING_INTERVAL_MS: Number(Deno.env.get("MEDICLOUD_PING_INTERVAL_MS") ?? 30000),
 

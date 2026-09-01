@@ -22,33 +22,22 @@ export function HealthProvider({
     children: React.ReactNode
 }) {
     const { data, error, isLoading, mutate, isValidating } = useSWR(
-        api.health.detailKey,
-        api.health.get,
+        api.info.detailKey,
+        api.info.get,
         {
             // refreshInterval: 5000, // optional
         }
     )
 
-    // Fetch agent mode from /healthy endpoint
-    const { data: agentHealthy } = useSWR(
-        api.agent.healthyKey,
-        api.agent.healthy,
-        {
-            revalidateOnFocus: false,
-            dedupingInterval: 60_000,
-        }
-    )
-
     const connected = React.useMemo(() => {
         return (
-            data?.running_machines.filter(
+            data?.running_machines?.filter(
                 (item) => item.machine.connected
             ).length ?? 0
         )
     }, [data])
 
-    const mode = agentHealthy?.mode
-        ?? (import.meta.env.VITE_AGENT_MODE as AgentMode | undefined)
+    const mode = (data?.mode as AgentMode) ?? undefined
 
     return (
         <HealthContext.Provider

@@ -1,3 +1,4 @@
+import React from "react";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import { ResourceEmpty } from "@/components/common/resourceState";
@@ -20,12 +21,6 @@ export function ControlPage() {
         refreshInterval: 25000,
     });
     
-    if (!data && !error) return <PageLoading />;
-    
-    if (error) {
-        return <ResourceError error={error} onRetry={() => mutate()} />;
-    }
-
     // Get slaves from API
     const slaves = data?.slaves || [];
 
@@ -33,15 +28,24 @@ export function ControlPage() {
     const activeSlaves = slaves.filter(s => s.isActive).length;
     
     // Calculate total machines across all slaves
-    const totalMachines = slaves.reduce((acc, slave) => {
-        try {
-            const machines = JSON.parse(slave.machinesJson);
-            return acc + machines.length;
-        } catch {
-            return acc;
-        }
-    }, 0);
+    const totalMachines = React.useMemo(() => {
+        return slaves.reduce((acc, slave) => {
+            try {
+                const machines = JSON.parse(slave.machinesJson);
+                return acc + machines.length;
+            } catch {
+                return acc;
+            }
+        }, 0);
+    }, [slaves]);
+
+    // Early returns must be after all hooks!
+    if (!data && !error) return <PageLoading />;
     
+    if (error) {
+        return <ResourceError error={error} onRetry={() => mutate()} />;
+    }
+
     return (
         <Container>
             <PageSection

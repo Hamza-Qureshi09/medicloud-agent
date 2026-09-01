@@ -37,6 +37,8 @@ export interface RunningMachine {
 
 export interface HealthResponse {
   status: string
+  mode?: string
+  version?: string
   registered_drivers: Driver[]
   running_machines: RunningMachine[]
 }
