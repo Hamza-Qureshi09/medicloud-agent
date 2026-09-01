@@ -12,7 +12,7 @@ import {
 } from "../types.ts";
 
 
-const AGENT_URL = env.AGENT_PUBLIC_URL;
+const AGENT_URL = env.AGENT_PUBLIC_URL || `http://127.0.0.1:${env.MEDICLOUD_AGENT_HTTP_PORT}`;
 const MEDICLOUD_URL = env.MEDICLOUD_API_URL;
 
 
