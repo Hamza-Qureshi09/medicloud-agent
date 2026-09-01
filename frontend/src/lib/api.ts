@@ -38,6 +38,7 @@ export const api = {
         
         slavesKey: "agent.slaves",
         slaves: () => request<{ slaves: SlaveRecord[] }>("/slaves"),
+        markInactive: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/inactive`, { method: "POST" }),
     },
 
     health: {

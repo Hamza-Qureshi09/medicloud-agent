@@ -6,19 +6,28 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon } from "@phosphor-icons/react";
-import type { SlaveRecord } from "@/types/api";
 import useSWR from "swr";
 import { api } from "@/lib/api";
+import { ConfirmAction } from "@/components/common/confirmAction";
+import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
+import { Button } from "@/components/ui/button";
+import { StopIcon } from "@phosphor-icons/react";
 
 
 export function ControlPage() {
-    const { data, error } = useSWR(api.agent.slavesKey, api.agent.slaves, {
+    const { data, error, mutate } = useSWR(api.agent.slavesKey, api.agent.slaves, {
         revalidateOnFocus: false,
         refreshInterval: 25000,
     });
+    
+    if (!data && !error) return <PageLoading />;
+    
+    if (error) {
+        return <ResourceError error={error} onRetry={() => mutate()} />;
+    }
 
-    // If API fails, fallback to static data. Otherwise use fetched data (or static while loading initially).
-    const slaves = data?.slaves;
+    // Get slaves from API
+    const slaves = data?.slaves || [];
 
     const totalSlaves = slaves.length;
     const activeSlaves = slaves.filter(s => s.isActive).length;
@@ -39,6 +48,9 @@ export function ControlPage() {
                 eyebrow="Slave Network"
                 title="Agent Control Center"
                 description="Monitor connected slave agents, their connection status, and delegated machine capabilities."
+                actions={
+                    <RefreshButton onRefresh={() => mutate()} />
+                }
             />
 
             {/* Stat Cards */}
@@ -84,14 +96,38 @@ export function ControlPage() {
                                                 <Badge variant={slave.isActive ? "default" : "secondary"} className="ml-2">
                                                     {slave.isActive ? "Active" : "Inactive"}
                                                 </Badge>
+                                                
+                                                <div onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} onPointerDown={(e) => e.stopPropagation()}>
+                                                    <ConfirmAction
+                                                        trigger={
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10 -ml-1"
+                                                            >
+                                                                <StopIcon />
+                                                            </Button>
+                                                        }
+                                                        title="Mark Slave Inactive"
+                                                        description={`Are you sure you want to mark slave ${slave.slaveId.split('-')[1] || slave.slaveId} as inactive?`}
+                                                        actionLabel="Mark Inactive"
+                                                        onConfirm={async () => {
+                                                            await api.agent.markInactive(slave.slaveId);
+                                                            await mutate();
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="text-xs text-muted-foreground text-left font-normal mt-1">
                                                 Host: {slave.host}:{slave.port} • Last ping: {new Date(slave.lastPingAt).toLocaleString()}
                                             </div>
                                         </div>
-                                        <Badge variant="outline" className="shrink-0 mt-1">
-                                            {machines.length} Machine{machines.length !== 1 && 's'}
-                                        </Badge>
+                                        
+                                        <div className="flex items-center">
+                                            <Badge variant="outline" className="shrink-0 mt-1">
+                                                {machines.length} Machine{machines.length !== 1 && 's'}
+                                            </Badge>
+                                        </div>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>

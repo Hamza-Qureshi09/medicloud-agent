@@ -38,7 +38,7 @@ const navigation = [
 
 export function AppSidebar() {
     const location = useLocation()
-    const { connected } = useHealth()
+    const { connected, mode } = useHealth()
 
 
     return (
@@ -69,7 +69,10 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Workspace</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navigation.map((item) => (
+                            {navigation.map((item) => {
+                                if (item.to === "/dashboard/control" && mode !== "master") return null;
+                                
+                                return (
                                     <SidebarMenuItem key={item.to}>
                                         <SidebarMenuButton
                                             render={<NavLink to={item.to} />}
@@ -94,7 +97,8 @@ export function AppSidebar() {
                                             <span>{item.label}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-                            ))}
+                                );
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
