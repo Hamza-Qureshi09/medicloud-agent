@@ -200,3 +200,68 @@ export interface SlaveRecord {
   isActive: boolean
   createdAt: string
 }
+// external order (syncOrderInbox) types
+// The DB column is plain text with no constraint, so consumers must tolerate
+// values outside this union.
+export type ExternalOrderStatus =
+  | "received"
+  | "acknowledged"
+  | "processing"
+  | "leased_to_slave"
+  | "acknowledged_by_slave"
+  | "completed"
+  | "failed"
+
+export interface ExternalOrder {
+  id: number
+  dispatchId: string
+  leaseId: string
+  profileKey: string
+  driverId: string
+  targetSlaveId: string | null
+  payloadJson: string
+  agentOrderId: number | null
+  status: ExternalOrderStatus
+  errorText: string | null
+  receivedAt: string
+  acknowledgedAt: string | null
+  submittedAt: string | null
+  completedAt: string | null
+  downstreamLeaseId: string | null
+  downstreamLeaseExpiresAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+// external result (medicloudResultDispatch) types
+export type ResultDeliveryStatus = 0 | 1 | 2 | 3
+
+export interface ExternalResult {
+  id: number
+  agentResultId: number | null
+  agentOrderId: number
+  medicloudOrderId: string
+  medicloudDispatchId: string
+  idempotencyKey: string
+  payloadJson: string
+  deliveryStatus: ResultDeliveryStatus
+  sentAt: string | null
+  errorText: string | null
+  retryCount: number
+  createdAt: string
+}
+
+/**
+ * Analyte as stored inside `medicloudResultDispatch.payloadJson`.
+ * This is the agent's `ResultUploadItem["analytes"]` shape — narrower than
+ * `AnalyteResult`, which describes what an analyzer reports locally.
+ */
+export interface DispatchedAnalyte {
+  assayNo: string
+  value?: string
+  qualitative?: string
+  unit?: string
+  lowReference?: string
+  highReference?: string
+  abnormalFlag?: string
+}

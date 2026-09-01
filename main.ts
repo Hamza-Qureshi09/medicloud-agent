@@ -71,7 +71,7 @@ async function gracefulShutdown(
 
 if (import.meta.main) {
 
-  // 1. environment validation
+  // // 1. environment validation
   // environmentCheckups();
 
   // 2. Agent db + instance identity
@@ -121,7 +121,7 @@ if (import.meta.main) {
     },
   }, app.fetch);
 
-  // // 5. start background workers
+  // 5. start background workers
   // heartbeatWorker.start();
   // orderPullWorker.start();
   // resultDispatcher.startRetryLoop();

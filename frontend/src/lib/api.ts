@@ -1,4 +1,4 @@
-import type { AgentHealthyResponse, SlaveRecord, ApiErrorBody, CatalogDetail, CatalogSummary, Driver, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
+import type { ApiErrorBody, CatalogDetail, CatalogSummary, Driver, ExternalOrder, ExternalResult, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
 import { ApiError, json } from "./helpers"
 import type { OrderPayload, ProfilePayload } from "./schema"
 
@@ -22,6 +22,12 @@ export interface ResultQuery extends Query {
     limit?: number
     offset?: number
 }
+export interface ExternalQuery extends Query {
+    search?: string
+    status?: string | number
+    limit?: number
+    offset?: number
+}
 export interface StatisticQuery extends Query {
     machineId?: number
     testId?: string
@@ -32,7 +38,7 @@ export interface StatisticQuery extends Query {
 
 // api registry for all requests
 export const api = {
-    agent: {
+     agent: {
         healthyKey: "agent.healthy",
         healthy: () => request<AgentHealthyResponse>("/healthy"),
         
@@ -147,7 +153,19 @@ export const api = {
         get: (statisticId: number) => request<{ statistic: TestStatistic }>(`/test-statistics/${statisticId}`),
 
         remove: (statisticId: number) => request<void>(`/test-statistics/${statisticId}`, { method: "DELETE" }),
-    }
+    },
+
+    externalOrders: {
+        listKey: (query: ExternalQuery = {}) => ["externalOrders.list", query] as const,
+        list: (query: ExternalQuery = {}) =>
+            request<{ orders: ExternalOrder[]; count: number }>("/external-orders", { query }),
+    },
+
+    externalResults: {
+        listKey: (query: ExternalQuery = {}) => ["externalResults.list", query] as const,
+        list: (query: ExternalQuery = {}) =>
+            request<{ results: ExternalResult[]; count: number }>("/external-results", { query }),
+    },
 }
 
 
