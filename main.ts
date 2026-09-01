@@ -10,7 +10,7 @@ import { ResultDispatcher } from "./jobs/resultDispatcher.ts";
 import { registerDashboardRoutes } from "./routes/dashboard.ts";
 import { registerSlaveSyncRoutes } from "./routes/slaveSync.ts";
 import { initDB } from "./db/index.ts";
-import { cors } from "@hono/hono/cors";
+// import { cors } from "@hono/hono/cors";
 
 const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
@@ -99,7 +99,7 @@ if (import.meta.main) {
   const app = new Hono();
   
   // enable CORS for frontend dev server
-  app.use("*", cors());
+  // app.use("*", cors());
 
   // dashboard routes
   registerDashboardRoutes(app, slaveRegistry!);

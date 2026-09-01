@@ -9,7 +9,7 @@ export const env = {
   SERIAL_TRACE: Number(Deno.env.get("SERIAL_TRACE") ?? "false"),
 
   // Agent Mode (direct | master | slave)
-  AGENT_MODE: (Deno.env.get("AGENT_MODE") as "direct" | "master" | "slave") || "master",
+  AGENT_MODE: (Deno.env.get("AGENT_MODE") as "direct" | "master" | "slave"),
 
   // MediCloud connection (direct + master modes only)
   MEDICLOUD_AGENT_ID: Deno.env.get("MEDICLOUD_AGENT_ID") ?? "",
