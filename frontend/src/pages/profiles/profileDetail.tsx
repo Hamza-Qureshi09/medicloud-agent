@@ -396,11 +396,16 @@ export function ProfileDetailPage() {
                         <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
                                 <QueueIcon className="size-3.5 text-primary shrink-0" />
-                                <span className="text-xs text-foreground font-normal">
-                                    {activeOrdersCount > 0
-                                        ? `${activeOrdersCount} order${activeOrdersCount > 1 ? "s" : ""} staged`
-                                        : "No queued orders"}
-                                </span>
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-foreground font-normal">
+                                        {recentSampleId ? "View recent order" : "No queued orders"}
+                                    </span>
+                                    {activeOrdersCount > 0 && (
+                                        <span className="text-[11px] font-normal text-muted-foreground leading-relaxed">
+                                            Pending orders {activeOrdersCount}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <Link
                                 to={

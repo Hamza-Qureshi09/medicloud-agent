@@ -1,204 +1,130 @@
 import React from "react";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
-import { PageLoading, RefreshButton, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
+import { RefreshButton } from "@/components/common/resourceState";
 import useSWR from "swr";
 import { api } from "@/lib/api";
 import { Input } from "@/components/ui/input";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge";
-import type { MachineResult } from "@/types/api";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button";
-import { EyeIcon } from "@phosphor-icons/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTabbedFilters } from "@/hooks/use-tabbed-filters";
+import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
+import { MachineResults } from "./machineResults";
+import { ExternalResults } from "./externalResults";
 
-
+const TABS = ["machine", "external"] as const;
+const SEARCH_KEYS = { machine: "sampleId", external: "search" } as const;
 
 export function ResultsPage() {
-    const [sampleId, setSampleId] = React.useState("")
+    const { tab, search, input, page, setPage, onSearch, onTab, onReset } =
+        useTabbedFilters(TABS, SEARCH_KEYS);
+    const isMachine = tab === "machine";
 
-    const resultQuery = React.useMemo(() => ({ sampleId: sampleId || undefined, limit: 100 }), [sampleId])
-    const {
-        data: resultsData,
-        isValidating: resultIsValidating,
-        mutate: resultMutate,
-        error: resultErrors
-    } = useSWR(
-        api.results.listKey(resultQuery),
+    // Each list is fetched only while its own tab is open.
+    const resultQuery = React.useMemo(() => ({
+        sampleId: search || undefined,
+        limit: ITEMS_PER_PAGE,
+        offset: (page - 1) * ITEMS_PER_PAGE,
+    }), [search, page]);
+
+    const machineResults = useSWR(
+        isMachine ? api.results.listKey(resultQuery) : null,
         () => api.results.list(resultQuery),
-        {} // swr config for this rqst
-    )
+    );
+    const resultCount = useSWR(
+        isMachine ? api.results.countKey : null,
+        () => api.results.count(),
+    );
 
-    if (!resultsData && !resultErrors) return <PageLoading />
-    if (resultErrors) {
-        return <ResourceError error={resultErrors} onRetry={() => resultMutate()} />
-    }
+    const externalQuery = React.useMemo(() => ({
+        search: search || undefined,
+        limit: ITEMS_PER_PAGE,
+        offset: (page - 1) * ITEMS_PER_PAGE,
+    }), [search, page]);
 
+    const externalResults = useSWR(
+        isMachine ? null : api.externalResults.listKey(externalQuery),
+        () => api.externalResults.list(externalQuery),
+    );
 
-    return <Container>
+    const refresh = React.useCallback(async () => {
+        await Promise.all([
+            machineResults.mutate(),
+            resultCount.mutate(),
+            externalResults.mutate(),
+        ]);
+    }, [machineResults.mutate, resultCount.mutate, externalResults.mutate]);
 
-        {/* top page details */}
-        <PageSection
-            eyebrow="Immutable audit"
-            title="Reported analyzer results"
-            description="Result records are read-only. Open a record to inspect analytes, reference ranges, units, and abnormal flags."
-            actions={
-                <RefreshButton
-                    isLoading={resultIsValidating}
-                    onRefresh={() => resultMutate()}
-                />
-            }
-        />
+    // /results/count ignores filters, so a filtered machine list can only estimate.
+    const totalPages = isMachine
+        ? pageCount({
+            page,
+            rows: machineResults.data?.results.length ?? 0,
+            total: resultCount.data?.count ?? 0,
+            estimate: Boolean(search),
+        })
+        : pageCount({ page, rows: 0, total: externalResults.data?.count ?? 0 });
 
-        {/* sample id */}
-        <Input
-            className="max-w-md"
-            value={sampleId}
-            onChange={(event) => setSampleId(event.target.value)}
-            placeholder="Filter by sample ID"
-            aria-label="Filter results by sample ID"
-        />
+    const searchPlaceholder = isMachine
+        ? "Filter by sample ID"
+        : "Search external result";
+    const isRefreshing = isMachine ? machineResults.isValidating : externalResults.isValidating;
 
-        {/*  */}
-        {resultsData?.results.length ? (
-            <div className="overflow-hidden rounded-3xl border bg-card">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Result</TableHead>
-                            <TableHead>Sample</TableHead>
-                            <TableHead>Order</TableHead>
-                            <TableHead>Analyzer</TableHead>
-                            <TableHead>Analytes</TableHead>
-                            <TableHead>Received</TableHead>
-                            <TableHead className="text-right">Detail</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {resultsData.results.map((result) => (
-                            <TableRow key={result.id}>
-                                <TableCell className="font-medium">#{result.id}</TableCell>
-                                <TableCell>{result.sampleId}</TableCell>
-                                <TableCell>#{result.orderId}</TableCell>
-                                <TableCell>#{result.machineId}</TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">
-                                        {result.payload.results.length}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                    {new Date(result.receivedAt).toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <ResultDetail result={result} />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        ) : (
-            <ResourceEmpty
-                title="No result records"
-                description="Results appear here after a connected analyzer reports completed tests."
+    return (
+        <Container>
+            {/* Top page details */}
+            <PageSection
+                eyebrow="Immutable audit"
+                title="Reported analyzer results"
+                description="Result records are read-only. Open a record to inspect analytes, reference ranges, units, and abnormal flags."
+                actions={
+                    <RefreshButton
+                        isLoading={isRefreshing}
+                        onRefresh={() => {
+                            onReset();
+                            void refresh();
+                        }}
+                    />
+                }
             />
-        )}
-    </Container>
-}
 
+            {/* Search */}
+            <Input
+                className="max-w-md"
+                value={input}
+                onChange={(event) => onSearch(event.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+            />
 
-// result details
-function ResultDetail({ result }: { result: MachineResult }) {
-    const [open, setOpen] = React.useState(false)
-    const detail = useSWR(
-        open ? api.results.detailKey(result.id) : null,
-        () => api.results.get(result.id),
-        {} // swr config for this rqst
-    )
-    const current = detail.data?.result ?? result
+            {/* Tabbed result lists below the filter */}
+            <Tabs value={tab} onValueChange={onTab}>
+                <TabsList>
+                    <TabsTrigger value="machine">Machine Results</TabsTrigger>
+                    <TabsTrigger value="external">External Results</TabsTrigger>
+                </TabsList>
 
-    return (<Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger
-            render={
-                <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label={`Open result ${result.id}`}
-                />
-            }
-        >
-            <EyeIcon />
-        </DialogTrigger>
+                <TabsContent value="machine">
+                    <MachineResults
+                        results={machineResults.data?.results}
+                        error={machineResults.error}
+                        onRetry={() => void machineResults.mutate()}
+                        page={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                    />
+                </TabsContent>
 
-        {/* dialog content */}
-        <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Result {current.id} · {current.sampleId}</DialogTitle>
-                <DialogDescription>
-                    Immutable analyzer payload received{" "}
-                    {new Date(current.receivedAt).toLocaleString()}.
-                </DialogDescription>
-            </DialogHeader>
-
-            {/* table */}
-            <div className="max-h-[60vh] overflow-auto rounded-2xl border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Assay</TableHead>
-                            <TableHead>Value</TableHead>
-                            <TableHead>Unit</TableHead>
-                            <TableHead>Reference</TableHead>
-                            <TableHead>Flag</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {current.payload.results.map((analyte, index) => (
-                            <TableRow key={`${analyte.assayNo}-${index}`}>
-                                <TableCell>
-                                    <p className="font-medium">
-                                        {analyte.assayName || analyte.assayNo}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {analyte.assayNo}
-                                    </p>
-                                </TableCell>
-                                <TableCell>{analyte.value || analyte.qualitative || "—"}</TableCell>
-                                <TableCell>{analyte.unit || "—"}</TableCell>
-                                <TableCell>
-                                    {analyte.lowReference || analyte.highReference
-                                        ? `${analyte.lowReference || "—"}–${analyte.highReference || "—"}`
-                                        : "—"}
-                                </TableCell>
-                                <TableCell>
-                                    {analyte.abnormalFlag ? (
-                                        <Badge variant="destructive">{analyte.abnormalFlag}</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Normal</Badge>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        </DialogContent>
-
-
-    </Dialog>)
-
+                <TabsContent value="external">
+                    <ExternalResults
+                        results={externalResults.data?.results}
+                        error={externalResults.error}
+                        onRetry={() => void externalResults.mutate()}
+                        page={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                    />
+                </TabsContent>
+            </Tabs>
+        </Container>
+    );
 }
