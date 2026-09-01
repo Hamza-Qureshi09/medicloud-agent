@@ -91,7 +91,7 @@ export async function listExternalResults(
                 contains(medicloudResultDispatch.idempotencyKey, search),
                 // Sample IDs and analytes exist only inside the payload, so it is searched too.
                 // This forces a table scan; revisit with FTS if the outbox grows large.
-                contains(medicloudResultDispatch.payloadJson, search),
+                // contains(medicloudResultDispatch.payloadJson, search),
             )
             : undefined,
         deliveryStatus !== undefined

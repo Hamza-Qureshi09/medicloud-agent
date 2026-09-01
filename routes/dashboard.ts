@@ -2,9 +2,7 @@ import { Hono, type Context } from "@hono/hono";
 import { serveStatic } from "@hono/hono/deno";
 import { listExternalOrders, listExternalResults } from "../db/queries/external.ts";
 import { env } from "../lib/env.ts";
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
+import {MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE} from "../lib/constants.ts";
 
 
 /** Reads the search/status/limit/offset query shared by both external lists. */
