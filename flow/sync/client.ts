@@ -1,9 +1,19 @@
-import { register_slave_agent_to_master, sync_acknowledge_orders, sync_heartbeat, sync_pull_orders, sync_report_status, sync_upload_results, } from "../../lib/endpoints.ts";
-import { getLocalMachineCapabilities } from "./capabilities.ts";
+import {
+    register_slave_agent_to_master,
+    sync_acknowledge_orders,
+    sync_heartbeat,
+    sync_pull_orders,
+    sync_report_status,
+    sync_upload_results
+} from "../../lib/endpoints.ts";
 import { env } from "../../lib/env.ts";
-import { SyncMachineCapability, SyncAuthHeaders, ResultUploadItem } from "../../types.ts";
-
-
+import { getLocalMachineCapabilities } from "./capabilities.ts";
+import {
+    SyncMachineCapability,
+    SyncAuthHeaders,
+    ResultUploadItem
+} from "../../types.ts";
+import { AGENT_PROTOCOL_VERSION, AGENT_SOFTWARE_VERSION } from "../../lib/constants.ts";
 
 export class SyncClient {
     constructor(
@@ -15,7 +25,7 @@ export class SyncClient {
         private readonly apiPrefix = "/api/agent-sync",
     ) { }
 
-    // "slave"/"master"/"direct" use this to ping to their host
+    // "slave"/"master"/"direct" use this to ping to their upstream host
     heartbeat(
         mode: "direct" | "master" | "slave",
         machines: SyncMachineCapability[],
@@ -26,16 +36,17 @@ export class SyncClient {
             this.auth,
             {
                 mode,
-                // protocolVersion: "1.0",
-                // softwareVersion: "1.0.0",
+                protocolVersion: AGENT_PROTOCOL_VERSION,
+                softwareVersion: AGENT_SOFTWARE_VERSION,
                 machines,
             },
         );
     }
 
+
     // "master"/"direct" agents pull orders from medicloud, "slave" pulls from "master" 
     // while pulling data the agent/master/slave will tell how much to pull 
-    // and what data active machine profiles currently they are having
+    // and also tells what data of active machine profiles currently they are having
     pullOrders(
         capacity: number,
         availableProfileKeys: string[],
@@ -50,6 +61,7 @@ export class SyncClient {
             },
         );
     }
+
 
     // after data pulling from the "host", & storing data into "syncOrderInbox", send acknowledgment to the "host" with "accepted"/"rejected" orders 
     acknowledgeOrders(
@@ -76,7 +88,8 @@ export class SyncClient {
         );
     }
 
-    // report the "host" about the "failed" order
+
+    // report the "host" about the "failed"/"processing" orders
     reportStatus(
         updates: Array<{
             dispatchId: string;
@@ -93,6 +106,7 @@ export class SyncClient {
             },
         );
     }
+
 
     // this will upload results batch to upstream (master,medicloud)
     uploadResults(
@@ -111,8 +125,6 @@ export class SyncClient {
     }
 
 
-
-
     // private helpers
     private get auth(): SyncAuthHeaders {
         return {
@@ -122,7 +134,6 @@ export class SyncClient {
             headerPrefix: this.headerPrefix,
         };
     }
-
 }
 
 

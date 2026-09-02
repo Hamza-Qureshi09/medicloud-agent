@@ -8,7 +8,50 @@ import {
     JITTER_MS,
 } from "../lib/constants.ts";
 import type { SyncClient } from "../flow/sync/client.ts";
-import type { PulledOrder, ResultUploadItem } from "../types.ts";
+import type { PulledOrder, ResultUploadItem, UploadAnalyte } from "../types.ts";
+
+
+/**
+ * The SDK's analyte, read structurally so this file does not depend on the
+ * exact driver types and keeps compiling across SDK revisions.
+ */
+type SdkAnalyte = Partial<Record<keyof UploadAnalyte, unknown>>;
+
+/** Optional string field, dropped entirely when the driver did not set it. */
+function text(value: unknown): string | undefined {
+    if (value === undefined || value === null || value === "") return undefined;
+    return String(value);
+}
+
+/**
+ * Projects one SDK analyte onto the wire shape MediCloud accepts.
+ *
+ * Upstream validates against a closed schema, so this whitelist is what keeps a
+ * new SDK field from breaking every upload.
+ */
+function toUploadAnalyte(analyte: SdkAnalyte): UploadAnalyte {
+    const projected: UploadAnalyte = { assayNo: String(analyte.assayNo ?? "") };
+
+    const optional = [
+        "assayName",
+        "resultType",
+        "value",
+        "qualitative",
+        "unit",
+        "lowReference",
+        "highReference",
+        "abnormalFlag",
+        "status",
+        "completedAt",
+    ] as const;
+
+    for (const key of optional) {
+        const value = text(analyte[key]);
+        if (value !== undefined) projected[key] = value;
+    }
+
+    return projected;
+}
 
 
 /**
@@ -39,7 +82,7 @@ export class ResultDispatcher {
         orderId: number;
         sampleId: string;
         receivedAt: Date | string;
-        payload?: { results?: ResultUploadItem["analytes"] };
+        payload?: { results?: SdkAnalyte[] };
     }): Promise<void> {
 
         // Find the inbox row that owns this result's order.
@@ -65,7 +108,7 @@ export class ResultDispatcher {
             receivedAt: result.receivedAt instanceof Date
                 ? result.receivedAt.toISOString()
                 : String(result.receivedAt ?? now),
-            analytes: result.payload?.results ?? [],
+            analytes: (result.payload?.results ?? []).map(toUploadAnalyte),
         };
 
         // Insert into outbox only if not already there (idempotent).
@@ -160,8 +203,12 @@ export class ResultDispatcher {
         if (this.running) return;
         this.running = true;
 
+        // Declared outside the try so the catch penalises exactly the rows this
+        // attempt actually carried, and nothing else.
+        let deliverable: Array<typeof medicloudResultDispatch.$inferSelect> = [];
+
         try {
-            const rows = await db
+            deliverable = await db
                 .select()
                 .from(medicloudResultDispatch)
                 .where(and(
@@ -173,7 +220,6 @@ export class ResultDispatcher {
                 ))
                 .limit(RESULT_UPLOAD_BATCH_SIZE);
 
-            const deliverable = rows;
             if (deliverable.length === 0) return;
 
             const batchId = crypto.randomUUID()
@@ -209,44 +255,90 @@ export class ResultDispatcher {
             }
 
             // Handle upstream rejections.
+            const giveUp: Array<{ dispatchId: string; message: string }> = [];
             for (const rejection of response.rejected) {
                 const row = deliverable.find((r) => r.idempotencyKey === rejection.idempotencyKey);
                 if (!row) continue;
                 const nextRetryCount = row.retryCount + 1;
                 const finalStatus = (!rejection.retryable || nextRetryCount >= RESULT_MAX_RETRY_ATTEMPTS) ? 3 : 2;
+                const message = `${rejection.code}: ${rejection.message}`;
                 await db
                     .update(medicloudResultDispatch)
                     .set({
                         deliveryStatus: finalStatus,
-                        errorText: `${rejection.code}: ${rejection.message}`,
+                        errorText: message,
                         retryCount: nextRetryCount,
                     })
                     .where(eq(medicloudResultDispatch.id, row.id));
+
+                if (finalStatus === 3) {
+                    giveUp.push({ dispatchId: row.medicloudDispatchId, message });
+                }
             }
+            await this.abandon(giveUp);
 
         } catch (error) {
-            // Network/upstream failure — increment retry count on all pending rows.
+            // Network/upstream failure — penalise only the rows this attempt carried.
             const message = error instanceof Error ? error.message : String(error);
-            const pending = await db
-                .select()
-                .from(medicloudResultDispatch)
-                .where(or(
-                    eq(medicloudResultDispatch.deliveryStatus, 0),
-                    eq(medicloudResultDispatch.deliveryStatus, 2),
-                ))
-                .limit(RESULT_UPLOAD_BATCH_SIZE);
+            const giveUp: Array<{ dispatchId: string; message: string }> = [];
 
-            for (const row of pending) {
+            for (const row of deliverable) {
                 const nextRetryCount = row.retryCount + 1;
                 const finalStatus = nextRetryCount >= RESULT_MAX_RETRY_ATTEMPTS ? 3 : 2;
                 await db
                     .update(medicloudResultDispatch)
                     .set({ deliveryStatus: finalStatus, errorText: message, retryCount: nextRetryCount })
                     .where(eq(medicloudResultDispatch.id, row.id));
+
+                if (finalStatus === 3) {
+                    giveUp.push({ dispatchId: row.medicloudDispatchId, message });
+                }
             }
+
+            // Best-effort: upstream is already unreachable, so this usually
+            // fails too and the next cycle re-reports.
+            await this.abandon(giveUp);
             throw error;
         } finally {
             this.running = false;
+        }
+    }
+
+
+    /**
+     * Closes out results we will never deliver.
+     *
+     * Without this a permanently failed result leaves its inbox row stuck at
+     * "processing" and leaves MediCloud's dispatch waiting forever with no
+     * indication that the lab is no longer trying.
+     */
+    private async abandon(
+        failures: Array<{ dispatchId: string; message: string }>,
+    ): Promise<void> {
+        if (failures.length === 0) return;
+
+        const now = new Date().toISOString();
+        for (const failure of failures) {
+            await db
+                .update(syncOrderInbox)
+                .set({
+                    status: "failed",
+                    errorText: `Result delivery abandoned: ${failure.message}`,
+                    updatedAt: now,
+                })
+                .where(eq(syncOrderInbox.dispatchId, failure.dispatchId));
+        }
+
+        try {
+            await this.syncClient.reportStatus(
+                failures.map((failure) => ({
+                    dispatchId: failure.dispatchId,
+                    status: "failed" as const,
+                    message: `Result delivery abandoned: ${failure.message}`,
+                })),
+            );
+        } catch (error) {
+            console.error("[ResultDispatcher] Failed to report abandoned results upstream:", error);
         }
     }
 }

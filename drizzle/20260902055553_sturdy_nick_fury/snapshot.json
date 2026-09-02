@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "72021d0d-3b1a-4bac-b87b-a4cfc8862a97",
+  "id": "1084223b-9c04-439e-956f-6cc3d3cfcb48",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -180,7 +180,7 @@
     },
     {
       "type": "text",
-      "notNull": true,
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -190,7 +190,7 @@
     },
     {
       "type": "integer",
-      "notNull": true,
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -454,6 +454,24 @@
       "name": "syncOrderInbox_pk",
       "table": "syncOrderInbox",
       "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "deliveryStatus",
+          "isExpression": false
+        },
+        {
+          "value": "retryCount",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_result_dispatch_delivery",
+      "entityType": "indexes",
+      "table": "medicloudResultDispatch"
     },
     {
       "columns": [

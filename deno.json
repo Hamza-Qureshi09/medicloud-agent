@@ -3,7 +3,6 @@
     "dev": "deno run --watch-hmr -A main.ts",
     "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate"
   },
-  "nodeModulesDir": "auto",
   "imports": {
     "@hono/hono": "jsr:@hono/hono@^4.12.32",
     "@libsql/client": "npm:@libsql/client@^0.17.4",
@@ -13,5 +12,6 @@
     "@mediCloud/sdk/registry": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts",
     "drizzle-kit": "npm:drizzle-kit@1.0.0-rc.4",
     "drizzle-orm": "npm:drizzle-orm@1.0.0-rc.4"
-  }
+  },
+  "nodeModulesDir": "auto"
 }
