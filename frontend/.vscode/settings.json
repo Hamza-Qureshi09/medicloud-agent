@@ -1,7 +1,0 @@
-{
-  "deno.enable": false,
-  "editor.links": true,
-  "editor.multiCursorModifier": "alt",
-  "typescript.validate.enable": true,
-  "javascript.validate.enable": true
-}

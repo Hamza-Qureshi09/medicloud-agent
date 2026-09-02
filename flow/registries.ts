@@ -27,16 +27,16 @@ export async function AgentRegistries(instanceId: string): Promise<AgentRegistri
     // SlaveRegistry is only needed on "master" to track connected slaves.
     const slaveRegistry = env.AGENT_MODE === "master" ? new SlaveRegistry() : null;
 
-    // "slave" talks to "master"; "direct" and "master" talk to MediCloud.
+    // "slave" talks to "master", "direct" and "master" talk to MediCloud.
     const syncClient = env.AGENT_MODE === "slave"
         ? await createSlaveSyncClient(instanceId)
         : createMedicloudSyncClient(instanceId);
 
     /**
      * What capabilities to report depends on the agent's mode:
-     *   slave  → report only LOCAL machines to the master ("here is what I can handle")
-     *   direct → report only LOCAL machines to MediCloud  ("here is what this agent can handle")
-     *   master → report LOCAL + all active SLAVE machines to MediCloud ("here is everything in this lab")
+     *   slave  -> report only LOCAL machines to the master ("here is what I can handle")
+     *   direct -> report only LOCAL machines to MediCloud  ("here is what this agent can handle")
+     *   master -> report LOCAL + all active SLAVE machines to MediCloud ("here is everything in this lab")
      */
     const getCapabilities = env.AGENT_MODE === "master"
         ? () => getUpstreamCapabilities(slaveRegistry)

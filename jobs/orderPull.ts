@@ -73,7 +73,10 @@ export class OrderPullWorker {
         let nextDelay = this.orderPullIntervalMs;
 
         try {
-            // Resume any stuck acknowledged orders before asking for new ones.
+            // Re-acknowledge orders whose ack never landed, then resume any
+            // acknowledged orders still waiting on the machine, before asking
+            // upstream for more work.
+            await this.reacknowledgeStoredOrders();
             await this.resumeStoredOrders();
 
             // before fetching new orders batch check how much capacity is avilable to fetch 
@@ -198,6 +201,14 @@ export class OrderPullWorker {
                     createdAt: now,
                     updatedAt: now,
                 });
+            } else {
+                // Already stored - upstream re-leased it after our previous ack
+                // was lost. Adopt the new lease so a later re-ack uses a lease
+                // upstream still recognises.
+                await db
+                    .update(syncOrderInbox)
+                    .set({ leaseId, updatedAt: now })
+                    .where(eq(syncOrderInbox.dispatchId, order.dispatchId));
             }
 
             accepted.push({ dispatchId: order.dispatchId });
@@ -213,6 +224,68 @@ export class OrderPullWorker {
                 .update(syncOrderInbox)
                 .set({ status: "acknowledged", acknowledgedAt, updatedAt: acknowledgedAt })
                 .where(eq(syncOrderInbox.dispatchId, dispatchId));
+        }
+    }
+
+
+    /**
+     * Re-acknowledges orders that were stored but whose ack never reached
+     * upstream (network drop mid-cycle).
+     *
+     * Without this they sit at "received" forever: resumeStoredOrders() only
+     * looks at "acknowledged" rows, while "received" still counts as in-flight,
+     * so every lost ack permanently shrinks this agent's pull capacity until it
+     * reaches zero and stops accepting work altogether.
+     */
+    private async reacknowledgeStoredOrders(): Promise<void> {
+
+        const stuckRows = await db
+            .select()
+            .from(syncOrderInbox)
+            .where(eq(syncOrderInbox.status, "received"));
+
+        if (stuckRows.length === 0) return;
+
+        // Upstream validates the ack against the lease it issued, so replay one
+        // ack per lease rather than lumping every stuck row into one call.
+        const byLease = new Map<string, string[]>();
+        for (const row of stuckRows) {
+            byLease.set(row.leaseId, [...(byLease.get(row.leaseId) ?? []), row.dispatchId]);
+        }
+
+        for (const [leaseId, dispatchIds] of byLease) {
+            try {
+                const ackResult = await this.syncClient.acknowledgeOrders(
+                    leaseId,
+                    dispatchIds.map((dispatchId) => ({ dispatchId })), // accepted
+                    [], // rejected
+                );
+
+                const now = new Date().toISOString();
+                for (const dispatchId of ackResult.acknowledged) {
+                    await db
+                        .update(syncOrderInbox)
+                        .set({ status: "acknowledged", acknowledgedAt: now, updatedAt: now })
+                        .where(eq(syncOrderInbox.dispatchId, dispatchId));
+                }
+
+                // Upstream no longer recognises our lease - it has expired and
+                // been handed on. Release the row so it stops consuming capacity,
+                // the next pull that re-leases it will revive this same record.
+                for (const dispatchId of ackResult.conflicts) {
+                    await db
+                        .update(syncOrderInbox)
+                        .set({
+                            status: "failed",
+                            errorText: "Lease no longer valid on upstream, awaiting re-lease",
+                            updatedAt: now,
+                        })
+                        .where(eq(syncOrderInbox.dispatchId, dispatchId));
+                }
+            } catch (error) {
+                // Still unreachable - leave the rows alone and try again next cycle.
+                console.error(`[OrderPullWorker] Re-ack failed for lease ${leaseId}:`, error);
+            }
         }
     }
 
@@ -234,7 +307,7 @@ export class OrderPullWorker {
         for (const row of pendingRows) {
             const order = JSON.parse(row.payloadJson) as PulledOrder;
 
-            // Use the DB column — MediCloud never sets targetSlaveId in the payload,
+            // Use the DB column - MediCloud never sets targetSlaveId in the payload,
             // so order.targetSlaveId would always be undefined even for slave orders.
             if (row.targetSlaveId) continue;
 
@@ -289,7 +362,7 @@ export class OrderPullWorker {
             await this.syncClient.reportStatus([{ dispatchId, status: "processing" }]);
         } catch (error) {
             console.error(`[OrderPullWorker] Failed to report processing status for ${dispatchId}:`, error);
-            // Do not mark the order as failed — the machine is already processing it.
+            // Do not mark the order as failed - the machine is already processing it.
         }
     }
 

@@ -10,8 +10,8 @@ import type { SyncMachineCapability } from "../types.ts";
  *   - All machine capabilities this agent is responsible for
  *
  * Mode behaviour:
- *   - "direct" / "master" → reports to MediCloud.
- *   - "slave"             → reports to master (not MediCloud).
+ *   - "direct" / "master" -> reports to MediCloud.
+ *   - "slave"             -> reports to master (not MediCloud).
  *
  * Failures are logged but do not stop the loop.
  */

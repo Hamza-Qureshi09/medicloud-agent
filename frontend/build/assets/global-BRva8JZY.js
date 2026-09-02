@@ -1,1 +1,0 @@
-function e({page:e,rows:t,total:n,estimate:r=!1}){return r?t<20?e:e+1:Math.max(1,Math.ceil(n/20))}export{e as t};

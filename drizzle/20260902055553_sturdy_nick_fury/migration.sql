@@ -18,8 +18,8 @@ CREATE TABLE `slaveRegistry` (
 	`slaveId` text NOT NULL UNIQUE,
 	`instanceId` text UNIQUE,
 	`secretHash` text,
-	`host` text NOT NULL,
-	`port` integer NOT NULL,
+	`host` text,
+	`port` integer,
 	`machinesJson` text NOT NULL,
 	`lastPingAt` text NOT NULL,
 	`isActive` integer DEFAULT true NOT NULL,
@@ -48,5 +48,6 @@ CREATE TABLE `syncOrderInbox` (
 	`updatedAt` text NOT NULL
 );
 --> statement-breakpoint
+CREATE INDEX `idx_result_dispatch_delivery` ON `medicloudResultDispatch` (`deliveryStatus`,`retryCount`);--> statement-breakpoint
 CREATE INDEX `idx_sync_inbox_upstream` ON `syncOrderInbox` (`status`,`receivedAt`);--> statement-breakpoint
 CREATE INDEX `idx_sync_inbox_slave` ON `syncOrderInbox` (`targetSlaveId`,`status`,`downstreamLeaseExpiresAt`);

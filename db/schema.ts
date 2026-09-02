@@ -42,16 +42,16 @@ export const syncOrderInbox = sqliteTable(
          * Current processing state of the inbox order.
          *
          * Local order lifecycle:
-         *   received           → acknowledged → processing → completed
+         *   received           -> acknowledged -> processing -> completed
          *                                                  ↘ failed
          *
          * Slave-forwarded order lifecycle (master only):
-         *   received           → acknowledged → leased_to_slave → acknowledged_by_slave → completed
+         *   received           -> acknowledged -> leased_to_slave -> acknowledged_by_slave -> completed
          *                                                                               ↘ failed
          *
          * - received            : Order received and stored locally.
          * - acknowledged         : Receipt confirmed back to upstream (MediCloud or master).
-         * - processing           : Submitted to local machine SDK — currently being processed.
+         * - processing           : Submitted to local machine SDK - currently being processed.
          * - leased_to_slave      : Leased to a slave agent, awaiting slave acknowledgment.
          * - acknowledged_by_slave: Slave confirmed receipt and is now processing the order.
          * - completed            : Result delivered to upstream successfully.
@@ -134,10 +134,10 @@ export const medicloudResultDispatch = sqliteTable(
 
         /**
         * Current delivery state.
-        * - 0 : Pending — not yet attempted.
-        * - 1 : Delivered — successfully accepted by upstream.
-        * - 2 : Retryable failure — upstream rejected with a transient error.
-        * - 3 : Permanent failure — max retries exceeded or upstream rejected permanently.
+        * - 0 : Pending - not yet attempted.
+        * - 1 : Delivered - successfully accepted by upstream.
+        * - 2 : Retryable failure - upstream rejected with a transient error.
+        * - 3 : Permanent failure - max retries exceeded or upstream rejected permanently.
         */
         deliveryStatus: int().notNull().default(0),
 
@@ -152,7 +152,13 @@ export const medicloudResultDispatch = sqliteTable(
 
         // Time when this result dispatch record was created.
         createdAt: text().notNull(),
-    },
+    }, (table) => [
+        // Drives the flush query: pending/retryable rows still under the cap.
+        index("idx_result_dispatch_delivery").on(
+            table.deliveryStatus,
+            table.retryCount,
+        ),
+    ]
 )
 
 
@@ -176,11 +182,13 @@ export const slaveRegistry = sqliteTable(
         // Hash of the secret used to authenticate communication with this slave.
         secretHash: text(),
 
-        // Hostname or IP address used by the master to communicate with the slave.
-        host: text().notNull(),
+        // Where the slave can be reached, recorded for operator visibility only.
+        // Nullable because slaves always call the master (pull model), so the
+        // master never dials back and slaves do not report an address.
+        host: text(),
 
         // Network port on which the slave agent is listening.
-        port: int().notNull(),
+        port: int(),
 
         // Slave's available machines/capabilities stored as serialized JSON.
         machinesJson: text().notNull(),
