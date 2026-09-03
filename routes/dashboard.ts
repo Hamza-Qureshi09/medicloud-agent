@@ -4,6 +4,7 @@ import { env } from "../lib/env.ts";
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from "../lib/constants.ts";
 import type { SlaveRegistry } from "../flow/master/slaveRegistry.ts";
 import { fetchMachineHealth } from "../lib/endpoints.ts";
+import { listExternalOrders, listExternalResults } from "../db/quries/external.ts";
 
 
 /** Reads the search/status/limit/offset query shared by both external lists. */

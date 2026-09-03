@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --watch-hmr -A main.ts",
+    "dev": "deno run --watch-hmr --sloppy-imports -A main.ts",
     "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate"
   },
   "imports": {
