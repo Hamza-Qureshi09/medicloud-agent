@@ -23,6 +23,11 @@ import { ExternalOrders } from "./externalOrders";
 
 const TABS = ["machine", "external"] as const;
 const SEARCH_KEYS = { machine: "sampleId", external: "search" } as const;
+// swrConfig default.
+const ORDERS_SWR_OPTIONS = {
+    revalidateOnFocus: false,
+    refreshInterval: 10_000,
+} as const;
 
 const machineStatuses: { value: string; label: string }[] = [
     { value: "all", label: "All statuses" },
@@ -65,10 +70,12 @@ export function OrdersPage() {
     const machineOrders = useSWR(
         isMachine ? api.orders.listKey(orderQuery) : null,
         () => api.orders.list(orderQuery),
+        ORDERS_SWR_OPTIONS,
     );
     const orderCount = useSWR(
         isMachine ? api.orders.countKey : null,
         () => api.orders.count(),
+        ORDERS_SWR_OPTIONS,
     );
 
     const externalQuery = React.useMemo(() => ({
@@ -81,6 +88,7 @@ export function OrdersPage() {
     const externalOrders = useSWR(
         isMachine ? null : api.externalOrders.listKey(externalQuery),
         () => api.externalOrders.list(externalQuery),
+        ORDERS_SWR_OPTIONS,
     );
 
     const refresh = React.useCallback(async () => {

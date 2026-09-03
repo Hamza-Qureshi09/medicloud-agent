@@ -194,13 +194,15 @@ export interface AgentHealthyResponse {
 export interface SlaveRecord {
   id: number
   slaveId: string
-  instanceId: string
-  host: string
-  port: number
+  instanceId: string | null
+  host: string | null
+  port: number | null
   machinesJson: string
+  machineCount: number
   lastPingAt: string
   isActive: boolean
   createdAt: string
+  updatedAt: string
 }
 // external order (syncOrderInbox) types
 // The DB column is plain text with no constraint, so consumers must tolerate

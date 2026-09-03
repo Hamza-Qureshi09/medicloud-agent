@@ -4,7 +4,7 @@ import { env } from "../lib/env.ts";
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from "../lib/constants.ts";
 import type { SlaveRegistry } from "../flow/master/slaveRegistry.ts";
 import { fetchMachineHealth } from "../lib/endpoints.ts";
-import { listExternalOrders, listExternalResults } from "../db/quries/external.ts";
+import { listExternalOrders, listExternalResults } from "../db/queries/external.ts";
 
 
 /** Reads the search/status/limit/offset query shared by both external lists. */
@@ -53,13 +53,23 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         });
     });
 
-    // List all registered slaves (master mode only)
+    // List all registered slaves (master mode only).
+    // Machine totals are derived here so the dashboard never has to parse or
+    // count `machinesJson` itself.
     app.get("/slaves", async (c) => {
         if (!slaveRegistry) {
-            return c.json({ slaves: [] });
+            return c.json({ slaves: [], totalMachines: 0 });
         }
+
         const slaves = await slaveRegistry.listActive();
-        return c.json({ slaves });
+
+        return c.json({
+            slaves,
+            totalMachines: slaves.reduce(
+                (total, slave) => total + slave.machineCount,
+                0,
+            ),
+        });
     });
 
     // Mark a slave as inactive

@@ -39,3 +39,18 @@ export const RESULT_RETRY_INTERVAL_MS = 10_000;
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
+
+
+/** Lifecycle states a `syncOrderInbox` row can hold. Mirrors the status doc in schema.ts. */
+export const EXTERNAL_ORDER_STATUSES = [
+    "received",
+    "acknowledged",
+    "processing",
+    "leased_to_slave",
+    "acknowledged_by_slave",
+    "completed",
+    "failed",
+] as const;
+
+/** Delivery states a `medicloudResultDispatch` row can hold. */
+export const RESULT_DELIVERY_STATUSES = [0, 1, 2, 3] as const;

@@ -40,7 +40,7 @@ export interface StatisticQuery extends Query {
 export const api = {
      agent: {
         slavesKey: "agent.slaves",
-        slaves: () => request<{ slaves: SlaveRecord[] }>("/slaves"),
+        slaves: () => request<{ slaves: SlaveRecord[]; totalMachines: number }>("/slaves"),
         markInactive: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/inactive`, { method: "POST" }),
     },
 
