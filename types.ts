@@ -149,3 +149,16 @@ export interface ResultUploadResponse {
         message: string;
     }>;
 }
+
+export interface ListQuery {
+    search?: string;
+    status?: string;
+    limit: number;
+    offset: number;
+}
+
+export interface ListPage<T> {
+    rows: T[];
+    count: number;
+}
+

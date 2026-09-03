@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, count, eq, gt, sql } from "drizzle-orm";
 import { db } from "../../db/index.ts";
 import { slaveRegistry } from "../../db/schema.ts";
 import type { SyncMachineCapability } from "../../types.ts";
@@ -77,13 +77,36 @@ export class SlaveRegistry {
             .where(eq(slaveRegistry.isActive, true));
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
     }
+    
+    async countMachines(): Promise<number> {
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
+
+        const [totals] = await db
+            .select({ total: count() })
+            .from(sql`${slaveRegistry}, json_each(${slaveRegistry.machinesJson})`)
+            .where(and(
+                eq(slaveRegistry.isActive, true),
+                gt(slaveRegistry.lastPingAt, twoMinutesAgo),
+            ));
+
+        return totals?.total ?? 0;
+    }
 
 
-    /** Marks a slave as inactive (e.g. after a failed heartbeat or explicit disconnect). */
-    async markInactive(slaveId: string): Promise<void> {
-        await db.update(slaveRegistry)
+    /**
+     * Marks a slave as inactive (e.g. after a failed heartbeat or explicit
+     * disconnect).
+     *
+     * Returns false when no row matches `slaveId`, so callers can tell an
+     * unknown slave apart from one that was actually updated.
+     */
+    async markInactive(slaveId: string): Promise<boolean> {
+        const updated = await db.update(slaveRegistry)
             .set({ isActive: false, updatedAt: new Date().toISOString() })
-            .where(eq(slaveRegistry.slaveId, slaveId));
+            .where(eq(slaveRegistry.slaveId, slaveId))
+            .returning({ slaveId: slaveRegistry.slaveId });
+
+        return updated.length > 0;
     }
 
     // private helpers

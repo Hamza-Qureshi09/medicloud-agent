@@ -6,6 +6,7 @@ import { AgentRegistries } from "./flow/registries.ts";
 import { registerDashboardRoutes } from "./routes/dashboard.ts";
 import { registerSlaveSyncRoutes } from "./routes/slaveSync.ts";
 import { initDB } from "./db/index.ts";
+import { cors } from "@hono/hono/cors";
 
 const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
@@ -61,6 +62,7 @@ if (import.meta.main) {
 
   // 5. HTTP server - agent routes + optional slave-sync routes + machine SDK passthrough
   const app = new Hono();
+  app.use("*", cors())
 
   // dashboard routes
   registerDashboardRoutes(app, slaveRegistry!);
@@ -69,7 +71,7 @@ if (import.meta.main) {
   if (slaveRegistry) {
     registerSlaveSyncRoutes(app, slaveRegistry, syncClient, resultDispatcher);
   }
-
+  
   // all unmatched requests go directly to the Machine SDK HTTP handler
   app.all("*", async (context) => await machineHandler(context.req.raw));
 

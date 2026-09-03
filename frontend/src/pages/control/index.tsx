@@ -1,4 +1,3 @@
-import React from "react";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import { ResourceEmpty } from "@/components/common/resourceState";
@@ -13,6 +12,7 @@ import { ConfirmAction } from "@/components/common/confirmAction";
 import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
 import { Button } from "@/components/ui/button";
 import { StopIcon } from "@phosphor-icons/react";
+import type { SlaveRecord } from "../../types/api.ts";
 
 
 export function ControlPage() {
@@ -22,22 +22,13 @@ export function ControlPage() {
     });
     
     // Get slaves from API
-    const slaves = data?.slaves || [];
+    const slaves = data?.slaves as SlaveRecord[] || [];
 
     const totalSlaves = slaves.length;
     const activeSlaves = slaves.filter(s => s.isActive).length;
-    
-    // Calculate total machines across all slaves
-    const totalMachines = React.useMemo(() => {
-        return slaves.reduce((acc, slave) => {
-            try {
-                const machines = JSON.parse(slave.machinesJson);
-                return acc + machines.length;
-            } catch {
-                return acc;
-            }
-        }, 0);
-    }, [slaves]);
+
+    // Machine totals are computed by the agent, not derived here.
+    const totalMachines = data?.totalMachines ?? 0;
 
     // Early returns must be after all hooks!
     if (!data && !error) return <PageLoading />;
