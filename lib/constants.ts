@@ -35,3 +35,7 @@ export const RESULT_MAX_RETRY_ATTEMPTS = 20;
 
 // How long to wait between result flush cycles.
 export const RESULT_RETRY_INTERVAL_MS = 10_000;
+
+
+export const DEFAULT_PAGE_SIZE = 20;
+export const MAX_PAGE_SIZE = 100;

@@ -1,6 +1,6 @@
 import { env } from "./env.ts";
 import { ApiError } from "./error.ts";
-import type { RunningMachineView } from "@mediCloud/sdk/registry";
+import type { MachineDriverView, RunningMachineView } from "@mediCloud/sdk/registry";
 import {
     CatalogTest,
     PullResponse,
@@ -31,8 +31,14 @@ export async function fetchMachineProfiles(): Promise<TMachineProfile[]> {
     return data.profiles;
 }
 
+type MachineHealthResponse = {
+    registered_drivers: MachineDriverView[];
+    running_machines: RunningMachineView[]
+
+};
+
 /** Fetches the health "/health" running-machine list from the local SDK. */
-export async function fetchMachineHealth(): Promise<RunningMachineView[]> {
+export async function fetchMachineHealth(): Promise<MachineHealthResponse> {
     const response = await fetch(`${AGENT_URL}/health`);
     if (!response.ok) {
         throw new ApiError(
@@ -40,8 +46,8 @@ export async function fetchMachineHealth(): Promise<RunningMachineView[]> {
             response.status,
         );
     }
-    const data = await response.json() as { running_machines: RunningMachineView[] };
-    return data.running_machines;
+    const data = await response.json() as MachineHealthResponse;
+    return data;
 }
 
 /**
