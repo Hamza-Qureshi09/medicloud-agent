@@ -32,30 +32,52 @@ export type TMachineProfile = {
 }
 
 
+// one analyte a test answers with, keyed by the assayNo the driver reports
+export interface CatalogAnalyte {
+    code: string;
+    name: string;
+    unit?: string;
+}
+
+// a single orderable test as advertised by the machine SDK's /catalogs route
+export interface CatalogTest {
+    code: string;
+    name: string;
+
+    // will be Absent on SDK builds older than the analyte-aware catalog.
+    analytes?: CatalogAnalyte[];
+}
+
 // synchronize machine capabilities after (profile/machine) data merge
 export interface SyncMachineCapability {
     profileKey: string;
     localProfileId: number;
     driverId: string;
     name: string;
-    catalogTests: string[];
     running: boolean;
     connected: boolean;
     isSlaveOwned: boolean;
     slaveId?: string;
+    catalogTests: string[];
+
+    // Per-test analyte breakdown, reported alongside the flat catalogTests list
+    // so MediCloud can offer assayNo choices when a dispatch is built. Only the
+    // tests whose results/analytes the SDK actually knows appear here.
+    catalog?: Array<{ testCode: string; analytes: CatalogAnalyte[] }>;
 }
+
 export type TSlaveSyncRegisterPayload = {
     instanceId: string,
     machines: SyncMachineCapability[]
 }
 
-export type TSlavePingPayload = {
-    serverTime: string;
-    heartbeatAfterMs: number;
-    pullAfterMs: number;
-    maxOrderBatchSize: number;
-    maxResultBatchSize: number;
-}
+// export type TSlavePingPayload = {
+//     serverTime: string;
+//     heartbeatAfterMs: number;
+//     pullAfterMs: number;
+//     maxOrderBatchSize: number;
+//     maxResultBatchSize: number;
+// }
 
 export interface PulledOrder {
     dispatchId: string;
@@ -76,7 +98,7 @@ export interface PullResponse {
     orders: PulledOrder[];
 }
 
-
+// used in "client.ts"
 export type SyncAuthHeaders = {
     clientId: string;
     secret: string;
@@ -92,15 +114,29 @@ export interface ResultUploadItem {
     localResultId: number;
     sampleId: string;
     receivedAt: string;
-    analytes: Array<{
-        assayNo: string;
-        value?: string;
-        qualitative?: string;
-        unit?: string;
-        lowReference?: string;
-        highReference?: string;
-        abnormalFlag?: string;
-    }>;
+    analytes: UploadAnalyte[];
+}
+
+/**
+ * The analyte shape sent upstream.
+ *
+ * Deliberately explicit rather than forwarding the SDK's result object as-is:
+ * MediCloud validates the batch against a closed schema and rejects any
+ * property it does not know, so an extra field appearing in a future SDK build
+ * would turn every upload into a 400 that only retries into a dead letter.
+ */
+export interface UploadAnalyte {
+    assayNo: string;
+    assayName?: string;
+    resultType?: string;
+    value?: string;
+    qualitative?: string;
+    unit?: string;
+    lowReference?: string;
+    highReference?: string;
+    abnormalFlag?: string;
+    status?: string;
+    completedAt?: string;
 }
 
 export interface ResultUploadResponse {

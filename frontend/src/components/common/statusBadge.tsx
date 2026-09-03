@@ -77,4 +77,3 @@ export function ResultDeliveryStatusBadge({ status }: { status: ResultDeliverySt
 
     return <Badge variant={variant}>{deliveryStatusLabels[status] ?? `Status ${status}`}</Badge>
 }
-

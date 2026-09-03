@@ -2,6 +2,7 @@ import { env } from "./env.ts";
 import { ApiError } from "./error.ts";
 import type { MachineDriverView, RunningMachineView } from "@mediCloud/sdk/registry";
 import {
+    CatalogTest,
     PullResponse,
     ResultUploadItem,
     ResultUploadResponse,
@@ -12,11 +13,13 @@ import {
 } from "../types.ts";
 
 
-const AGENT_URL = env.AGENT_PUBLIC_URL || `http://127.0.0.1:${env.MEDICLOUD_AGENT_HTTP_PORT}`;
-const MEDICLOUD_URL = env.MEDICLOUD_API_URL;
+
+// The machine SDK is served by this same agent/process, so it is reached over
+// loopback. AGENT_PUBLIC_URL is the outside-facing address.
+const AGENT_URL = env.AGENT_LOCAL_URL;
 
 
-// Machine SDK - raw fetch calls
+// 1. Machine SDK - raw fetch calls
 
 /** Fetches all registered machine profiles from the local SDK. */
 export async function fetchMachineProfiles(): Promise<TMachineProfile[]> {
@@ -47,10 +50,15 @@ export async function fetchMachineHealth(): Promise<MachineHealthResponse> {
     return data;
 }
 
-/** Fetches the test catalog supported by a specific driver. */
+/**
+ * Fetches the test catalog supported by a specific driver.
+ *
+ * Each entry carries the analytes ("assayNo" values) the test answers with,
+ * which MediCloud needs to offer result mappings at dispatch time.
+ */
 export async function fetchDriverCatalog(
     driverId: string,
-): Promise<Array<{ code: string; name: string }>> {
+): Promise<CatalogTest[]> {
     const response = await fetch(
         `${AGENT_URL}/catalogs?driver=${encodeURIComponent(driverId)}`,
     );
@@ -60,7 +68,7 @@ export async function fetchDriverCatalog(
             response.status,
         );
     }
-    const data = await response.json() as { tests?: Array<{ code: string; name: string }> };
+    const data = await response.json() as { tests?: CatalogTest[] };
     return data.tests ?? [];
 }
 
@@ -91,6 +99,9 @@ export async function postMachineOrder(order: {
     return data.order.id;
 }
 
+
+
+// 2. Agent/Medicloud related calls
 
 /**
  * Register a slave with the master.
@@ -162,6 +173,7 @@ async function syncRequest<T>(
     return (data?.data ?? data) as T;
 }
 
+
 // "slave"/"master"/"direct" use this to ping to their host with available data (machines)
 export const sync_heartbeat = (
     baseUrl: string,
@@ -169,8 +181,8 @@ export const sync_heartbeat = (
     auth: SyncAuthHeaders,
     payload: {
         mode: "direct" | "master" | "slave";
-        // protocolVersion: string;
-        // softwareVersion: string;
+        protocolVersion: string;
+        softwareVersion?: string;
         machines: SyncMachineCapability[];
     },
 ) => {
@@ -191,7 +203,7 @@ export const sync_heartbeat = (
 
 // "master"/"direct" agents pull orders from medicloud, "slave" pulls from "master" 
 // while pulling data the agent/master/slave will tell how much to pull 
-// and what data active machine profiles currently they are having
+// and also tells what data of active machine profiles currently they are having
 export const sync_pull_orders = (
     baseUrl: string,
     apiPrefix: string,
@@ -283,7 +295,3 @@ export const sync_upload_results = (
         auth,
     );
 };
-
-
-
-

@@ -1,4 +1,9 @@
 
+
+export const AGENT_PROTOCOL_VERSION = "1.0"
+export const AGENT_SOFTWARE_VERSION = "1.0.0"
+
+
 // How quickly to pull again right after a batch of orders was received.
 export const ON_ORDERS_RECEIVED_DELAY_MS = 250;
 
@@ -12,7 +17,7 @@ export const JITTER_MS = 2_000; // 2sec delay
 // Actual capacity sent to upstream is dynamic: MAX_CAPACITY - currently_in_flight_orders.
 export const MAX_CAPACITY = 50;
 
-// Statuses that count as "in-flight" — order is in agent's care, no result yet.
+// Statuses that count as "in-flight" - order is in agent's care, no result yet.
 // Includes slave-owned statuses so master capacity accounting stays correct.
 export const IN_FLIGHT_STATUSES = [
     "received",
@@ -30,6 +35,7 @@ export const RESULT_MAX_RETRY_ATTEMPTS = 20;
 
 // How long to wait between result flush cycles.
 export const RESULT_RETRY_INTERVAL_MS = 10_000;
+
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;

@@ -2,7 +2,6 @@ import { fetchDriverCatalog, fetchMachineHealth, fetchMachineProfiles } from "..
 import type { SlaveRegistry } from "../master/slaveRegistry.ts";
 import type { SyncMachineCapability } from "../../types.ts";
 
-
 /**
  * List of machine capabilities this agent can handle locally.
  *
@@ -31,12 +30,22 @@ export async function getLocalMachineCapabilities(): Promise<SyncMachineCapabili
             // Fetch the tests this driver supports.
             const catalogTests = await fetchDriverCatalog(profile.driverId);
 
+            // Only carry tests whose analytes this SDK build actually knows —
+            // an empty list upstream would read as "answers with nothing".
+            const catalog = catalogTests
+                .filter((test) => test.analytes?.length)
+                .map((test) => ({
+                    testCode: test.code,
+                    analytes: test.analytes as NonNullable<typeof test.analytes>,
+                }));
+
             return {
                 profileKey: `${profile.driverId}:${profile.id}`,
                 localProfileId: profile.id,
                 driverId: profile.driverId,
                 name: profile.name ?? `${profile.driverId} #${profile.id}`,
                 catalogTests: catalogTests.map((test) => test.code),
+                ...(catalog.length ? { catalog } : {}),
                 running: active?.machine.running ?? false,
                 connected: active?.machine.connected ?? false,
                 isSlaveOwned: false,
@@ -83,6 +92,7 @@ export async function getUpstreamCapabilities(
 
         return machines.map((machine) => ({
             ...machine,
+
             // namespace the profileKey so master can identify which slave owns it
             profileKey: `slave:${slave.slaveId}:${machine.profileKey}`,
             isSlaveOwned: true,

@@ -1,6 +1,5 @@
-import { Hono, type Context } from "@hono/hono";
+import { Context, Hono } from "@hono/hono";
 import { serveStatic } from "@hono/hono/deno";
-import { listExternalOrders, listExternalResults } from "../db/queries/external.ts";
 import { env } from "../lib/env.ts";
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from "../lib/constants.ts";
 import type { SlaveRegistry } from "../flow/master/slaveRegistry.ts";
