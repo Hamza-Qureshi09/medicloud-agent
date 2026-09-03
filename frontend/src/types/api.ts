@@ -198,7 +198,6 @@ export interface SlaveRecord {
   host: string | null
   port: number | null
   machinesJson: string
-  machineCount: number
   lastPingAt: string
   isActive: boolean
   createdAt: string

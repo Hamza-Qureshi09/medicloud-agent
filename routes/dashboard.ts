@@ -54,22 +54,18 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
     });
 
     // List all registered slaves (master mode only).
-    // Machine totals are derived here so the dashboard never has to parse or
-    // count `machinesJson` itself.
+    // The machine total is counted in the database, not derived in the dashboard.
     app.get("/slaves", async (c) => {
         if (!slaveRegistry) {
             return c.json({ slaves: [], totalMachines: 0 });
         }
 
-        const slaves = await slaveRegistry.listActive();
+        const [slaves, totalMachines] = await Promise.all([
+            slaveRegistry.listActive(),
+            slaveRegistry.countMachines(),
+        ]);
 
-        return c.json({
-            slaves,
-            totalMachines: slaves.reduce(
-                (total, slave) => total + slave.machineCount,
-                0,
-            ),
-        });
+        return c.json({ slaves, totalMachines });
     });
 
     // Mark a slave as inactive

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, count, eq, gt, sql } from "drizzle-orm";
 import { db } from "../../db/index.ts";
 import { slaveRegistry } from "../../db/schema.ts";
 import type { SyncMachineCapability } from "../../types.ts";
@@ -73,26 +73,23 @@ export class SlaveRegistry {
     /** Returns all slaves that have pinged within the last 2 minutes. */
     async listActive() {
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
-        const all = await db.select({
-            id: slaveRegistry.id,
-            slaveId: slaveRegistry.slaveId,
-            instanceId: slaveRegistry.instanceId,
-            host: slaveRegistry.host,
-            port: slaveRegistry.port,
-            machinesJson: slaveRegistry.machinesJson,
-            lastPingAt: slaveRegistry.lastPingAt,
-            isActive: slaveRegistry.isActive,
-            createdAt: slaveRegistry.createdAt,
-            updatedAt: slaveRegistry.updatedAt,
-
-            // Sized in SQL so no caller parses machinesJson just to count it.
-            // json_valid guards the query against a malformed stored value.
-            machineCount: sql<number>`case when json_valid(${slaveRegistry.machinesJson}) then json_array_length(${slaveRegistry.machinesJson}) else 0 end`,
-        })
-            .from(slaveRegistry)
+        const all = await db.select().from(slaveRegistry)
             .where(eq(slaveRegistry.isActive, true));
-
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
+    }
+    
+    async countMachines(): Promise<number> {
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
+
+        const [totals] = await db
+            .select({ total: count() })
+            .from(sql`${slaveRegistry}, json_each(${slaveRegistry.machinesJson})`)
+            .where(and(
+                eq(slaveRegistry.isActive, true),
+                gt(slaveRegistry.lastPingAt, twoMinutesAgo),
+            ));
+
+        return totals?.total ?? 0;
     }
 
 

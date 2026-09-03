@@ -120,7 +120,7 @@ export function ControlPage() {
                                         
                                         <div className="flex items-center">
                                             <Badge variant="outline" className="shrink-0 mt-1">
-                                                {slave.machineCount} Machine{slave.machineCount !== 1 && 's'}
+                                                {machines.length} Machine{machines.length !== 1 && 's'}
                                             </Badge>
                                         </div>
                                     </div>
