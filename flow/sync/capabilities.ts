@@ -36,6 +36,9 @@ export async function getLocalMachineCapabilities(): Promise<SyncMachineCapabili
                 .filter((test) => test.analytes?.length)
                 .map((test) => ({
                     testCode: test.code,
+                    // Human-readable test name (e.g. "Complete Blood Count
+                    // (CBC)"), so MediCloud need not show raw codes.
+                    testName: test.name,
                     analytes: test.analytes as NonNullable<typeof test.analytes>,
                 }));
 

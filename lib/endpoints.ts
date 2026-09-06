@@ -76,6 +76,8 @@ export async function fetchDriverCatalog(
 export async function postMachineOrder(order: {
     machineId: number;
     sampleId: string;
+    sampleType?: string;
+    rackPosition?: string;
     tests: string[];
     patientName: string;
     patientId: string;

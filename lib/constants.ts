@@ -31,10 +31,19 @@ export const IN_FLIGHT_STATUSES = [
 export const RESULT_UPLOAD_BATCH_SIZE = 100;
 
 // Maximum delivery attempts before a result is permanently marked as failed.
+//
+// Counts REJECTIONS only - batches upstream actually looked at and refused.
+// Connectivity failures never touch this budget: a lab whose link drops for an
+// hour must not lose results the analyzer already produced. See
+// isTransientFailure() in lib/error.ts.
 export const RESULT_MAX_RETRY_ATTEMPTS = 20;
 
 // How long to wait between result flush cycles.
 export const RESULT_RETRY_INTERVAL_MS = 10_000;
+
+// Backoff applied while upstream is unreachable, so a long outage is not
+// hammered every 10s. Capped so recovery is still detected promptly.
+export const RESULT_OFFLINE_BACKOFF_MS = 60_000;
 
 
 export const DEFAULT_PAGE_SIZE = 20;

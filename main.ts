@@ -11,33 +11,33 @@ import { cors } from "@hono/hono/cors";
 const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
 // environment checkups
-// function environmentCheckups() {
-//   // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
-//   if (
-//     (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
-//     !env.SLAVE_BOOTSTRAP_SECRET
-//   ) {
-//     throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
-//   }
+function environmentCheckups() {
+  // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
+  if (
+    (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
+    !env.SLAVE_BOOTSTRAP_SECRET
+  ) {
+    throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
+  }
 
-//   // slave mode also needs to know where the "master" lives
-//   if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
-//     throw new Error("MASTER_HOST is required in slave mode");
-//   }
+  // slave mode also needs to know where the "master" lives
+  if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
+    throw new Error("MASTER_HOST is required in slave mode");
+  }
 
-//   // "direct" and "master" modes communicate with MediCloud directly
-//   if (
-//     env.AGENT_MODE !== "slave" &&
-//     (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL)
-//   ) {
-//     throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
-//   }
-// }
+  // "direct" and "master" modes communicate with MediCloud directly
+  if (
+    env.AGENT_MODE !== "slave" &&
+    (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL)
+  ) {
+    throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
+  }
+}
 
 if (import.meta.main) {
 
-  // // 1. environment validation
-  // environmentCheckups();
+  // 1. environment validation
+  environmentCheckups();
 
   // 2. Agent db + instance identity
   await initDB();
@@ -84,10 +84,10 @@ if (import.meta.main) {
     },
   }, app.fetch);
 
-  // // 6. start background workers
-  // heartbeatWorker.start();
-  // orderPullWorker.start();
-  // resultDispatcher.startRetryLoop();
+  // 6. start background workers
+  heartbeatWorker.start();
+  orderPullWorker.start();
+  resultDispatcher.startRetryLoop();
 
   // 7. graceful shutdown
   Deno.addSignalListener("SIGINT",
