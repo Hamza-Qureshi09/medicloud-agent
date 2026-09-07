@@ -2,8 +2,6 @@
   "version": "5",
   "specifiers": {
     "jsr:@hono/hono@^4.12.32": "4.13.5",
-    "jsr:@std/assert@1": "1.0.19",
-    "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@zod/zod@^4.4.3": "4.5.4",
     "npm:@libsql/client@~0.17.4": "0.17.4",
     "npm:drizzle-kit@1.0.0-rc.4": "1.0.0-rc.4",
@@ -12,15 +10,6 @@
   "jsr": {
     "@hono/hono@4.13.5": {
       "integrity": "b5b10f340820d14d69add622452e88722d7e99e05e30cdeafcb90133fc752126"
-    },
-    "@std/assert@1.0.19": {
-      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
-      "dependencies": [
-        "jsr:@std/internal"
-      ]
-    },
-    "@std/internal@1.0.14": {
-      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
     "@zod/zod@4.5.4": {
       "integrity": "bf0da80e42232d5f9f485d37b5c980e0d88f07fe04b9b1f2bd9012c008404df4"
@@ -244,8 +233,8 @@
     "@neon-rs/load@0.0.4": {
       "integrity": "sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw=="
     },
-    "@types/node@26.4.0": {
-      "integrity": "sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==",
+    "@types/node@26.4.1": {
+      "integrity": "sha512-k97ENvZWtvA6yqz5/FS6a7duDgOPEeOQOc2iKS/nY6mX6qJUKtLnWzQS+Xj6tXweyj6ZcTAK2Qecetnvi9nCLA==",
       "dependencies": [
         "undici-types"
       ]
@@ -371,7 +360,7 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/results.routes.ts": "c43a324e58a36400042abeea707be127932e6d4f7a1a08fa62a24446c4efa799",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/routes.ts": "720f60fb3f9073156ac7feb832be6f9f0c5a88b4d5b74ab9e3d696d19ae6cef9",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/testStatistics.routes.ts": "eafcfe3d289ca2c594077fa14e90a953d5f18a12d406e3c0e98eca8410be9e3f",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/utils.ts": "1ae6e98f48e5bed88ac2815a30ed49b88053a399f4d55e59cf9862d5c060cf71",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/utils.ts": "73302ccf121a662dacf2e52799cce413ef0c709d96859c871b028fe81193d237",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/validation.ts": "742ad0dc984863e51b5a290315cb785af8619090d28c9b1d8f3fb47f896d1e21",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/logger.ts": "cbf5932db7597972e0b13299a37f44d13b61d3a157c3bc4a79c2a13b5a3fb597",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/utils.ts": "ccba4acac6d4124765aad461d52bcd643adfa68e2cdc5076742fec44eece352b",
@@ -403,7 +392,7 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/records.ts": "43ded02932dc7ef35cb91d652fd4060c9144f2e8d48ec48d1ebe444f86ecf252",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/cobasC111Serial.ts": "e635d4b3ed63dbab92a755a5a93882b5b1fa7622ecd19eeabba988d1ca1b6ab1",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/sysmexKx21n.ts": "bb4958507196da0c35f317805c0ee3bb47ecdbf153bee5ab16c3a82d32367d4c",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts": "e4748bf350972b90c479be11c7a0d6f6a085427e5a10b3d6f56b07155371b7dd",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts": "65c7291156ecbe649e67770ae263ee4a2f423a2f965fc4e7449d1efb968fd6f6",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/schema.ts": "90b4ce41425553c38529e71b363b1e937b0442a2cbbd5739188f3e69a42c47b8",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/orderStore.ts": "cd96cd51bc5f4a0cac371c236b29f966538607e0a64a133cdc302914286af816",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/profileStore.ts": "38f00789beaa896ac1cdf7a70b0ea46f0e95f7c6db33ec3ae3f8ee3fef1d7c1d",
@@ -411,7 +400,7 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/store/testStatisticStore.ts": "8792c573dc272669f8c1541da73e83437ac612f724d08e01ef2d450742d37f3b",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/transports/machineCom.ts": "48df0678b4d449a7e3a7bad2aa3c955c05cca8f3fa41a345015986d409b47cef",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/transports/serialConn.ts": "83be05ba8c33a55d16499f9c13cf06bc3f95a6050ecfb8f81a362590348ace87",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/types.ts": "cf9d0ce51d6f5bdfc0e5401d94d1e6ca0e835a665df145302b6682de9c5a442a"
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/types.ts": "c947c3332402463941b7e965af31e6f8dee1fbd2196508e431cd7ef2c0bccc72"
   },
   "workspace": {
     "dependencies": [

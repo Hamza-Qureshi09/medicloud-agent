@@ -63,7 +63,7 @@ export interface SyncMachineCapability {
     // Per-test analyte breakdown, reported alongside the flat catalogTests list
     // so MediCloud can offer assayNo choices when a dispatch is built. Only the
     // tests whose results/analytes the SDK actually knows appear here.
-    catalog?: Array<{ testCode: string; analytes: CatalogAnalyte[] }>;
+    catalog?: Array<{ testCode: string; testName?: string; analytes: CatalogAnalyte[] }>;
 }
 
 export type TSlaveSyncRegisterPayload = {
@@ -89,6 +89,8 @@ export interface PulledOrder {
     patient: { id?: string; name: string; dob?: string; sex?: string };
     tests: string[];
     payloadVersion: number;
+    sampleType?: string;
+    rackPosition?: string;
 }
 
 export interface PullResponse {

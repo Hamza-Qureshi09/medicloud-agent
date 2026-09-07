@@ -9,8 +9,12 @@ import {
     ON_ERROR_DELAY_MS,
     ON_ORDERS_RECEIVED_DELAY_MS,
 } from "../lib/constants.ts";
+import { describeError } from "../lib/error.ts";
 import type { SyncClient } from "../flow/sync/client.ts";
 import type { PulledOrder, SyncMachineCapability } from "../types.ts";
+
+/** Idle pulls between "still alive, nothing to do" lines (~1 min at 10s). */
+const IDLE_LOG_EVERY_N_CYCLES = 6;
 
 
 
@@ -34,6 +38,10 @@ export class OrderPullWorker {
     private timer: ReturnType<typeof setTimeout> | null = null;
     private running = false;
     private stopped = true;
+    /** Last failure printed, so a persistent outage is not logged every cycle. */
+    private lastError: string | null = null;
+    /** Consecutive empty pulls, so the idle line repeats occasionally. */
+    private idleCycles = 0;
 
     constructor(
         private readonly syncClient: SyncClient,
@@ -82,6 +90,7 @@ export class OrderPullWorker {
             // before fetching new orders batch check how much capacity is avilable to fetch 
             // e.g:- total capacity is 50 but 30 is already in in-flight then 20 will fetch now.
             const availableCapacity = await this.getAvailableCapacity();
+            this.lastError = null;
 
             if (availableCapacity === 0) {
                 // At capacity - skip this pull, check again after default interval.
@@ -99,16 +108,39 @@ export class OrderPullWorker {
                 const response = await this.syncClient.pullOrders(availableCapacity, availableProfileKeys);
 
                 if (response.leaseId && response.orders.length > 0) {
+                    console.log(
+                        `[OrderPullWorker] Pulled ${response.orders.length} order(s) under lease ${response.leaseId}: ` +
+                        response.orders
+                            .map((o) => `${o.dispatchId} (sample ${o.sampleId}, tests ${o.tests.join("/")}, profile ${o.profileKey})`)
+                            .join("; "),
+                    );
                     await this.storeAndAcknowledge(response.leaseId, response.orders, capabilities);
                     await this.resumeStoredOrders();
                     nextDelay = ON_ORDERS_RECEIVED_DELAY_MS;
+                    this.idleCycles = 0;
                 } else {
+                    // This fires every ~10s, so logging every cycle would bury
+                    // everything else. Print the first one, then roughly once a
+                    // minute after that: enough to prove the loop is alive
+                    // without drowning the console.
+                    if (this.idleCycles % IDLE_LOG_EVERY_N_CYCLES === 0) {
+                        console.log(
+                            `[OrderPullWorker] Polled, no pending orders (capacity ${availableCapacity}, ` +
+                            `${availableProfileKeys.length}/${capabilities.length} profile(s) offered)`,
+                        );
+                    }
+                    this.idleCycles++;
                     nextDelay = response.pullAfterMs || this.orderPullIntervalMs;
                 }
             }
 
         } catch (error) {
-            console.error("[OrderPullWorker] Pull cycle failed:", error);
+            const message = describeError(error);
+            if (message !== this.lastError) {
+                console.error(`[OrderPullWorker] Pull cycle failed: ${message}`);
+                this.lastError = message;
+            }
+            this.idleCycles = 0;
             nextDelay = ON_ERROR_DELAY_MS;
         } finally {
             this.running = false;
@@ -218,6 +250,13 @@ export class OrderPullWorker {
         const ackResult = await this.syncClient.acknowledgeOrders(leaseId, accepted, rejected);
 
         // "host" give reply as an acknowledgment so update status of these "received" orders
+        console.log(
+            `[OrderPullWorker] Ack sent: ${accepted.length} accepted, ${rejected.length} rejected` +
+            (rejected.length
+                ? ` (${rejected.map((r) => `${r.dispatchId} ${r.code}`).join(", ")})`
+                : ""),
+        );
+
         const acknowledgedAt = new Date().toISOString();
         for (const dispatchId of ackResult.acknowledged) {
             await db
@@ -343,6 +382,8 @@ export class OrderPullWorker {
         const agentOrderId = await postMachineOrder({
             machineId: localProfileId,
             sampleId: order.sampleId,
+            ...(order.sampleType ? { sampleType: order.sampleType } : {}),
+            ...(order.rackPosition ? { rackPosition: order.rackPosition } : {}),
             tests: order.tests,
             patientName: order.patient.name,
             patientId: order.patient.id ?? "",
@@ -357,6 +398,11 @@ export class OrderPullWorker {
             .update(syncOrderInbox)
             .set({ agentOrderId, status: "processing", submittedAt: now, updatedAt: now })
             .where(eq(syncOrderInbox.dispatchId, dispatchId));
+
+        console.log(
+            `[OrderPullWorker] Submitted ${dispatchId} to machine profile ${localProfileId} ` +
+            `as agent order #${agentOrderId} (sample ${order.sampleId}, tests ${order.tests.join("/")})`,
+        );
 
         try {
             await this.syncClient.reportStatus([{ dispatchId, status: "processing" }]);

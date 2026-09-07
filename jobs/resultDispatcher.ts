@@ -5,8 +5,10 @@ import {
     RESULT_MAX_RETRY_ATTEMPTS,
     RESULT_RETRY_INTERVAL_MS,
     RESULT_UPLOAD_BATCH_SIZE,
+    RESULT_OFFLINE_BACKOFF_MS,
     JITTER_MS,
 } from "../lib/constants.ts";
+import { describeError, isTransientFailure } from "../lib/error.ts";
 import type { SyncClient } from "../flow/sync/client.ts";
 import type { PulledOrder, ResultUploadItem, UploadAnalyte } from "../types.ts";
 
@@ -68,6 +70,10 @@ export class ResultDispatcher {
 
     private timer: ReturnType<typeof setTimeout> | null = null;
     private running = false;
+    /** Last failure printed, so a persistent outage is not logged every loop. */
+    private lastError: string | null = null;
+    /** Set while upstream is unreachable, so the loop backs off instead of spinning. */
+    private offline = false;
 
     constructor(private readonly syncClient: SyncClient) { }
 
@@ -92,7 +98,12 @@ export class ResultDispatcher {
             .where(eq(syncOrderInbox.agentOrderId, result.orderId));
 
         // No matching inbox row means this order did not come from MediCloud — ignore.
-        if (inboxRows.length === 0) return;
+        if (inboxRows.length === 0) {
+            console.log(
+                `[ResultDispatcher] Ignoring local result #${result.id} (agent order ${result.orderId}) - not a MediCloud order`,
+            );
+            return;
+        }
 
         const inbox = inboxRows[0];
         const order = JSON.parse(inbox.payloadJson) as PulledOrder;
@@ -118,6 +129,11 @@ export class ResultDispatcher {
             .where(eq(medicloudResultDispatch.agentResultId, result.id));
 
         if (existing.length === 0) {
+            console.log(
+                `[ResultDispatcher] Queued result #${result.id} for dispatch ${inbox.dispatchId} ` +
+                `(sample ${result.sampleId}, ${upload.analytes.length} analyte(s): ` +
+                `${upload.analytes.map((a) => a.assayNo).join(", ") || "none"})`,
+            );
             await db.insert(medicloudResultDispatch).values({
                 agentResultId: result.id,
                 agentOrderId: result.orderId,
@@ -187,9 +203,17 @@ export class ResultDispatcher {
         try {
             await this.flush();
         } catch (error) {
-            console.error("[ResultDispatcher] Flush failed:", error);
+            const message = describeError(error);
+            if (message !== this.lastError) {
+                console.error(`[ResultDispatcher] Flush failed: ${message}`);
+                this.lastError = message;
+            }
         } finally {
-            this.schedule(RESULT_RETRY_INTERVAL_MS + Math.floor(Math.random() * JITTER_MS));
+            // While upstream is down there is nothing to gain from a 10s cycle.
+            const interval = this.offline
+                ? RESULT_OFFLINE_BACKOFF_MS
+                : RESULT_RETRY_INTERVAL_MS;
+            this.schedule(interval + Math.floor(Math.random() * JITTER_MS));
         }
     }
 
@@ -230,6 +254,17 @@ export class ResultDispatcher {
 
             const deliveredKeys = [...response.accepted, ...response.duplicates];
             const now = new Date().toISOString();
+            this.lastError = null;
+            this.offline = false;
+
+            console.log(
+                `[ResultDispatcher] Uploaded batch ${batchId}: ${deliverable.length} sent, ` +
+                `${response.accepted.length} accepted, ${response.duplicates.length} duplicate, ` +
+                `${response.rejected.length} rejected` +
+                (response.rejected.length
+                    ? ` (${response.rejected.map((r) => `${r.code}${r.retryable ? " retryable" : ""}`).join(", ")})`
+                    : ""),
+            );
 
             // Mark successfully delivered rows.
             if (deliveredKeys.length > 0) {
@@ -278,8 +313,30 @@ export class ResultDispatcher {
             await this.abandon(giveUp);
 
         } catch (error) {
-            // Network/upstream failure — penalise only the rows this attempt carried.
-            const message = error instanceof Error ? error.message : String(error);
+            const message = describeError(error);
+
+            // Could not reach upstream at all. That says nothing about these
+            // results, so the retry budget is left untouched - otherwise an
+            // outage longer than RESULT_MAX_RETRY_ATTEMPTS * the flush interval
+            // would permanently discard patient results the analyzer already
+            // produced. The rows stay retryable and go out when the link
+            // returns.
+            if (isTransientFailure(error)) {
+                this.offline = true;
+                await db
+                    .update(medicloudResultDispatch)
+                    .set({ deliveryStatus: 2, errorText: message })
+                    .where(
+                        inArray(
+                            medicloudResultDispatch.id,
+                            deliverable.map((row) => row.id),
+                        ),
+                    );
+                throw error;
+            }
+
+            // A real refusal from upstream - penalise only the rows this
+            // attempt actually carried.
             const giveUp: Array<{ dispatchId: string; message: string }> = [];
 
             for (const row of deliverable) {
@@ -295,8 +352,6 @@ export class ResultDispatcher {
                 }
             }
 
-            // Best-effort: upstream is already unreachable, so this usually
-            // fails too and the next cycle re-reports.
             await this.abandon(giveUp);
             throw error;
         } finally {
