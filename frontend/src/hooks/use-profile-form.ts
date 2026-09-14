@@ -204,18 +204,18 @@ export function useProfileForm(
                 // create/update
                 if (profile?.id) await api.profiles.update(profile.id, payload);
                 else await api.profiles.create(payload);
-
-                // hook call
-                await onCreated();
-                setOpen(false);
             });
         } catch (err) {
+            console.log(err, "err from use profile form");
             const message = extractApiError(
-                err ? err.message : err,
-                "Profile could not be saved.",
+                err,
             );
             toast.error(message);
             dispatch({ type: "SET_ROOT_ERROR", error: message });
+        } finally {
+             // hook call
+            await onCreated();
+            setOpen(false);
         }
     }
 
