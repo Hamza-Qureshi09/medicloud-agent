@@ -117,6 +117,7 @@ export const register_slave_agent_to_master = async (
 ) => {
 
     const response = await fetch(`${masterUrl.replace(/\/$/, "")}/slave-sync/register`, {
+        signal: AbortSignal.timeout(20_000),
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -149,6 +150,7 @@ async function syncRequest<T>(
     const response = await fetch(
         `${baseUrl.replace(/\/$/, "")}${path}`,
         {
+            signal: AbortSignal.timeout(20_000),
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

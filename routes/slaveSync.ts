@@ -258,7 +258,9 @@ export function registerSlaveSyncRoutes(
             const rows = await db.select().from(syncOrderInbox).where(and(
                 eq(syncOrderInbox.dispatchId, item.dispatchId),
                 eq(syncOrderInbox.targetSlaveId, slaveId),
-                inArray(syncOrderInbox.status, ["acknowledged_by_slave", "processing"]),
+                // A dispatch can produce multiple batches, and a slave may retry
+                // after the master delivered a batch but its reply was lost.
+                inArray(syncOrderInbox.status, ["acknowledged_by_slave", "processing", "completed"]),
             ));
 
             if (rows.length === 0) {
