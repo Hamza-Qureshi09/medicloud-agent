@@ -29,7 +29,7 @@ export async function AgentRegistries(instanceId: string): Promise<AgentRegistri
 
     // "slave" talks to "master", "direct" and "master" talk to MediCloud.
     const syncClient = env.AGENT_MODE === "slave"
-        ? await createSlaveSyncClient(instanceId)
+        ? createSlaveSyncClient(instanceId)
         : createMedicloudSyncClient(instanceId);
 
     /**

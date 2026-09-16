@@ -1,3 +1,4 @@
+import { dirname } from "node:path";
 import {
     register_slave_agent_to_master,
     sync_acknowledge_orders,
@@ -6,6 +7,7 @@ import {
     sync_report_status,
     sync_upload_results
 } from "../../lib/endpoints.ts";
+import { ApiError, describeError } from "../../lib/error.ts";
 import { env } from "../../lib/env.ts";
 import { getLocalMachineCapabilities } from "./capabilities.ts";
 import {
@@ -23,17 +25,18 @@ export class SyncClient {
         private readonly instanceId: string,
         private readonly headerPrefix: "agent" | "slave" = "agent",
         private readonly apiPrefix = "/api/agent-sync",
+        private readonly authProvider?: () => Promise<SyncAuthHeaders>,
     ) { }
 
     // "slave"/"master"/"direct" use this to ping to their upstream host
-    heartbeat(
+    async heartbeat(
         mode: "direct" | "master" | "slave",
         machines: SyncMachineCapability[],
     ) {
         return sync_heartbeat(
             this.baseUrl,
             this.apiPrefix,
-            this.auth,
+            await this.getAuth(),
             {
                 mode,
                 protocolVersion: AGENT_PROTOCOL_VERSION,
@@ -47,14 +50,14 @@ export class SyncClient {
     // "master"/"direct" agents pull orders from medicloud, "slave" pulls from "master" 
     // while pulling data the agent/master/slave will tell how much to pull 
     // and also tells what data of active machine profiles currently they are having
-    pullOrders(
+    async pullOrders(
         capacity: number,
         availableProfileKeys: string[],
     ) {
         return sync_pull_orders(
             this.baseUrl,
             this.apiPrefix,
-            this.auth,
+            await this.getAuth(),
             {
                 capacity,
                 availableProfileKeys,
@@ -64,7 +67,7 @@ export class SyncClient {
 
 
     // after data pulling from the "host", & storing data into "syncOrderInbox", send acknowledgment to the "host" with "accepted"/"rejected" orders 
-    acknowledgeOrders(
+    async acknowledgeOrders(
         leaseId: string,
         accepted: Array<{
             dispatchId: string;
@@ -79,7 +82,7 @@ export class SyncClient {
         return sync_acknowledge_orders(
             this.baseUrl,
             this.apiPrefix,
-            this.auth,
+            await this.getAuth(),
             {
                 leaseId,
                 accepted,
@@ -90,7 +93,7 @@ export class SyncClient {
 
 
     // report the "host" about the "failed"/"processing" orders
-    reportStatus(
+    async reportStatus(
         updates: Array<{
             dispatchId: string;
             status: "processing" | "failed";
@@ -100,7 +103,7 @@ export class SyncClient {
         return sync_report_status(
             this.baseUrl,
             this.apiPrefix,
-            this.auth,
+            await this.getAuth(),
             {
                 updates,
             },
@@ -109,14 +112,14 @@ export class SyncClient {
 
 
     // this will upload results batch to upstream (master,medicloud)
-    uploadResults(
+    async uploadResults(
         batchId: string,
         results: ResultUploadItem[],
     ) {
         return sync_upload_results(
             this.baseUrl,
             this.apiPrefix,
-            this.auth,
+            await this.getAuth(),
             {
                 batchId,
                 results,
@@ -126,7 +129,11 @@ export class SyncClient {
 
 
     // private helpers
-    private get auth(): SyncAuthHeaders {
+    private async getAuth(): Promise<SyncAuthHeaders> {
+        // if in "slave" mode, the authProvider will be set to a function that returns the slave credentials
+        if (this.authProvider) return await this.authProvider();
+
+        // otherwise, return the agent credentials in "mater"/"direct" mode
         return {
             clientId: this.clientId,
             secret: this.secret,
@@ -148,42 +155,50 @@ export function createMedicloudSyncClient(instanceId: string): SyncClient {
 }
 
 
-// sync slave with master
-export async function createSlaveSyncClient(
+/**
+ * Construct without network I/O. Workers first use this client after the local
+ * HTTP server is listening, so capability discovery cannot call an unstarted
+ * server. Concurrent workers share registration; failures retry next cycle.
+ */
+export function createSlaveSyncClient(
     instanceId: string,
-): Promise<SyncClient> {
+    options: {
+        masterUrl?: string;
+        credentialsPath?: string;
+        getCapabilities?: () => Promise<SyncMachineCapability[]>;
+    } = {},
+): SyncClient {
+    const masterUrl = options.masterUrl ?? `http://${env.MASTER_HOST}:${env.MASTER_PORT}`;
+    const credentialsPath = options.credentialsPath ?? "./data/slave-credentials.json";
+    let pending: Promise<SyncAuthHeaders> | undefined;
 
-    const masterUrl = `http://${env.MASTER_HOST}:${env.MASTER_PORT}`;
-    const credentialsPath = "./data/slave-credentials.json";
-    const readCreds = await Deno.readTextFile(credentialsPath).catch(() => "{}")
-    const credentials = JSON.parse(readCreds) as { slaveId?: string; slaveSecret?: string };
-    let slaveId = credentials.slaveId ?? "";
-    let slaveSecret = credentials.slaveSecret ?? "";
+    const initialize = async (): Promise<SyncAuthHeaders> => {
+        let credentials: { slaveId?: string; slaveSecret?: string } = {};
+        try {
+            credentials = JSON.parse(await Deno.readTextFile(credentialsPath));
+        } catch (error) {
+            if (!(error instanceof Deno.errors.NotFound) && !(error instanceof SyntaxError)) throw error;
+        }
+        let { slaveId, slaveSecret } = credentials ?? {};
+        if (!slaveId || !slaveSecret) {
+            const machines = await (options.getCapabilities ?? getLocalMachineCapabilities)();
+            const data = await register_slave_agent_to_master(masterUrl, { instanceId, machines });
+            slaveId = data.slaveId;
+            slaveSecret = data.slaveSecret;
+            await Deno.mkdir(dirname(credentialsPath), { recursive: true });
+            await Deno.writeTextFile(credentialsPath, JSON.stringify({ slaveId, slaveSecret }));
+        }
+        return { clientId: slaveId!, secret: slaveSecret!, instanceId, headerPrefix: "slave" };
+    };
 
-
-    // fetch machine capabilities (how much machines currently it is handling)
-    const machines = await getLocalMachineCapabilities()
-
-    if (!slaveId || !slaveSecret) {
-        // first register the "slave" agent to master 
-        const data = await register_slave_agent_to_master(masterUrl, { instanceId, machines })
-
-        slaveId = data.slaveId;
-        slaveSecret = data.slaveSecret;
-
-        await Deno.writeTextFile(
-            credentialsPath,
-            JSON.stringify({ slaveId, slaveSecret }),
-        );
-    }
-
-    // then sync the "slave" to 'master'
-    return new SyncClient(
-        masterUrl,
-        slaveId,
-        slaveSecret,
-        instanceId,
-        "slave",
-        "/slave-sync",
-    );
+    return new SyncClient(masterUrl, "", "", instanceId, "slave", "/slave-sync", () => {
+        if (!pending) {
+            pending = initialize().catch((error) => {
+                pending = undefined;
+                // Failure to register says nothing about queued patient results.
+                throw new ApiError(`Slave registration unavailable: ${describeError(error)}`, 503);
+            });
+        }
+        return pending;
+    });
 }
