@@ -14,3 +14,6 @@ frontend/node_modules/
 
 # agent dependencies
 node_modules
+
+# tests
+tests

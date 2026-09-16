@@ -70,6 +70,7 @@ export class ResultDispatcher {
 
     private timer: ReturnType<typeof setTimeout> | null = null;
     private running = false;
+    private stopped = true;
     /** Last failure printed, so a persistent outage is not logged every loop. */
     private lastError: string | null = null;
     /** Set while upstream is unreachable, so the loop backs off instead of spinning. */
@@ -181,12 +182,15 @@ export class ResultDispatcher {
 
     /** Starts the background retry loop. Call once after construction. */
     startRetryLoop(): void {
+        if (!this.stopped) return;
+        this.stopped = false;
         this.schedule(RESULT_RETRY_INTERVAL_MS);
     }
 
 
     /** Stops the retry loop. Safe to call even if never started. */
     stop(): void {
+        this.stopped = true;
         if (this.timer !== null) {
             clearTimeout(this.timer);
             this.timer = null;
@@ -195,8 +199,12 @@ export class ResultDispatcher {
 
 
     private schedule(delayMs: number): void {
-        this.stop();
-        this.timer = setTimeout(() => void this.runLoop(), delayMs);
+        if (this.stopped) return;
+        if (this.timer !== null) clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+            this.timer = null;
+            void this.runLoop();
+        }, delayMs);
     }
 
     private async runLoop(): Promise<void> {
