@@ -203,6 +203,11 @@ export interface SlaveRecord {
   createdAt: string
   updatedAt: string
 }
+/** One-time credentials returned when a slave is registered from the master UI. */
+export interface SlaveCredentials {
+  slaveId: string
+  slaveSecret: string
+}
 // external order (syncOrderInbox) types
 // The DB column is plain text with no constraint, so consumers must tolerate
 // values outside this union.

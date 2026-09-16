@@ -5,14 +5,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction }
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon } from "@phosphor-icons/react";
+import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon, CopyIcon, CheckIcon, WarningIcon } from "@phosphor-icons/react";
 import useSWR from "swr";
 import { api } from "@/lib/api";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { StopIcon } from "@phosphor-icons/react";
-import type { SlaveRecord } from "../../types/api.ts";
+import { FormErrorList } from "@/components/common/formError";
+import { useAsyncAction } from "@/hooks/use-async-action";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
+import { useState, useCallback } from "react";
+import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
 
 
 export function ControlPage() {
@@ -44,7 +58,10 @@ export function ControlPage() {
                 title="Agent Control Center"
                 description="Monitor connected slave agents, their connection status, and delegated machine capabilities."
                 actions={
-                    <RefreshButton onRefresh={() => mutate()} />
+                    <div className="flex gap-2">
+                        <RegisterSlaveButton onRegistered={() => mutate()} />
+                        <RefreshButton onRefresh={() => mutate()} />
+                    </div>
                 }
             />
 
@@ -170,6 +187,211 @@ export function ControlPage() {
         </Container>
     );
 }
+
+
+// ── Register Slave Button + Dialog ──────────────────────────────────────────
+
+function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [name, setName] = useState("");
+    const [nameError, setNameError] = useState<string | null>(null);
+    const [credentials, setCredentials] = useState<SlaveCredentials | null>(null);
+    const action = useAsyncAction("Failed to register slave.");
+
+    const handleOpen = useCallback(() => {
+        setOpen(true);
+        setName("");
+        setNameError(null);
+        setCredentials(null);
+        action.reset();
+    }, [action]);
+
+    const handleSubmit = useCallback(async () => {
+        const trimmed = name.trim();
+        if (!trimmed) {
+            setNameError("Name is required");
+            return;
+        }
+        if (trimmed.length < 2) {
+            setNameError("Name must be at least 2 characters");
+            return;
+        }
+        setNameError(null);
+
+        const result = await action.execute(() =>
+            api.agent.registerSlave({ name: trimmed })
+        ).catch(() => undefined);
+
+        if (result) {
+            setCredentials(result);
+        }
+    }, [name, action]);
+
+    const handleDismiss = useCallback(() => {
+        setOpen(false);
+        if (credentials) {
+            onRegistered();
+        }
+    }, [credentials, onRegistered]);
+
+    return (
+        <>
+            <Button variant="secondary" size="sm" onClick={handleOpen}>
+                Register New Slave
+            </Button>
+
+            <Dialog open={open} onOpenChange={(nextOpen) => {
+                if (!nextOpen) handleDismiss();
+                else handleOpen();
+            }}>
+                <DialogContent>
+                    {credentials ? (
+                        // ── Credentials Reveal ──
+                        <SlaveCredentialsReveal
+                            credentials={credentials}
+                            onDismiss={handleDismiss}
+                        />
+                    ) : (
+                        // ── Registration Form ──
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>Register New Slave</DialogTitle>
+                                <DialogDescription>
+                                    Create a new slave agent registration. You will receive one-time credentials to configure the slave.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleSubmit();
+                                }}
+                                className="flex flex-col gap-4"
+                            >
+                                <Field>
+                                    <FieldLabel>Name</FieldLabel>
+                                    <Input
+                                        placeholder='e.g. "Lab B Slave"'
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        autoFocus
+                                        disabled={action.pending}
+                                    />
+                                    {nameError && <FieldError>{nameError}</FieldError>}
+                                </Field>
+
+                                <FormErrorList errorMessage={action.error} />
+
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleDismiss}
+                                        disabled={action.pending}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={action.pending}>
+                                        {action.pending ? <Spinner data-icon="inline-start" /> : null}
+                                        Register
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}
+
+
+// ── Credentials Reveal (shown once after successful registration) ───────────
+
+function SlaveCredentialsReveal({
+    credentials,
+    onDismiss,
+}: {
+    credentials: SlaveCredentials;
+    onDismiss: () => void;
+}) {
+    const fields = [
+        { label: "Slave ID", value: credentials.slaveId },
+        { label: "Secret Key", value: credentials.slaveSecret },
+    ];
+
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>Slave Credentials</DialogTitle>
+                <DialogDescription>
+                    Copy these now. The secret key is shown only once.
+                </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-4">
+                {/* Warning banner */}
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive">
+                    <WarningIcon className="size-4 shrink-0" />
+                    <p className="text-xs leading-snug">
+                        The secret key cannot be retrieved again. Store it somewhere safe.
+                    </p>
+                </div>
+
+                {/* Credential fields */}
+                {fields.map((field) => (
+                    <div key={field.label} className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground">
+                            {field.label}
+                        </span>
+                        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted border border-muted/50">
+                            <span className="font-mono text-xs break-all min-w-0">
+                                {field.value || "N/A"}
+                            </span>
+                            {field.value && <CopyButton value={field.value} />}
+                        </div>
+                    </div>
+                ))}
+
+                <Button type="button" size="lg" onClick={onDismiss}>
+                    Done
+                </Button>
+            </div>
+        </>
+    );
+}
+
+
+// ── Copy Button (local to this page) ────────────────────────────────────────
+
+function CopyButton({ value }: { value: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // fallback: do nothing
+        }
+    }, [value]);
+
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
+            onClick={handleCopy}
+        >
+            {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+        </Button>
+    );
+}
+
+
+// ── Stat Card ───────────────────────────────────────────────────────────────
 
 function StatCard({
     title,
