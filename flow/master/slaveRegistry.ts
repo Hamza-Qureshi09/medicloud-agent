@@ -6,58 +6,16 @@ import type { SyncMachineCapability } from "../../types.ts";
 
 export class SlaveRegistry {
 
-    // when "slave" agent registers itself to the "master"
+    /**
+     * Register a new slave.
+     * 
+     * Creates a slot that has never actually connected. The slave is marked inactive with
+     * no heartbeat timestamp so the UI shows "never connected". Once the slave agent
+     * boots with these credentials, it will begin heartbeating to activate.
+     */
     async register(
         instanceId: string,
-        machines: SyncMachineCapability[],
     ): Promise<{ slaveId: string; slaveSecret: string }> {
-
-        const slaveSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-        const secretHash = await this.hash(slaveSecret);
-        const now = new Date().toISOString();
-
-        // if this slave instance already has a record, refresh its credentials and machines
-        const existing = await db.select().from(slaveRegistry)
-            .where(eq(slaveRegistry.instanceId, instanceId));
-
-        if (existing.length > 0) {
-            await db.update(slaveRegistry).set({
-                secretHash,
-                machinesJson: JSON.stringify(machines),
-                lastPingAt: now,
-                isActive: true,
-                updatedAt: now,
-            }).where(eq(slaveRegistry.id, existing[0].id));
-
-            return { slaveId: existing[0].slaveId, slaveSecret };
-        }
-
-        // new slave - create a fresh registry record
-        const slaveId = crypto.randomUUID();
-        await db.insert(slaveRegistry).values({
-            slaveId,
-            instanceId,
-            secretHash,
-            machinesJson: JSON.stringify(machines),
-            lastPingAt: now,
-            createdAt: now,
-            updatedAt: now,
-        });
-        return { slaveId, slaveSecret };
-    }
-
-
-    /**
-     * Pre-register a slave from the master UI.
-     *
-     * Unlike `register()` (called by the slave itself), this creates a slot
-     * that has never actually connected. The slave is marked inactive with
-     * no heartbeat timestamp so the UI shows "never connected" — exactly
-     */
-    async preRegister(
-        instanceId: string,
-    ): Promise<{ slaveId: string; slaveSecret: string }> {
-
         const slaveSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
         const secretHash = await this.hash(slaveSecret);
         const now = new Date().toISOString();

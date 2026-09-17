@@ -311,7 +311,7 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
 }
 
 
-// ── Credentials Reveal (shown once after successful registration) ───────────
+// ── Credentials Reveal (shown once after successful registration)
 
 function SlaveCredentialsReveal({
     credentials,
@@ -367,8 +367,7 @@ function SlaveCredentialsReveal({
 }
 
 
-// ── Copy Button (local to this page) ────────────────────────────────────────
-
+// ── Copy Button (local to this page)
 function CopyButton({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
 
@@ -396,7 +395,7 @@ function CopyButton({ value }: { value: string }) {
 }
 
 
-// ── Stat Card ───────────────────────────────────────────────────────────────
+// ── Stat Card
 
 function StatCard({
     title,

@@ -1,7 +1,5 @@
 import type { ApiErrorBody, SlaveRecord } from "@/types/api";
 
-// ── Slave Liveness (mirrors medicloud-app's agentStatus logic) ──────────────
-
 /** How fresh a heartbeat must be for a slave to count as online. */
 export const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
