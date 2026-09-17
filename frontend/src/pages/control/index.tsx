@@ -28,6 +28,35 @@ import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback } from "react";
 import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
 
+const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+type SlaveLiveness = "online" | "stale" | "never";
+
+function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
+    const lastSeen = slave.lastPingAt ? new Date(slave.lastPingAt) : undefined;
+
+    // No heartbeat, or epoch placeholder from preRegister → never connected.
+    if (!lastSeen || Number.isNaN(lastSeen.getTime()) || lastSeen.getTime() === 0) {
+        return "never";
+    }
+
+    return Date.now() - lastSeen.getTime() <= SLAVE_ONLINE_WINDOW_MS
+        ? "online"
+        : "stale";
+}
+
+const slaveStatusLabel: Record<SlaveLiveness, string> = {
+    online: "Online",
+    stale: "Unreachable",
+    never: "Never Connected",
+};
+
+const slaveStatusVariant: Record<SlaveLiveness, "default" | "secondary" | "outline"> = {
+    online: "default",
+    stale: "secondary",
+    never: "outline",
+};
+
 
 export function ControlPage() {
     const { data, error, mutate } = useSWR(api.agent.slavesKey, api.agent.slaves, {
@@ -39,7 +68,7 @@ export function ControlPage() {
     const slaves = data?.slaves as SlaveRecord[] || [];
 
     const totalSlaves = slaves.length;
-    const activeSlaves = slaves.filter(s => s.isActive).length;
+    const activeSlaves = slaves.filter(s => slaveLiveness(s) === "online").length;
 
     // Machine totals are computed by the agent, not derived here.
     const totalMachines = data?.totalMachines ?? 0;
@@ -105,28 +134,17 @@ export function ControlPage() {
                                         <div className="flex flex-col items-start gap-1">
                                             <div className="flex items-center gap-2 text-base font-semibold">
                                                 Slave: {slave.slaveId.split('-')[1] || slave.slaveId}
-                                                <Badge variant={slave.isActive ? "default" : "secondary"} className="ml-2">
-                                                    {slave.isActive ? "Active" : "Inactive"}
+                                                <Badge variant={slaveStatusVariant[slaveLiveness(slave)]} className="ml-2">
+                                                    {slaveStatusLabel[slaveLiveness(slave)]}
                                                 </Badge>
-                                            </div>
-                                            <div className="text-xs text-muted-foreground text-left font-normal mt-1">
-                                                Host: {slave.host}:{slave.port} • Last ping: {new Date(slave.lastPingAt).toLocaleString()}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-3">
-                                            <Badge variant="outline" className="shrink-0 mt-1">
-                                                {machines.length} Machine{machines.length !== 1 && 's'}
-                                            </Badge>
-                                            
-                                            {slave.isActive && (
+                                                
                                                 <div onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} onPointerDown={(e) => e.stopPropagation()}>
                                                     <ConfirmAction
                                                         trigger={
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10 -ml-1"
                                                             >
                                                                 <StopIcon />
                                                             </Button>
@@ -140,7 +158,19 @@ export function ControlPage() {
                                                         }}
                                                     />
                                                 </div>
-                                            )}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground text-left font-normal mt-1">
+                                                {slaveLiveness(slave) === "never"
+                                                    ? "Never connected"
+                                                    : <>Host: {slave.host}:{slave.port} • Last ping: {new Date(slave.lastPingAt).toLocaleString()}</>
+                                                }
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center">
+                                            <Badge variant="outline" className="shrink-0 mt-1">
+                                                {machines.length} Machine{machines.length !== 1 && 's'}
+                                            </Badge>
                                         </div>
                                     </div>
                                 </AccordionTrigger>

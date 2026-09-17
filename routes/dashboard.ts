@@ -88,7 +88,7 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         // the same name refreshes credentials instead of creating duplicates.
         const instanceId = `manual:${name}`;
 
-        const { slaveId, slaveSecret } = await slaveRegistry.register(instanceId, []);
+        const { slaveId, slaveSecret } = await slaveRegistry.preRegister(instanceId);
         return c.json({ slaveId, slaveSecret });
     });
 
