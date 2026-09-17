@@ -70,12 +70,22 @@ export class SlaveRegistry {
             .where(eq(slaveRegistry.slaveId, slaveId));
     }
 
-    /** Returns all slaves that have pinged within the last 2 minutes. */
+    /** Returns all slaves that have pinged within the last 2 minutes and are explicitly active. */
     async listActive() {
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
         const all = await db.select().from(slaveRegistry)
             .where(eq(slaveRegistry.isActive, true));
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
+    }
+
+    /** Returns all slaves, dynamically adjusting isActive based on recent ping status. */
+    async listAll() {
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
+        const all = await db.select().from(slaveRegistry);
+        return all.map(s => ({
+            ...s,
+            isActive: s.isActive && s.lastPingAt > twoMinutesAgo,
+        }));
     }
     
     async countMachines(): Promise<number> {

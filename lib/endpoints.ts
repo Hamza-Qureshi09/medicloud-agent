@@ -9,7 +9,6 @@ import {
     SyncAuthHeaders,
     SyncMachineCapability,
     TMachineProfile,
-    TSlaveSyncRegisterPayload,
 } from "../types.ts";
 
 
@@ -104,39 +103,6 @@ export async function postMachineOrder(order: {
 
 
 // 2. Agent/Medicloud related calls
-
-/**
- * Register a slave with the master.
- *
- * This endpoint uses the bootstrap secret because the slave
- * does not yet have its own slaveId/slaveSecret.
- */
-export const register_slave_agent_to_master = async (
-    masterUrl: string,
-    payload: TSlaveSyncRegisterPayload
-) => {
-
-    const response = await fetch(`${masterUrl.replace(/\/$/, "")}/slave-sync/register`, {
-        signal: AbortSignal.timeout(20_000),
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-slave-secret": env.SLAVE_BOOTSTRAP_SECRET,
-        },
-        body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || !data.slaveId || !data.slaveSecret) {
-        throw new ApiError(
-            data?.message ?? data?.error ?? "Slave registration failed",
-            response.status
-        )
-    }
-
-    return data
-}
 
 /**
  * Common POST request used by authenticated sync endpoints.

@@ -62,7 +62,7 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         }
 
         const [slaves, totalMachines] = await Promise.all([
-            slaveRegistry.listActive(),
+            slaveRegistry.listAll(),
             slaveRegistry.countMachines(),
         ]);
 

@@ -12,17 +12,11 @@ const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
 // environment checkups
 function environmentCheckups() {
-  // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
-  if (
-    (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
-    !env.SLAVE_BOOTSTRAP_SECRET
-  ) {
-    throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
-  }
-
-  // slave mode also needs to know where the "master" lives
-  if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
-    throw new Error("MASTER_HOST is required in slave mode");
+  // slave mode also needs to know where the "master" lives, and its credentials
+  if (env.AGENT_MODE === "slave") {
+    if (!env.MASTER_HOST) throw new Error("MASTER_HOST is required in slave mode");
+    if (!env.SLAVE_ID) throw new Error("SLAVE_ID is required in slave mode");
+    if (!env.SLAVE_SECRET) throw new Error("SLAVE_SECRET is required in slave mode");
   }
 
   // "direct" and "master" modes communicate with MediCloud directly
