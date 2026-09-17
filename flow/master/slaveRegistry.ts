@@ -118,6 +118,7 @@ export class SlaveRegistry {
     }
 
     /** Returns all slaves that have pinged within the last 2 minutes. */
+    /** Returns all slaves that have pinged within the last 2 minutes. */
     async listActive() {
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
         const all = await db.select().from(slaveRegistry)
@@ -125,6 +126,7 @@ export class SlaveRegistry {
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
     }
 
+    /** Returns every registered slave regardless of activity or ping recency. */
     /** Returns every registered slave regardless of activity or ping recency. */
     async listAll() {
         return db.select({

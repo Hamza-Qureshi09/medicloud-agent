@@ -41,6 +41,35 @@ const slaveStatusVariant: Record<SlaveLiveness, "default" | "secondary" | "outli
     never: "outline",
 };
 
+const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+type SlaveLiveness = "online" | "stale" | "never";
+
+function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
+    const lastSeen = slave.lastPingAt ? new Date(slave.lastPingAt) : undefined;
+
+    // No heartbeat, or epoch placeholder from preRegister → never connected.
+    if (!lastSeen || Number.isNaN(lastSeen.getTime()) || lastSeen.getTime() === 0) {
+        return "never";
+    }
+
+    return Date.now() - lastSeen.getTime() <= SLAVE_ONLINE_WINDOW_MS
+        ? "online"
+        : "stale";
+}
+
+const slaveStatusLabel: Record<SlaveLiveness, string> = {
+    online: "Online",
+    stale: "Unreachable",
+    never: "Never Connected",
+};
+
+const slaveStatusVariant: Record<SlaveLiveness, "default" | "secondary" | "outline"> = {
+    online: "default",
+    stale: "secondary",
+    never: "outline",
+};
+
 
 export function ControlPage() {
     const { data, error, mutate } = useSWR(api.agent.slavesKey, api.agent.slaves, {
