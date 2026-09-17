@@ -41,6 +41,7 @@ export interface HealthResponse {
   version?: string
   registered_drivers: Driver[]
   running_machines: RunningMachine[]
+  slaves: number
 }
 
 export interface CatalogSummary {

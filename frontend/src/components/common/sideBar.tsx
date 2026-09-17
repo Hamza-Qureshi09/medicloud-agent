@@ -25,9 +25,6 @@ import {
     ShareNetworkIcon
 } from "@phosphor-icons/react"
 import { useHealth } from "@/contexts/health-context";
-import useSWR from "swr";
-import { api } from "@/lib/api";
-import { slaveLiveness } from "@/lib/helpers";
 
 const navigation = [
     { to: "/dashboard", label: "Overview", icon: GaugeIcon },
@@ -42,15 +39,7 @@ const navigation = [
 
 export function AppSidebar() {
     const location = useLocation()
-    const { connected, mode } = useHealth()
-    
-    // Fetch slaves if we are in master mode
-    const { data: slavesData } = useSWR(
-        mode === "master" ? api.agent.slavesKey : null,
-        api.agent.slaves,
-        { refreshInterval: 25000 }
-    );
-    const activeSlaves = slavesData?.slaves?.filter(s => slaveLiveness(s) === "online").length ?? 0;
+    const { connected, activeSlaves, mode } = useHealth()
 
     return (
         <Sidebar variant="floating" collapsible="icon" className="bg-background">

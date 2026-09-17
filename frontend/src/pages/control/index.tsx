@@ -26,6 +26,9 @@ import {
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
 import { slaveLiveness, type SlaveLiveness } from "@/lib/helpers";
 
@@ -223,50 +226,38 @@ export function ControlPage() {
 }
 
 
-// ── Register Slave Button + Dialog ──────────────────────────────────────────
+// ── Register Slave Button + Dialog 
+
+const registerSlaveSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters").trim()
+});
 
 function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
     const [open, setOpen] = useState(false);
-    const [name, setName] = useState("");
-    const [nameError, setNameError] = useState<string | null>(null);
     const [credentials, setCredentials] = useState<SlaveCredentials | null>(null);
     const action = useAsyncAction("Failed to register slave.");
 
+    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+        resolver: zodResolver(registerSlaveSchema),
+        defaultValues: { name: "" }
+    });
+
     const handleOpen = useCallback(() => {
         setOpen(true);
-        setName("");
-        setNameError(null);
         setCredentials(null);
+        reset();
         action.reset();
-    }, [action]);
-
-    const handleSubmit = useCallback(async () => {
-        const trimmed = name.trim();
-        if (!trimmed) {
-            setNameError("Name is required");
-            return;
-        }
-        if (trimmed.length < 2) {
-            setNameError("Name must be at least 2 characters");
-            return;
-        }
-        setNameError(null);
-
-        const result = await action.execute(() =>
-            api.agent.registerSlave({ name: trimmed })
-        ).catch(() => undefined);
-
-        if (result) {
-            setCredentials(result);
-        }
-    }, [name, action]);
+    }, [action, reset]);
 
     const handleDismiss = useCallback(() => {
         setOpen(false);
-        if (credentials) {
-            onRegistered();
-        }
+        if (credentials) onRegistered();
     }, [credentials, onRegistered]);
+
+    const onSubmit = handleSubmit(async (values) => {
+        const result = await action.execute(() => api.agent.registerSlave({ name: values.name })).catch(() => undefined);
+        if (result) setCredentials(result);
+    });
 
     return (
         <>
@@ -274,19 +265,11 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
                 Register New Slave
             </Button>
 
-            <Dialog open={open} onOpenChange={(nextOpen) => {
-                if (!nextOpen) handleDismiss();
-                else handleOpen();
-            }}>
+            <Dialog open={open} onOpenChange={(nextOpen) => nextOpen ? handleOpen() : handleDismiss()}>
                 <DialogContent>
                     {credentials ? (
-                        // ── Credentials Reveal ──
-                        <SlaveCredentialsReveal
-                            credentials={credentials}
-                            onDismiss={handleDismiss}
-                        />
+                        <SlaveCredentialsReveal credentials={credentials} onDismiss={handleDismiss} />
                     ) : (
-                        // ── Registration Form ──
                         <>
                             <DialogHeader>
                                 <DialogTitle>Register New Slave</DialogTitle>
@@ -295,34 +278,22 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
                                 </DialogDescription>
                             </DialogHeader>
 
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSubmit();
-                                }}
-                                className="flex flex-col gap-4"
-                            >
+                            <form onSubmit={onSubmit} className="flex flex-col gap-4">
                                 <Field>
                                     <FieldLabel>Name</FieldLabel>
                                     <Input
                                         placeholder='e.g. "Lab B Slave"'
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
                                         autoFocus
                                         disabled={action.pending}
+                                        {...register("name")}
                                     />
-                                    {nameError && <FieldError>{nameError}</FieldError>}
+                                    {errors.name && <FieldError>{errors.name.message}</FieldError>}
                                 </Field>
 
                                 <FormErrorList errorMessage={action.error} />
 
                                 <DialogFooter>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleDismiss}
-                                        disabled={action.pending}
-                                    >
+                                    <Button type="button" variant="outline" onClick={handleDismiss} disabled={action.pending}>
                                         Cancel
                                     </Button>
                                     <Button type="submit" disabled={action.pending}>
