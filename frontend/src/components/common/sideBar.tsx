@@ -27,6 +27,7 @@ import {
 import { useHealth } from "@/contexts/health-context";
 import useSWR from "swr";
 import { api } from "@/lib/api";
+import { slaveLiveness } from "@/lib/helpers";
 
 const navigation = [
     { to: "/dashboard", label: "Overview", icon: GaugeIcon },
@@ -49,7 +50,7 @@ export function AppSidebar() {
         api.agent.slaves,
         { refreshInterval: 25000 }
     );
-    const activeSlaves = slavesData?.slaves?.filter(s => s.isActive).length ?? 0;
+    const activeSlaves = slavesData?.slaves?.filter(s => slaveLiveness(s) === "online").length ?? 0;
 
     return (
         <Sidebar variant="floating" collapsible="icon" className="bg-background">

@@ -42,6 +42,7 @@ export const api = {
         slavesKey: "agent.slaves",
         slaves: () => request<{ slaves: SlaveRecord[]; totalMachines: number }>("/slaves"),
         markInactive: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/inactive`, { method: "POST" }),
+        deleteSlave: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/delete`, { method: "POST" }),
         registerSlave: (body: { name: string }) => request<SlaveCredentials>("/slaves/register", json("POST", body)),
     },
 

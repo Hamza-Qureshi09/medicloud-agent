@@ -1,4 +1,24 @@
-import type { ApiErrorBody } from "@/types/api";
+import type { ApiErrorBody, SlaveRecord } from "@/types/api";
+
+// ── Slave Liveness (mirrors medicloud-app's agentStatus logic) ──────────────
+
+/** How fresh a heartbeat must be for a slave to count as online. */
+export const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+export type SlaveLiveness = "online" | "stale" | "never";
+
+export function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
+    const lastSeen = slave.lastPingAt ? new Date(slave.lastPingAt) : undefined;
+
+    // No heartbeat, or epoch placeholder from preRegister → never connected.
+    if (!lastSeen || Number.isNaN(lastSeen.getTime()) || lastSeen.getTime() === 0) {
+        return "never";
+    }
+
+    return Date.now() - lastSeen.getTime() <= SLAVE_ONLINE_WINDOW_MS
+        ? "online"
+        : "stale";
+}
 
 // dashboard header metadata
 export const pageMeta: Record<string, { title: string; description: string }> =

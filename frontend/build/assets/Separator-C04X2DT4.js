@@ -1,1 +1,0 @@
-import{D as e,ft as t,lt as n}from"./resourceState-BbL36JRU.js";var r=t(n(),1).forwardRef(function(t,n){let{className:r,render:i,orientation:a=`horizontal`,style:o,...s}=t;return e(`div`,t,{state:{orientation:a},ref:n,props:[{role:`separator`,"aria-orientation":a},s]})});export{r as t};

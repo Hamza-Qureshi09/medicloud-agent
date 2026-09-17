@@ -46,6 +46,53 @@ export class SlaveRegistry {
         return { slaveId, slaveSecret };
     }
 
+
+    /**
+     * Pre-register a slave from the master UI.
+     *
+     * Unlike `register()` (called by the slave itself), this creates a slot
+     * that has never actually connected. The slave is marked inactive with
+     * no heartbeat timestamp so the UI shows "never connected" — exactly
+     */
+    async preRegister(
+        instanceId: string,
+    ): Promise<{ slaveId: string; slaveSecret: string }> {
+
+        const slaveSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+        const secretHash = await this.hash(slaveSecret);
+        const now = new Date().toISOString();
+
+        // If this instanceId already exists, refresh credentials only.
+        const existing = await db.select().from(slaveRegistry)
+            .where(eq(slaveRegistry.instanceId, instanceId));
+
+        if (existing.length > 0) {
+            await db.update(slaveRegistry).set({
+                secretHash,
+                updatedAt: now,
+            }).where(eq(slaveRegistry.id, existing[0].id));
+
+            return { slaveId: existing[0].slaveId, slaveSecret };
+        }
+
+        // New slave — inactive with epoch lastPingAt so it reads as "never connected".
+        const slaveId = crypto.randomUUID();
+        const epoch = new Date(0).toISOString();
+
+        await db.insert(slaveRegistry).values({
+            slaveId,
+            instanceId,
+            secretHash,
+            machinesJson: JSON.stringify([]),
+            lastPingAt: epoch,
+            isActive: false,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return { slaveId, slaveSecret };
+    }
+
     /** Verifies a slave's slaveId + secret against the stored hash. */
     async authenticate(slaveId: string, secret: string): Promise<boolean> {
         const rows = await db.select().from(slaveRegistry)
@@ -70,7 +117,7 @@ export class SlaveRegistry {
             .where(eq(slaveRegistry.slaveId, slaveId));
     }
 
-    /** Returns all slaves that have pinged within the last 2 minutes and are explicitly active. */
+    /** Returns all slaves that have pinged within the last 2 minutes. */
     async listActive() {
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
         const all = await db.select().from(slaveRegistry)
@@ -78,14 +125,20 @@ export class SlaveRegistry {
         return all.filter((s) => s.lastPingAt > twoMinutesAgo);
     }
 
-    /** Returns all slaves, dynamically adjusting isActive based on recent ping status. */
+    /** Returns every registered slave regardless of activity or ping recency. */
     async listAll() {
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1_000).toISOString();
-        const all = await db.select().from(slaveRegistry);
-        return all.map(s => ({
-            ...s,
-            isActive: s.isActive && s.lastPingAt > twoMinutesAgo,
-        }));
+        return db.select({
+            id: slaveRegistry.id,
+            slaveId: slaveRegistry.slaveId,
+            instanceId: slaveRegistry.instanceId,
+            host: slaveRegistry.host,
+            port: slaveRegistry.port,
+            machinesJson: slaveRegistry.machinesJson,
+            lastPingAt: slaveRegistry.lastPingAt,
+            isActive: slaveRegistry.isActive,
+            createdAt: slaveRegistry.createdAt,
+            updatedAt: slaveRegistry.updatedAt,
+        }).from(slaveRegistry);
     }
     
     async countMachines(): Promise<number> {
@@ -117,6 +170,19 @@ export class SlaveRegistry {
             .returning({ slaveId: slaveRegistry.slaveId });
 
         return updated.length > 0;
+    }
+
+    /**
+     * Permanently removes a slave from the registry.
+     *
+     * Returns false when no row matches `slaveId`.
+     */
+    async delete(slaveId: string): Promise<boolean> {
+        const deleted = await db.delete(slaveRegistry)
+            .where(eq(slaveRegistry.slaveId, slaveId))
+            .returning({ slaveId: slaveRegistry.slaveId });
+
+        return deleted.length > 0;
     }
 
     // private helpers

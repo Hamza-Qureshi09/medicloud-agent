@@ -88,7 +88,7 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         // the same name refreshes credentials instead of creating duplicates.
         const instanceId = `manual:${name}`;
 
-        const { slaveId, slaveSecret } = await slaveRegistry.register(instanceId, []);
+        const { slaveId, slaveSecret } = await slaveRegistry.preRegister(instanceId);
         return c.json({ slaveId, slaveSecret });
     });
 
@@ -97,6 +97,19 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         if (!slaveRegistry) return c.json({ success: false }, 400);
         const slaveId = c.req.param("slaveId");
         const found = await slaveRegistry.markInactive(slaveId);
+
+        if (!found) {
+            return c.json({ error: "Slave not found" }, 404);
+        }
+
+        return c.json({ success: true });
+    });
+
+    // Permanently delete a slave from the registry.
+    app.post("/slaves/:slaveId/delete", async (c) => {
+        if (!slaveRegistry) return c.json({ success: false }, 400);
+        const slaveId = c.req.param("slaveId");
+        const found = await slaveRegistry.delete(slaveId);
 
         if (!found) {
             return c.json({ error: "Slave not found" }, 404);
