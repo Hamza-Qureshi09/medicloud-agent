@@ -5,7 +5,7 @@ import { ThemeProvider } from "./contexts/theme-context";
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { RouterProvider } from "react-router-dom"
 import { router } from "./router";
-import { HealthProvider } from "./contexts/health-context";
+import { MachineProvider } from "./contexts/machine-context";
 import { Toaster } from "sonner"
 
 export default function App() {
@@ -14,12 +14,12 @@ export default function App() {
             {(theme) => <React.Fragment>
                 <SWRConfig value={swrConfig}>
                     <TooltipProvider>
-                        <HealthProvider>
+                        <MachineProvider>
                             <RouterProvider
                                 useTransitions={true}
                                 router={router}
                             />
-                        </HealthProvider>
+                        </MachineProvider>
                     </TooltipProvider>
                 </SWRConfig>
 

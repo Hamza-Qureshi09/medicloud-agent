@@ -1,8 +1,8 @@
 import { MachineManager } from "@mediCloud/sdk/manager";
-import { HeartbeatWorker } from "../jobs/heartbeat";
-import { OrderPullWorker } from "../jobs/orderPull";
-import { ResultDispatcher } from "../jobs/resultDispatcher";
-import { shutdown } from "./signals";
+import { HeartbeatWorker } from "../jobs/heartbeat.ts";
+import { OrderPullWorker } from "../jobs/orderPull.ts";
+import { ResultDispatcher } from "../jobs/resultDispatcher.ts";
+import { shutdown } from "./signals.ts";
 import { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { EXTERNAL_ORDER_STATUSES, RESULT_DELIVERY_STATUSES } from "./constants.ts";
 import { sql, SQL } from "drizzle-orm";

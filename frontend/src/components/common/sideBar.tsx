@@ -11,6 +11,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
+    SidebarSeparator,
 } from "@/components/ui/sidebar"
 import {
     ActivityIcon,
@@ -23,7 +24,7 @@ import {
     UsersThreeIcon,
     ShareNetworkIcon
 } from "@phosphor-icons/react"
-import { useHealth } from "@/contexts/health-context";
+import { useMachineContext } from "../../contexts/machine-context.tsx";
 
 const navigation = [
     { to: "/dashboard", label: "Overview", icon: GaugeIcon },
@@ -38,8 +39,7 @@ const navigation = [
 
 export function AppSidebar() {
     const location = useLocation()
-    const { connected, mode } = useHealth()
-
+    const { connected, activeSlaves, mode } = useMachineContext()
 
     return (
         <Sidebar variant="floating" collapsible="icon" className="bg-background">
@@ -78,14 +78,6 @@ export function AppSidebar() {
                                             render={<NavLink to={item.to} />}
                                             isActive={
                                             location.pathname === item.to // this will not help in nested paths matching
-                                            /**
-                                             * Allow this kind of nested isActive path.
-                                             * /drivers
-                                             * /drivers /123 /edit
-                                             */
-                                            // item.to === "/"
-                                            //     ? location.pathname === "/"
-                                            //     : location.pathname.startsWith(item.to)
                                             }
                                             tooltip={item.label}
                                             size={"sm"}
@@ -107,11 +99,30 @@ export function AppSidebar() {
             {/* sidebar footer */}
             <SidebarFooter className="bg-background">
                 <SidebarMenu>
+                    {mode === "master" && (
+                        <>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton tooltip="Slaves online" render={<NavLink to="/dashboard/control" />}>
+                                    <span className="relative flex size-7 items-center justify-center">
+                                        <span className="size-2 rounded-full bg-primary" />
+                                        {activeSlaves > 0 && <span className="absolute size-4 animate-ping rounded-full bg-primary/20" />}
+                                    </span>
+                                    <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+                                        <span className="text-xs font-medium">Slaves online</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {activeSlaves} connected
+                                        </span>
+                                    </span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarSeparator className="my-1 mx-2" />
+                        </>
+                    )}
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Service health">
                             <span className="relative flex size-7 items-center justify-center">
                                 <span className="size-2 rounded-full bg-primary" />
-                                <span className="absolute size-4 animate-ping rounded-full bg-primary/20" />
+                                {connected > 0 && <span className="absolute size-4 animate-ping rounded-full bg-primary/20" />}
                             </span>
                             <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
                                 <span className="text-xs font-medium">Service online</span>

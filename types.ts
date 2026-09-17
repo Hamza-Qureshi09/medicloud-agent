@@ -66,10 +66,7 @@ export interface SyncMachineCapability {
     catalog?: Array<{ testCode: string; testName?: string; analytes: CatalogAnalyte[] }>;
 }
 
-export type TSlaveSyncRegisterPayload = {
-    instanceId: string,
-    machines: SyncMachineCapability[]
-}
+
 
 // export type TSlavePingPayload = {
 //     serverTime: string;

@@ -54,18 +54,42 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
     });
 
     // List all registered slaves (master mode only).
-    // The machine total is counted in the database, not derived in the dashboard.
+    // Returns every slave — active, inactive, and pre-registered — so the
+    // control page always shows the full picture.
     app.get("/slaves", async (c) => {
         if (!slaveRegistry) {
             return c.json({ slaves: [], totalMachines: 0 });
         }
 
         const [slaves, totalMachines] = await Promise.all([
-            slaveRegistry.listActive(),
+            slaveRegistry.listAll(),
             slaveRegistry.countMachines(),
         ]);
 
         return c.json({ slaves, totalMachines });
+    });
+
+    // Register a new slave from the master UI.
+    // Returns one-time credentials (slaveId + slaveSecret) that the operator
+    // must copy — the secret cannot be retrieved again.
+    app.post("/slaves/register", async (c) => {
+        if (!slaveRegistry) {
+            return c.json({ error: "Slave registration is only available in master mode" }, 400);
+        }
+
+        const body = await c.req.json().catch(() => ({}));
+        const name = typeof body.name === "string" ? body.name.trim() : "";
+
+        if (!name) {
+            return c.json({ error: "Name is required" }, 400);
+        }
+
+        // Use the name as a stable instanceId prefix so re-registration by
+        // the same name refreshes credentials instead of creating duplicates.
+        const instanceId = `manual:${name}`;
+
+        const { slaveId, slaveSecret } = await slaveRegistry.register(instanceId);
+        return c.json({ slaveId, slaveSecret });
     });
 
     // Mark a slave as inactive
@@ -73,6 +97,19 @@ export function registerDashboardRoutes(app: Hono, slaveRegistry: SlaveRegistry 
         if (!slaveRegistry) return c.json({ success: false }, 400);
         const slaveId = c.req.param("slaveId");
         const found = await slaveRegistry.markInactive(slaveId);
+
+        if (!found) {
+            return c.json({ error: "Slave not found" }, 404);
+        }
+
+        return c.json({ success: true });
+    });
+
+    // Permanently delete a slave from the registry.
+    app.post("/slaves/:slaveId/delete", async (c) => {
+        if (!slaveRegistry) return c.json({ success: false }, 400);
+        const slaveId = c.req.param("slaveId");
+        const found = await slaveRegistry.delete(slaveId);
 
         if (!found) {
             return c.json({ error: "Slave not found" }, 404);

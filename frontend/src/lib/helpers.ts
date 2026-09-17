@@ -1,4 +1,21 @@
-import type { ApiErrorBody } from "@/types/api";
+import type { ApiErrorBody, SlaveLiveness, SlaveRecord } from "@/types/api";
+import { SLAVE_ONLINE_WINDOW_MS } from "./global";
+
+/** How fresh a heartbeat must be for a slave to count as online. */
+
+
+export function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
+    const lastSeen = slave.lastPingAt ? new Date(slave.lastPingAt) : undefined;
+
+    // No heartbeat, or epoch placeholder from preRegister → never connected.
+    if (!lastSeen || Number.isNaN(lastSeen.getTime()) || lastSeen.getTime() === 0) {
+        return "never";
+    }
+
+    return Date.now() - lastSeen.getTime() <= SLAVE_ONLINE_WINDOW_MS
+        ? "online"
+        : "stale";
+}
 
 // dashboard header metadata
 export const pageMeta: Record<string, { title: string; description: string }> =

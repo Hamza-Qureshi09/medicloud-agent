@@ -3,6 +3,8 @@ export type OrderStatus = "pending" | "testing" | "completed" | "failed"
 export type DriverConfigFieldType = "string" | "number" | "boolean" | "select"
 
 export type DriverTransportType = 'tcp' | 'serial' | 'custom';
+export type SlaveLiveness = "online" | "stale" | "never";
+
 
 export interface DriverConfigField {
   key: string
@@ -35,12 +37,13 @@ export interface RunningMachine {
   }
 }
 
-export interface HealthResponse {
+export interface MachineResponse {
   status: string
   mode?: string
   version?: string
   registered_drivers: Driver[]
   running_machines: RunningMachine[]
+  slaves: number
 }
 
 export interface CatalogSummary {
@@ -183,7 +186,7 @@ export type TTestStatisticQuery = {
 // agent mode
 export type AgentMode = "direct" | "master" | "slave"
 
-// agent healthy endpoint response
+// agent machine endpoint response
 export interface AgentHealthyResponse {
   status: string
   mode: AgentMode
@@ -202,6 +205,11 @@ export interface SlaveRecord {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+/** One-time credentials returned when a slave is registered from the master UI. */
+export interface SlaveCredentials {
+  slaveId: string
+  slaveSecret: string
 }
 // external order (syncOrderInbox) types
 // The DB column is plain text with no constraint, so consumers must tolerate

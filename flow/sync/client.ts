@@ -1,6 +1,4 @@
-import { dirname } from "node:path";
 import {
-    register_slave_agent_to_master,
     sync_acknowledge_orders,
     sync_heartbeat,
     sync_pull_orders,
@@ -9,7 +7,6 @@ import {
 } from "../../lib/endpoints.ts";
 import { ApiError, describeError } from "../../lib/error.ts";
 import { env } from "../../lib/env.ts";
-import { getLocalMachineCapabilities } from "./capabilities.ts";
 import {
     SyncMachineCapability,
     SyncAuthHeaders,
@@ -164,39 +161,28 @@ export function createSlaveSyncClient(
     instanceId: string,
     options: {
         masterUrl?: string;
-        credentialsPath?: string;
-        getCapabilities?: () => Promise<SyncMachineCapability[]>;
     } = {},
 ): SyncClient {
     const masterUrl = options.masterUrl ?? `http://${env.MASTER_HOST}:${env.MASTER_PORT}`;
-    const credentialsPath = options.credentialsPath ?? "./data/slave-credentials.json";
     let pending: Promise<SyncAuthHeaders> | undefined;
 
     const initialize = async (): Promise<SyncAuthHeaders> => {
-        let credentials: { slaveId?: string; slaveSecret?: string } = {};
-        try {
-            credentials = JSON.parse(await Deno.readTextFile(credentialsPath));
-        } catch (error) {
-            if (!(error instanceof Deno.errors.NotFound) && !(error instanceof SyntaxError)) throw error;
-        }
-        let { slaveId, slaveSecret } = credentials ?? {};
+        const slaveId = env.SLAVE_ID;
+        const slaveSecret = env.SLAVE_SECRET;
+
         if (!slaveId || !slaveSecret) {
-            const machines = await (options.getCapabilities ?? getLocalMachineCapabilities)();
-            const data = await register_slave_agent_to_master(masterUrl, { instanceId, machines });
-            slaveId = data.slaveId;
-            slaveSecret = data.slaveSecret;
-            await Deno.mkdir(dirname(credentialsPath), { recursive: true });
-            await Deno.writeTextFile(credentialsPath, JSON.stringify({ slaveId, slaveSecret }));
+            throw new Error("SLAVE_ID and SLAVE_SECRET environment variables are required in slave mode.");
         }
-        return { clientId: slaveId!, secret: slaveSecret!, instanceId, headerPrefix: "slave" };
+
+        return { clientId: slaveId, secret: slaveSecret, instanceId, headerPrefix: "slave" };
     };
 
     return new SyncClient(masterUrl, "", "", instanceId, "slave", "/slave-sync", () => {
         if (!pending) {
             pending = initialize().catch((error) => {
                 pending = undefined;
-                // Failure to register says nothing about queued patient results.
-                throw new ApiError(`Slave registration unavailable: ${describeError(error)}`, 503);
+                // Failure to configure says nothing about queued patient results.
+                throw new ApiError(`Slave configuration missing: ${describeError(error)}`, 503);
             });
         }
         return pending;

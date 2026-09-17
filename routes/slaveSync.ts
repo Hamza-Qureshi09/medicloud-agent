@@ -14,16 +14,6 @@ const SLAVE_LEASE_MS = 5 * 60 * 1_000;  // 5 mins
 
 
 /**
- * One-time registration check - requires the shared SLAVE_BOOTSTRAP_SECRET.
- * Used only on the /register endpoint to prevent arbitrary agents from registering.
- */
-function authorizeBootstrap(context: Context): boolean {
-    return Boolean(env.SLAVE_BOOTSTRAP_SECRET) &&
-        context.req.header("x-slave-secret") === env.SLAVE_BOOTSTRAP_SECRET;
-}
-
-
-/**
  * Per-request authentication - verifies slaveId + per-slave secret.
  * Returns the authenticated slaveId string, or a 401 Response to return immediately.
  */
@@ -46,7 +36,6 @@ async function requireSlave(
  * Only called in "master" mode - slaves talk to these endpoints.
  *
  * Routes:
- *   POST /slave-sync/register        - slave registers, receives slaveId + secret
  *   POST /slave-sync/heartbeat       - slave pings with current machine list
  *   POST /slave-sync/orders/pull     - slave requests a batch of leased orders
  *   POST /slave-sync/orders/ack      - slave accepts/rejects a batch of orders
@@ -60,31 +49,16 @@ export function registerSlaveSyncRoutes(
     resultDispatcher: ResultDispatcher,
 ): void {
 
-    // Slave registers itself for the first time (or re-registers after restart).
-    // Requires the bootstrap secret - not the per-slave secret.
-    app.post("/slave-sync/register", async (context) => {
-        if (!authorizeBootstrap(context)) {
-            return context.json({ error: "Unauthorized" }, 401);
-        }
-
-        const body = await context.req.json();
-        if (!body.instanceId || !Array.isArray(body.machines)) {
-            return context.json({ error: "instanceId and machines are required" }, 400);
-        }
-
-        return context.json(await registry.register(body.instanceId, body.machines));
-    });
-
 
     // Slave pings master with its current machine list.
     // Master responds with timing hints (how soon to ping again, pull again).
     app.post("/slave-sync/heartbeat", async (context) => {
         const slaveId = await requireSlave(context, registry);
         if (slaveId instanceof Response) return slaveId;
-
+        
         const body = await context.req.json();
         await registry.ping(slaveId, body.machines ?? []);
-
+        
         return context.json({
             serverTime: new Date().toISOString(),
             heartbeatAfterMs: 30_000,

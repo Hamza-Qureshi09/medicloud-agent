@@ -1,4 +1,4 @@
-import type { ApiErrorBody, CatalogDetail, SlaveRecord, CatalogSummary, Driver, ExternalOrder, ExternalResult, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
+import type { ApiErrorBody, CatalogDetail, SlaveRecord, SlaveCredentials, CatalogSummary, Driver, ExternalOrder, ExternalResult, MachineResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
 import { ApiError, json } from "./helpers"
 import type { OrderPayload, ProfilePayload } from "./schema"
 
@@ -42,11 +42,13 @@ export const api = {
         slavesKey: "agent.slaves",
         slaves: () => request<{ slaves: SlaveRecord[]; totalMachines: number }>("/slaves"),
         markInactive: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/inactive`, { method: "POST" }),
+        deleteSlave: (slaveId: string) => request<{ success: boolean }>(`/slaves/${slaveId}/delete`, { method: "POST" }),
+        registerSlave: (body: { name: string }) => request<SlaveCredentials>("/slaves/register", json("POST", body)),
     },
 
     info: {
         detailKey: "info",
-        get: () => request<HealthResponse>("/info"),
+        get: () => request<MachineResponse>("/info"),
     },
 
     drivers: {

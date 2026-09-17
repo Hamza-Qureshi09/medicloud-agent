@@ -1,6 +1,6 @@
 import { PageSection } from "@/components/common/pageSection"
 import { PageLoading, RefreshButton, ResourceError, ResourceEmpty } from "@/components/common/resourceState"
-import { useHealth } from "@/contexts/health-context"
+import { useMachineContext } from "../contexts/machine-context.tsx"
 import { api } from "@/lib/api"
 import { CheckCircleIcon, ClockCountdownIcon, MicroscopeIcon, WarningCircleIcon } from "@phosphor-icons/react"
 import React from "react"
@@ -40,12 +40,12 @@ const chartConfig = {
 export function DashboardPage() {
     const {
         connected,
-        data: healthData,
-        error: healthError,
+        data: machineData,
+        error: machineError,
         isLoading,
-        mutate: healthMutate,
-        isValidating: healthIsValidating
-    } = useHealth()
+        mutate: machineMutate,
+        isValidating: machineIsValidating
+    } = useMachineContext()
 
     // Rqst #1 (order)
     const orderQuery = React.useMemo(() => ({ limit: 100 }), [])
@@ -118,8 +118,8 @@ export function DashboardPage() {
 
     // loading / error checking
     if (isLoading) return <PageLoading />
-    if (healthError) {
-        return <ResourceError error={healthError} onRetry={() => healthMutate()} />
+    if (machineError) {
+        return <ResourceError error={machineError} onRetry={() => machineMutate()} />
     }
 
 
@@ -131,9 +131,9 @@ export function DashboardPage() {
             description="A single view of connected analyzers, staged work, active tests, and learned turnaround performance."
             actions={
                 <RefreshButton
-                    isLoading={healthIsValidating || orderIsValidating || statisticsIsValidating}
+                    isLoading={machineIsValidating || orderIsValidating || statisticsIsValidating}
                     onRefresh={() => {
-                        void healthMutate()
+                        void machineMutate()
                         void orderMutate()
                         void statisticsMutate()
                     }}
@@ -146,7 +146,7 @@ export function DashboardPage() {
             <StatCard
                 title="Connected analyzers"
                 value={connected}
-                detail={`${healthData?.running_machines.length ?? 0} profiles running`}
+                detail={`${machineData?.running_machines.length ?? 0} profiles running`}
                 icon={MicroscopeIcon}
             />
             <StatCard
@@ -229,8 +229,8 @@ export function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                    {healthData?.running_machines.length ? (
-                        healthData.running_machines.map(({ profile, machine }) => (
+                    {machineData?.running_machines.length ? (
+                        machineData.running_machines.map(({ profile, machine }) => (
                             <div
                                 key={profile.id}
                                 className="flex items-center justify-between gap-3 rounded-2xl border p-3"

@@ -1,4 +1,6 @@
 export const ITEMS_PER_PAGE = 20;
+export const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
 
 /**
  * Total pages for a list.

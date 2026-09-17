@@ -12,25 +12,22 @@ const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
 
 // environment checkups
 function environmentCheckups() {
-  // "master" and "slave" modes both need SLAVE_BOOTSTRAP_SECRET
-  if (
-    (env.AGENT_MODE === "master" || env.AGENT_MODE === "slave") &&
-    !env.SLAVE_BOOTSTRAP_SECRET
-  ) {
-    throw new Error("SLAVE_BOOTSTRAP_SECRET is required in master and slave modes");
-  }
+  switch (env.AGENT_MODE) {
+    case "slave":
+      if (!env.MASTER_HOST) throw new Error("MASTER_HOST is required in slave mode");
+      if (!env.SLAVE_ID) throw new Error("SLAVE_ID is required in slave mode");
+      if (!env.SLAVE_SECRET) throw new Error("SLAVE_SECRET is required in slave mode");
+      break;
 
-  // slave mode also needs to know where the "master" lives
-  if (env.AGENT_MODE === "slave" && !env.MASTER_HOST) {
-    throw new Error("MASTER_HOST is required in slave mode");
-  }
+    case "direct":
+    case "master":
+      if (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL) {
+        throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
+      }
+      break;
 
-  // "direct" and "master" modes communicate with MediCloud directly
-  if (
-    env.AGENT_MODE !== "slave" &&
-    (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL)
-  ) {
-    throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
+    default:
+      throw new Error(`Unknown AGENT_MODE: ${env.AGENT_MODE}`);
   }
 }
 

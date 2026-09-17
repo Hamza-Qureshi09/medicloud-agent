@@ -2,7 +2,7 @@ import React from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import useSWR from "swr"
 import { api } from "@/lib/api"
-import { useHealth } from "@/contexts/health-context"
+import { useMachineContext } from "../../contexts/machine-context.tsx"
 import { useAsyncAction } from "@/hooks/use-async-action"
 import { PageSection } from "@/components/common/pageSection"
 import { PageLoading, ResourceError } from "@/components/common/resourceState"
@@ -43,7 +43,7 @@ export function ProfileDetailPage() {
     const navigate = useNavigate()
     const machineId = Number(id)
 
-    const { data: healthData, mutate: healthMutate } = useHealth()
+    const { data: healthData, mutate: healthMutate } = useMachineContext()
 
     // Fetch Profile Detail
     const {

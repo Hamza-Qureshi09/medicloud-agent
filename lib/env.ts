@@ -76,7 +76,8 @@ const EnvSchema = z.object({
 	// Slave mode only settings.
 	MASTER_HOST: envString(),
 	MASTER_PORT: envNumber(5001),
-	SLAVE_BOOTSTRAP_SECRET: envString(),
+	SLAVE_ID: envString(),
+	SLAVE_SECRET: envString(),
 
 	// Agent MediCloud database.
 	MEDICLOUD_DB_PATH: envString("./data/medicloud.db"),
