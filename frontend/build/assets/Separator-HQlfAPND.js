@@ -1,0 +1,1 @@
+import{dt as e,k as t,mt as n}from"./resourceState-BBWg9UPh.js";var r=n(e(),1).forwardRef(function(e,n){let{className:r,render:i,orientation:a=`horizontal`,style:o,...s}=e;return t(`div`,e,{state:{orientation:a},ref:n,props:[{role:`separator`,"aria-orientation":a},s]})});export{r as t};

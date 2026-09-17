@@ -3,6 +3,8 @@ export type OrderStatus = "pending" | "testing" | "completed" | "failed"
 export type DriverConfigFieldType = "string" | "number" | "boolean" | "select"
 
 export type DriverTransportType = 'tcp' | 'serial' | 'custom';
+export type SlaveLiveness = "online" | "stale" | "never";
+
 
 export interface DriverConfigField {
   key: string
@@ -35,7 +37,7 @@ export interface RunningMachine {
   }
 }
 
-export interface HealthResponse {
+export interface MachineResponse {
   status: string
   mode?: string
   version?: string
@@ -184,7 +186,7 @@ export type TTestStatisticQuery = {
 // agent mode
 export type AgentMode = "direct" | "master" | "slave"
 
-// agent healthy endpoint response
+// agent machine endpoint response
 export interface AgentHealthyResponse {
   status: string
   mode: AgentMode

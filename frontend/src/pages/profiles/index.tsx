@@ -5,7 +5,7 @@ import {
     ResourceEmpty,
     ResourceError,
 } from "@/components/common/resourceState";
-import { useHealth } from "@/contexts/health-context";
+import { useMachineContext } from "../../contexts/machine-context.tsx";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { api } from "@/lib/api";
 import React, { useState } from "react";
@@ -56,7 +56,7 @@ import {
 
 export function ProfilesPage() {
     const [currentPage, setCurrentPage] = useState(1);
-    const { data: healthData, mutate: healthMutate } = useHealth();
+    const { data: machineData, mutate: machineMutate } = useMachineContext();
 
     const {
         data: profileCount,
@@ -100,12 +100,12 @@ export function ProfilesPage() {
 
     const running = React.useMemo(() => {
         return new Map(
-            (healthData?.running_machines ?? []).map((item) => [
+            (machineData?.running_machines ?? []).map((item) => [
                 item.profile.id,
                 item.machine,
             ]),
         );
-    }, [healthData]);
+    }, [machineData]);
 
     const driversById = React.useMemo(
         () =>
@@ -121,7 +121,7 @@ export function ProfilesPage() {
     const profileAction = useAsyncAction("Analyzer action failed.");
     async function runHardRefresh() {
         await Promise.all([
-            healthMutate(),
+            machineMutate(),
             driversMutate(),
             profileCountMutate(),
             profilesMutate(),

@@ -1,4 +1,4 @@
-import type { ApiErrorBody, CatalogDetail, SlaveRecord, SlaveCredentials, CatalogSummary, Driver, ExternalOrder, ExternalResult, HealthResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
+import type { ApiErrorBody, CatalogDetail, SlaveRecord, SlaveCredentials, CatalogSummary, Driver, ExternalOrder, ExternalResult, MachineResponse, MachineOrder, MachineProfile, MachineResult, OrderStatus, TestStatistic, TProfileQuery } from "@/types/api"
 import { ApiError, json } from "./helpers"
 import type { OrderPayload, ProfilePayload } from "./schema"
 
@@ -48,7 +48,7 @@ export const api = {
 
     info: {
         detailKey: "info",
-        get: () => request<HealthResponse>("/info"),
+        get: () => request<MachineResponse>("/info"),
     },
 
     drivers: {

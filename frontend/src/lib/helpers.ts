@@ -1,9 +1,8 @@
-import type { ApiErrorBody, SlaveRecord } from "@/types/api";
+import type { ApiErrorBody, SlaveLiveness, SlaveRecord } from "@/types/api";
+import { SLAVE_ONLINE_WINDOW_MS } from "./global";
 
 /** How fresh a heartbeat must be for a slave to count as online. */
-export const SLAVE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
-export type SlaveLiveness = "online" | "stale" | "never";
 
 export function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
     const lastSeen = slave.lastPingAt ? new Date(slave.lastPingAt) : undefined;

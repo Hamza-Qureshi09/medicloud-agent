@@ -194,7 +194,7 @@ export const slaveRegistry = sqliteTable(
         machinesJson: text().notNull(),
 
         // Time when the master last successfully received a heartbeat/ping from the slave.
-        lastPingAt: text().notNull(),
+        lastPingAt: text(),
 
         // Whether the slave is currently considered active/available by the master.
         isActive: int({ mode: "boolean" })

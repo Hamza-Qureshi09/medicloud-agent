@@ -6,7 +6,6 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon, CopyIcon, CheckIcon, WarningIcon, TrashIcon } from "@phosphor-icons/react";
-import useSWR from "swr";
 import { api } from "@/lib/api";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
@@ -29,8 +28,9 @@ import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
-import { slaveLiveness, type SlaveLiveness } from "@/lib/helpers";
+import type { SlaveRecord, SlaveCredentials, SlaveLiveness } from "../../types/api.ts";
+import { slaveLiveness } from "@/lib/helpers";
+import { useMachineContext } from "@/contexts/machine-context";
 
 const slaveStatusLabel: Record<SlaveLiveness, string> = {
     online: "Online",
@@ -44,18 +44,13 @@ const slaveStatusVariant: Record<SlaveLiveness, "default" | "secondary" | "outli
     never: "outline",
 };
 
-
 export function ControlPage() {
-    const { data, error, mutate } = useSWR(api.agent.slavesKey, api.agent.slaves, {
-        revalidateOnFocus: false,
-        refreshInterval: 25000,
-    });
+    const { slavesData: data, activeSlaves, mutateSlaves: mutate, error } = useMachineContext();
     
     // Get slaves from API
     const slaves = data?.slaves as SlaveRecord[] || [];
 
     const totalSlaves = slaves.length;
-    const activeSlaves = slaves.filter(s => slaveLiveness(s) === "online").length;
 
     // Machine totals are computed by the agent, not derived here.
     const totalMachines = data?.totalMachines ?? 0;
@@ -226,7 +221,7 @@ export function ControlPage() {
 }
 
 
-// ── Register Slave Button + Dialog 
+// Register Slave Button + Dialog 
 
 const registerSlaveSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters").trim()
@@ -311,7 +306,7 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
 }
 
 
-// ── Credentials Reveal (shown once after successful registration)
+// Credentials Reveal (shown once after successful registration)
 
 function SlaveCredentialsReveal({
     credentials,
@@ -367,7 +362,7 @@ function SlaveCredentialsReveal({
 }
 
 
-// ── Copy Button (local to this page)
+// Copy Button
 function CopyButton({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
 
@@ -395,7 +390,7 @@ function CopyButton({ value }: { value: string }) {
 }
 
 
-// ── Stat Card
+// Stat Card
 
 function StatCard({
     title,

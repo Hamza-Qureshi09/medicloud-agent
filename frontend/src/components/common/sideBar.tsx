@@ -24,7 +24,7 @@ import {
     UsersThreeIcon,
     ShareNetworkIcon
 } from "@phosphor-icons/react"
-import { useHealth } from "@/contexts/health-context";
+import { useMachineContext } from "../../contexts/machine-context.tsx";
 
 const navigation = [
     { to: "/dashboard", label: "Overview", icon: GaugeIcon },
@@ -39,7 +39,7 @@ const navigation = [
 
 export function AppSidebar() {
     const location = useLocation()
-    const { connected, activeSlaves, mode } = useHealth()
+    const { connected, activeSlaves, mode } = useMachineContext()
 
     return (
         <Sidebar variant="floating" collapsible="icon" className="bg-background">
