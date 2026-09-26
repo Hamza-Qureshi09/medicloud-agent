@@ -1,7 +1,7 @@
 import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAsyncAction } from "@/hooks/use-async-action"
-import type { CatalogTest, MachineOrder, MachineProfile } from "@/types/api"
+import type { CatalogTest, AgentOrder, MachineOrder, MachineProfile } from "@/types/api"
 import { Controller, useForm, useWatch, type SubmitHandler } from "react-hook-form"
 import { orderFormSchema, orderPayload, type OrderFormValues } from "@/lib/schema"
 import { extractApiError } from "@/lib/helpers"
@@ -43,16 +43,21 @@ import { toast } from "sonner"
 export function OrderForm({
     profiles,
     order,
+    agentOrder,
     onSaved,
     trigger,
 }: {
     profiles: MachineProfile[]
     order?: MachineOrder
+    agentOrder?: AgentOrder
     onSaved: () => Promise<unknown>
     trigger?: React.ReactElement
 }) {
     const [open, setOpen] = React.useState(false)
+    const [loadingOrder, setLoadingOrder] = React.useState(false)
     const saveOrder = useAsyncAction("Order could not be saved.")
+
+    const isEditing = Boolean(order?.id || agentOrder)
 
     const form = useForm<OrderFormValues>({
         resolver: zodResolver(orderFormSchema),
@@ -99,27 +104,29 @@ export function OrderForm({
     )
 
     // Open/close handler
-    function changeOpen(nextOpen: boolean) {
-        if (nextOpen) {
-            saveOrder.reset()
-            form.clearErrors()
-            form.reset(getOrderFormDefaults(profiles, order))
-
-
-            // // fetch latest info by calling api before showing prefilled fields
-            // if (order?.id) {
-            //     try {
-            //         const { order: latestOrderData } = await saveOrder.execute(() => api.orders.get(order.id))
-            //         form.reset(getOrderFormDefaults(profiles, latestOrderData))
-            // handleTestsChange(latestOrderData.tests??[])
-            //     } catch (err) {
-            //         toast.error(extractApiError(err, "Could not load order details."))
-            //     }
-            // } else {
-            //     dispatch({ type: "SET_TESTS", tests: [] })
-            // }
+    async function changeOpen(nextOpen: boolean) {
+        if (!nextOpen) {
+            setOpen(false)
+            return
         }
-        setOpen(nextOpen)
+
+        saveOrder.reset()
+        form.clearErrors()
+        form.reset(getOrderFormDefaults(profiles, order))
+        setOpen(true)
+
+        const agentOrderId = agentOrder?.agentOrderId
+        if (order || agentOrderId == null) return
+
+        setLoadingOrder(true)
+        try {
+            const { order: latest } = await api.orders.get(agentOrderId)
+            form.reset(getOrderFormDefaults(profiles, latest))
+        } catch (err) {
+            toast.error(extractApiError(err, "Could not load order details."))
+        } finally {
+            setLoadingOrder(false)
+        }
     }
 
     // submit handler
@@ -140,15 +147,17 @@ export function OrderForm({
             }
 
             await saveOrder.execute(async () => {
-                const input = orderPayload(data, Boolean(order?.id))
+                const input = orderPayload(data, isEditing)
 
                 // create/update
-                if (order?.id) await api.orders.update(order.id, input)
-                else await api.orders.create(input)
+                if (agentOrder) await api.agentOrders.update(agentOrder.id, input)
+                else if (order?.id) await api.orders.update(order.id, input)
 
-                toast.success(order?.id ? "Order updated successfully." : "Order created successfully.")
+                else await api.agentOrders.create(input)
+
+                toast.success(isEditing ? "Order updated successfully." : "Order created successfully.")
                 await onSaved()
-                changeOpen(false)
+                void changeOpen(false)
             })
         } catch (err) {
             const msg = extractApiError(err, "Order could not be saved.")
@@ -157,8 +166,12 @@ export function OrderForm({
         }
     }
 
-    const dialogTrigger = trigger ?? (order ? (
-        <Button variant="ghost" size="icon-xs" aria-label={`Edit ${order.sampleId}`}>
+    const dialogTrigger = trigger ?? (isEditing ? (
+        <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={`Edit ${order?.sampleId ?? agentOrder?.dispatchId ?? "order"}`}
+        >
             <PencilSimpleIcon />
         </Button>
     ) : (
@@ -174,7 +187,7 @@ export function OrderForm({
             open={open}
             onOpenChange={(nextOpen, eventDetails) => {
                 if (eventDetails.reason === "outside-press") return
-                changeOpen(nextOpen)
+                void changeOpen(nextOpen)
             }}
         >
             <DialogTrigger render={dialogTrigger} />
@@ -184,26 +197,32 @@ export function OrderForm({
 
                     <DialogHeader>
                         <DialogTitle className="font-normal">
-                            {order?.id ? "Edit order" : "Create order"}
+                            {isEditing ? "Edit order" : "Create order"}
                         </DialogTitle>
                         <DialogDescription className="font-normal">
                             Active orders are staged in the target analyzer after validation.
                         </DialogDescription>
                     </DialogHeader>
 
-                    {!order?.id && profiles.length === 0 ? (
+                    {!isEditing && profiles.length === 0 ? (
                         <div className="py-5">
                             <ResourceEmpty
                                 title="No running analyzer"
                                 description="Start an analyzer profile before creating a test order."
                             />
                         </div>
+                    ) : loadingOrder ? (
+                        <div className="flex flex-col gap-4 py-6">
+                            <Skeleton className="h-9 w-full rounded-lg" />
+                            <Skeleton className="h-9 w-full rounded-lg" />
+                            <Skeleton className="h-9 w-2/3 rounded-lg" />
+                        </div>
                     ) : (
                         <ScrollArea className="h-[55dvh] min-h-0">
                             <FieldGroup className="py-2">
 
                                 {/* Analyzer selector - create only */}
-                                {!order?.id && (
+                                {!isEditing && (
                                     <Controller
                                         control={form.control}
                                         name="machineId"
@@ -411,17 +430,21 @@ export function OrderForm({
                             type="button"
                             variant="outline"
                             className="font-normal"
-                            onClick={() => changeOpen(false)}
+                            onClick={() => void changeOpen(false)}
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             className="font-normal"
-                            disabled={saveOrder.pending || (!order && (!profiles.length || !machineId))}
+                            disabled={
+                                saveOrder.pending ||
+                                loadingOrder ||
+                                (!isEditing && (!profiles.length || !machineId))
+                            }
                         >
                             {saveOrder.pending ? <Spinner data-icon="inline-start" /> : null}
-                            {order ? "Save changes" : "Create order"}
+                            {isEditing ? "Save changes" : "Create order"}
                         </Button>
                     </DialogFooter>
                 </form>

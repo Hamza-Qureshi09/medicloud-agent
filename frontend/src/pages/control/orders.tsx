@@ -1,16 +1,12 @@
-import { ConfirmAction } from "@/components/common/confirmAction";
 import { Pagination } from "@/components/common/pagination";
 import { PageLoading, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
-import { ExternalOrderStatusBadge } from "@/components/common/statusBadge";
-import { Button } from "@/components/ui/button";
+import { AgentOrderStatusBadge } from "@/components/common/statusBadge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, type ExternalQuery } from "@/lib/api";
 import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
-import { XCircleIcon } from "@phosphor-icons/react";
 import { useCallback, useMemo, useReducer } from "react";
-import { toast } from "sonner";
 import useSWR from "swr";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 
@@ -156,7 +152,6 @@ export function ControlSlaveOrders() {
                                     <TableHead className="font-normal">Driver</TableHead>
                                     <TableHead className="font-normal">Status</TableHead>
                                     <TableHead className="font-normal">Received At</TableHead>
-                                    <TableHead className="text-right font-normal">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -175,33 +170,10 @@ export function ControlSlaveOrders() {
                                             {order.driverId}
                                         </TableCell>
                                         <TableCell className="font-normal">
-                                            <ExternalOrderStatusBadge status={order.status} />
+                                            <AgentOrderStatusBadge status={order.status} />
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-xs font-mono font-normal">
                                             {new Date(order.receivedAt).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {(order.status === "received" || order.status === "acknowledged") ? (
-                                                <ConfirmAction
-                                                    trigger={
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon-xs"
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <XCircleIcon />
-                                                        </Button>
-                                                    }
-                                                    title="Reject Order"
-                                                    description={`Are you sure you want to reject order ${order.dispatchId}? This will mark it as failed and notify MediCloud.`}
-                                                    actionLabel="Reject"
-                                                    onConfirm={async () => {
-                                                        await api.externalOrders.reject(order.id);
-                                                        toast.success("Order rejected successfully");
-                                                        refresh();
-                                                    }}
-                                                />
-                                            ) : null}
                                         </TableCell>
                                     </TableRow>
                                 ))}

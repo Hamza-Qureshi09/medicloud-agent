@@ -19,6 +19,8 @@ export const syncOrderInbox = sqliteTable(
 
         // Unique MediCloud dispatch ID used to prevent processing the same dispatch twice. WHAT work/delivery is this?
         dispatchId: text().notNull().unique(),
+        // Unique MediCloud order ID associated with the dispatch.
+        source: text().notNull().default("upstream"),
 
         // Lease ID assigned by MediCloud for this order delivery. WHO currently has permission to process it?
         leaseId: text().notNull(),

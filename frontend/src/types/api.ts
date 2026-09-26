@@ -211,10 +211,10 @@ export interface SlaveCredentials {
   slaveId: string
   slaveSecret: string
 }
-// external order (syncOrderInbox) types
+// agent order (syncOrderInbox) types
 // The DB column is plain text with no constraint, so consumers must tolerate
 // values outside this union.
-export type ExternalOrderStatus =
+export type AgentOrderStatus =
   | "received"
   | "acknowledged"
   | "processing"
@@ -223,16 +223,20 @@ export type ExternalOrderStatus =
   | "completed"
   | "failed"
 
-export interface ExternalOrder {
+export type AgentOrderSource = "upstream" | "local"
+
+export interface AgentOrder {
   id: number
   dispatchId: string
+  source: AgentOrderSource
+  machineStatus?: OrderStatus | null
   leaseId: string
   profileKey: string
   driverId: string
   targetSlaveId: string | null
   payloadJson: string
   agentOrderId: number | null
-  status: ExternalOrderStatus
+  status: AgentOrderStatus
   errorText: string | null
   receivedAt: string
   acknowledgedAt: string | null
@@ -246,7 +250,17 @@ export interface ExternalOrder {
 
 // external result (medicloudResultDispatch) types
 export type ResultDeliveryStatus = 0 | 1 | 2 | 3
+export const slaveStatusLabel: Record<SlaveLiveness, string> = {
+    online: "Online",
+    stale: "Unreachable",
+    never: "Never Connected",
+};
 
+export const slaveStatusVariant: Record<SlaveLiveness, "default" | "secondary" | "outline"> = {
+    online: "default",
+    stale: "secondary",
+    never: "outline",
+};
 export interface ExternalResult {
   id: number
   agentResultId: number | null

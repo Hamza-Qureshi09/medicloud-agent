@@ -5,8 +5,8 @@ import type { ListPage, ListQuery } from "../../types.ts";
 import { contains, toDeliveryStatus, toOrderStatus } from "../../lib/utils.ts";
 
 
-/** Newest-first page of MediCloud orders received by this agent, searchable by dispatch ID. */
-export async function listExternalOrders(
+/** Newest-first page of this agent's orders (MediCloud dispatches and locally created ones), searchable by ID. */
+export async function listAgentOrders(
     { search, status, limit, offset }: ListQuery,
 ): Promise<ListPage<typeof syncOrderInbox.$inferSelect>> {
 
@@ -89,6 +89,7 @@ export async function listSlaveOrders(
             .select({
                 id: syncOrderInbox.id,
                 dispatchId: syncOrderInbox.dispatchId,
+                source: syncOrderInbox.source,
                 leaseId: syncOrderInbox.leaseId,
                 profileKey: syncOrderInbox.profileKey,
                 driverId: syncOrderInbox.driverId,

@@ -4,7 +4,12 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import type { ExternalOrderStatus, OrderStatus, ResultDeliveryStatus } from "@/types/api"
+import type {
+    AgentOrderSource,
+    AgentOrderStatus,
+    OrderStatus,
+    ResultDeliveryStatus,
+} from "@/types/api"
 
 /**
  * Three different status vocabularies meet on this dashboard, and they are easy
@@ -12,8 +17,8 @@ import type { ExternalOrderStatus, OrderStatus, ResultDeliveryStatus } from "@/t
  *
  *   - MACHINE order status  - owned by the machine SDK. Where the sample is on
  *     the analyzer.
- *   - EXTERNAL order status - owned by this agent. Where a MediCloud dispatch
- *     is in the sync handshake.
+ *   - AGENT order status    - owned by this agent. Where a MediCloud dispatch
+ *     is in the sync handshake, or how far an order created here has got.
  *   - DELIVERY status       - owned by this agent's outbox. Whether a finished
  *     result actually reached MediCloud.
  *
@@ -42,7 +47,7 @@ const machineStatusMeta: Record<OrderStatus, StatusMeta> = {
     },
 }
 
-const externalStatusMeta: Record<ExternalOrderStatus, StatusMeta> = {
+const agentOrderStatusMeta: Record<AgentOrderStatus, StatusMeta> = {
     received: {
         label: "Received",
         hint: "Pulled from MediCloud and stored locally, but not yet confirmed back. It is not on an analyzer yet.",
@@ -92,7 +97,6 @@ const deliveryStatusMeta: Record<ResultDeliveryStatus, StatusMeta> = {
     },
 }
 
-/** Wraps a badge so hovering (or focusing) explains what the status means. */
 function ExplainedBadge({
     meta,
     variant,
@@ -102,8 +106,6 @@ function ExplainedBadge({
     variant: "default" | "secondary" | "destructive" | "outline"
     fallback: string
 }) {
-    // An unrecognised status is shown raw rather than blank: a new value coming
-    // from a newer SDK or agent build should be visible, not silently empty.
     if (!meta) return <Badge variant="outline">{fallback}</Badge>
 
     return (
@@ -141,7 +143,7 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
     )
 }
 
-export function ExternalOrderStatusBadge({ status }: { status: ExternalOrderStatus }) {
+export function AgentOrderStatusBadge({ status }: { status: AgentOrderStatus }) {
     const variant =
         status === "failed"
             ? "destructive"
@@ -153,10 +155,23 @@ export function ExternalOrderStatusBadge({ status }: { status: ExternalOrderStat
 
     return (
         <ExplainedBadge
-            meta={externalStatusMeta[status]}
+            meta={agentOrderStatusMeta[status]}
             variant={variant}
             fallback={status}
         />
+    )
+}
+
+const orderSourceLabels: Record<AgentOrderSource, string> = {
+    local: "Owned",
+    upstream: "Upstream",
+}
+
+export function OrderSourceBadge({ source }: { source: AgentOrderSource }) {
+    return (
+        <Badge variant={source === "local" ? "secondary" : "outline"}>
+            {orderSourceLabels[source] ?? source}
+        </Badge>
     )
 }
 

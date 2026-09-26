@@ -51,7 +51,7 @@ export const MAX_PAGE_SIZE = 100;
 
 
 /** Lifecycle states a `syncOrderInbox` row can hold. Mirrors the status doc in schema.ts. */
-export const EXTERNAL_ORDER_STATUSES = [
+export const AGENT_ORDER_STATUSES = [
     "received",
     "acknowledged",
     "processing",

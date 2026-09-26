@@ -78,26 +78,87 @@ export async function postMachineOrder(order: {
     sampleType?: string;
     rackPosition?: string;
     tests: string[];
-    patientName: string;
-    patientId: string;
+    patientName?: string;
+    patientId?: string;
     dob?: string;
     sex?: string;
     createdAt: string;
     expiresAt: string;
 }): Promise<number> {
+
+    const body = Object.fromEntries(
+        Object.entries(order).filter(([, value]) =>
+            value !== undefined &&
+            value !== "" &&
+            !(Array.isArray(value) && value.length === 0)
+        ),
+    );
+
     const response = await fetch(`${AGENT_URL}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
+        body: JSON.stringify(body),
     });
     if (!response.ok) {
-        throw new ApiError("Failed to post order to local machine SDK.", response.status);
+        const error = await response.json().catch(() => ({})) as { error?: string };
+        throw new ApiError(
+            error.error ?? "Failed to post order to local machine SDK.",
+            response.status,
+        );
     }
     const data = await response.json() as { order: { id: number } | null };
     if (!data.order) {
         throw new Error("Machine SDK did not return a created order.");
     }
     return data.order.id;
+}
+
+export async function fetchMachineOrder(
+    orderId: number,
+): Promise<{ id: number; status?: string } | null> {
+    const response = await fetch(`${AGENT_URL}/orders/${orderId}`);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+        throw new ApiError(
+            `Failed to read machine order ${orderId}.`,
+            response.status,
+        );
+    }
+    const data = await response.json() as { order: { id: number; status?: string } | null };
+    return data.order ?? null;
+}
+
+export async function patchMachineOrder(
+    orderId: number,
+    update: Record<string, unknown>,
+): Promise<void> {
+    const response = await fetch(`${AGENT_URL}/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update),
+    });
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new ApiError(
+            body.error ?? `Failed to update machine order ${orderId}.`,
+            response.status,
+        );
+    }
+}
+
+export async function deleteMachineOrder(orderId: number): Promise<boolean> {
+    const response = await fetch(`${AGENT_URL}/orders/${orderId}`, {
+        method: "DELETE",
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new ApiError(
+            body.error ?? `Failed to delete machine order ${orderId}.`,
+            response.status,
+        );
+    }
+    return true;
 }
 
 

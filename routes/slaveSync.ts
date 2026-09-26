@@ -57,7 +57,8 @@ export function registerSlaveSyncRoutes(
         if (slaveId instanceof Response) return slaveId;
         
         const body = await context.req.json();
-        await registry.ping(slaveId, body.machines ?? []);
+        const instanceId = context.req.header("x-slave-instance-id") || "";
+        await registry.ping(slaveId, body.machines ?? [], instanceId);
         
         return context.json({
             serverTime: new Date().toISOString(),

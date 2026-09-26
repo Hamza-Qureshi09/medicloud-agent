@@ -33,7 +33,7 @@ const navigation = [
     { to: "/dashboard/results", label: "Results", icon: TestTubeIcon },
     { to: "/dashboard/statistics", label: "Turnaround", icon: ChartLineUpIcon },
     { to: "/dashboard/catalogs", label: "Test catalogs", icon: FlaskIcon },
-    { to: "/dashboard/control", label: "Control", icon: ShareNetworkIcon },
+    { to: "/dashboard/control", label: "Manage Slaves", icon: ShareNetworkIcon },
     { to: "/dashboard/drivers", label: "Drivers", icon: UsersThreeIcon },
 ]
 

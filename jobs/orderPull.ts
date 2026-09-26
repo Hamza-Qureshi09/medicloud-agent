@@ -281,7 +281,10 @@ export class OrderPullWorker {
         const stuckRows = await db
             .select()
             .from(syncOrderInbox)
-            .where(eq(syncOrderInbox.status, "received"));
+            .where(and(
+                eq(syncOrderInbox.status, "received"),
+                eq(syncOrderInbox.source, "upstream"),
+            ));
 
         if (stuckRows.length === 0) return;
 
@@ -341,6 +344,7 @@ export class OrderPullWorker {
             .where(and(
                 eq(syncOrderInbox.status, "acknowledged"),
                 isNull(syncOrderInbox.agentOrderId),
+                eq(syncOrderInbox.source, "upstream"),
             ));
 
         for (const row of pendingRows) {

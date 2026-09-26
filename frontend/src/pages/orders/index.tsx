@@ -19,10 +19,10 @@ import { useTabbedFilters } from "@/hooks/use-tabbed-filters";
 import { OrderForm } from "./orderForm";
 import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
 import { MachineOrders } from "./machineOrders";
-import { ExternalOrders } from "./externalOrders";
+import { AgentOrders } from "./agentOrders";
 
-const TABS = ["machine", "external"] as const;
-const SEARCH_KEYS = { machine: "sampleId", external: "search" } as const;
+const TABS = ["machine", "agent"] as const;
+const SEARCH_KEYS = { machine: "sampleId", agent: "search" } as const;
 // swrConfig default.
 const ORDERS_SWR_OPTIONS = {
     revalidateOnFocus: false,
@@ -37,7 +37,7 @@ const machineStatuses: { value: string; label: string }[] = [
     { value: "failed", label: "Failed" },
 ];
 
-const externalStatuses: { value: string; label: string }[] = [
+const agentOrderStatuses: { value: string; label: string }[] = [
     { value: "all", label: "All statuses" },
     { value: "received", label: "Received" },
     { value: "acknowledged", label: "Acknowledged" },
@@ -78,16 +78,16 @@ export function OrdersPage() {
         ORDERS_SWR_OPTIONS,
     );
 
-    const externalQuery = React.useMemo(() => ({
+    const agentQuery = React.useMemo(() => ({
         search: search || undefined,
         status: status || undefined,
         limit: ITEMS_PER_PAGE,
         offset: (page - 1) * ITEMS_PER_PAGE,
     }), [search, status, page]);
 
-    const externalOrders = useSWR(
-        isMachine ? null : api.externalOrders.listKey(externalQuery),
-        () => api.externalOrders.list(externalQuery),
+    const agentOrders = useSWR(
+        isMachine ? null : api.agentOrders.listKey(agentQuery),
+        () => api.agentOrders.list(agentQuery),
         ORDERS_SWR_OPTIONS,
     );
 
@@ -96,9 +96,9 @@ export function OrdersPage() {
             profiles.mutate(),
             machineOrders.mutate(),
             orderCount.mutate(),
-            externalOrders.mutate(),
+            agentOrders.mutate(),
         ]);
-    }, [profiles.mutate, machineOrders.mutate, orderCount.mutate, externalOrders.mutate]);
+    }, [profiles.mutate, machineOrders.mutate, orderCount.mutate, agentOrders.mutate]);
 
     // /orders/count ignores filters, so a filtered machine list can only estimate.
     const totalPages = isMachine
@@ -108,11 +108,11 @@ export function OrdersPage() {
             total: orderCount.data?.count ?? 0,
             estimate: Boolean(status || search),
         })
-        : pageCount({ page, rows: 0, total: externalOrders.data?.count ?? 0 });
+        : pageCount({ page, rows: 0, total: agentOrders.data?.count ?? 0 });
 
-    const statusOptions = isMachine ? machineStatuses : externalStatuses;
-    const searchPlaceholder = isMachine ? "Search sample ID" : "Search external order ID";
-    const isRefreshing = isMachine ? machineOrders.isValidating : externalOrders.isValidating;
+    const statusOptions = isMachine ? machineStatuses : agentOrderStatuses;
+    const searchPlaceholder = isMachine ? "Search sample ID" : "Search order ID";
+    const isRefreshing = isMachine ? machineOrders.isValidating : agentOrders.isValidating;
 
     return (
         <Container>
@@ -178,7 +178,7 @@ export function OrdersPage() {
             <Tabs value={tab} onValueChange={onTab}>
                 <TabsList>
                     <TabsTrigger value="machine">Machine Orders</TabsTrigger>
-                    <TabsTrigger value="external">External Orders</TabsTrigger>
+                    <TabsTrigger value="agent">Orders</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="machine">
@@ -194,11 +194,12 @@ export function OrdersPage() {
                     />
                 </TabsContent>
 
-                <TabsContent value="external">
-                    <ExternalOrders
-                        orders={externalOrders.data?.orders}
-                        error={externalOrders.error}
-                        onRetry={() => void externalOrders.mutate()}
+                <TabsContent value="agent">
+                    <AgentOrders
+                        orders={agentOrders.data?.orders}
+                        error={agentOrders.error}
+                        onRetry={() => void agentOrders.mutate()}
+                        profiles={profiles.data?.profiles ?? []}
                         page={page}
                         totalPages={totalPages}
                         onPageChange={setPage}

@@ -1,0 +1,1 @@
+import{dt as e,mt as t}from"./resourceState-BfHg5i6F.js";var n=t(e(),1);function r(e,t){let r=n.useRef(null),i=n.useCallback((...n)=>{r.current&&clearTimeout(r.current),r.current=setTimeout(()=>{e(...n)},t)},[e,t]);return n.useEffect(()=>()=>{r.current&&clearTimeout(r.current)},[]),i}export{r as t};

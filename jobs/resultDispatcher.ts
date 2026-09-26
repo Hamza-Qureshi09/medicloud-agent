@@ -107,9 +107,23 @@ export class ResultDispatcher {
         }
 
         const inbox = inboxRows[0];
+        const now = new Date().toISOString();
+
+        if (inbox.source === "local") {
+            await db
+                .update(syncOrderInbox)
+                .set({ status: "completed", completedAt: now, updatedAt: now })
+                .where(eq(syncOrderInbox.id, inbox.id));
+
+            console.log(
+                `[ResultDispatcher] Completed local order ${inbox.dispatchId} ` +
+                `(agent order ${result.orderId}, result #${result.id}) - kept on this agent`,
+            );
+            return;
+        }
+
         const order = JSON.parse(inbox.payloadJson) as PulledOrder;
         const idempotencyKey = `${inbox.dispatchId}:${result.id}`;
-        const now = new Date().toISOString();
 
         const upload: ResultUploadItem = {
             idempotencyKey,

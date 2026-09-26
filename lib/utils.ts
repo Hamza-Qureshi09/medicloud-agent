@@ -4,7 +4,7 @@ import { OrderPullWorker } from "../jobs/orderPull.ts";
 import { ResultDispatcher } from "../jobs/resultDispatcher.ts";
 import { shutdown } from "./signals.ts";
 import { SQLiteColumn } from "drizzle-orm/sqlite-core";
-import { EXTERNAL_ORDER_STATUSES, RESULT_DELIVERY_STATUSES } from "./constants.ts";
+import { AGENT_ORDER_STATUSES, RESULT_DELIVERY_STATUSES } from "./constants.ts";
 import { sql, SQL } from "drizzle-orm";
 
 
@@ -53,7 +53,7 @@ export function contains(column: SQLiteColumn, term: string): SQL {
 
 /** Narrows an untrusted query value to a known inbox status. */
 export function toOrderStatus(value?: string) {
-    const statuses: readonly string[] = EXTERNAL_ORDER_STATUSES;
+    const statuses: readonly string[] = AGENT_ORDER_STATUSES;
     return value && statuses.includes(value) ? value : undefined;
 }
 

@@ -149,6 +149,17 @@ export interface ResultUploadResponse {
     }>;
 }
 
+export interface LocalOrderInput {
+    machineId: number;
+    sampleId: string;
+    tests?: string[];
+    patientId?: string;
+    patientName?: string;
+    sampleType?: string;
+    rackPosition?: string;
+    expiresAt?: string;
+}
+
 export interface ListQuery {
     search?: string;
     status?: string;
