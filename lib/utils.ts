@@ -1,38 +1,43 @@
-import { MachineManager } from "@mediCloud/sdk/manager";
-import { HeartbeatWorker } from "../jobs/heartbeat.ts";
-import { OrderPullWorker } from "../jobs/orderPull.ts";
-import { ResultDispatcher } from "../jobs/resultDispatcher.ts";
-import { shutdown } from "./signals.ts";
-import { SQLiteColumn } from "drizzle-orm/sqlite-core";
-import { AGENT_ORDER_STATUSES, RESULT_DELIVERY_STATUSES } from "./constants.ts";
-import { sql, SQL } from "drizzle-orm";
+import type { ShutdownWorkers } from "../types.ts";
+import { type SQL, sql } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { dirname } from "node:path";
+import type { SdkAnalyte } from "../types.ts";
+import type { UploadAnalyte } from "../schemas/sync.ts";
 
-
+/**
+ * Reads or creates a stable UUID for this agent instance from a local file.
+ * Used to identify the agent across restarts in upstream heartbeat calls.
+ */
 export async function getOrCreateInstanceId(path: string): Promise<string> {
   const existing = await Deno.readTextFile(path).catch(() => "");
   if (existing.trim()) return existing.trim();
+
   const instanceId = crypto.randomUUID();
-  await Deno.mkdir("./data", { recursive: true });
+  await Deno.mkdir(dirname(path), { recursive: true });
   await Deno.writeTextFile(path, instanceId);
   return instanceId;
 }
-// handle graceful shutdowns
+
 let shuttingDown = false;
 
+/**
+ * Stops all background workers, shuts down the HTTP server, then exits.
+ * Safe to call multiple times - only the first call takes effect.
+ */
 export async function gracefulShutdown(
   signal: "SIGINT" | "SIGTERM",
-  workers: {
-    heartbeatWorker: HeartbeatWorker;
-    orderPullWorker: OrderPullWorker;
-    resultDispatcher: ResultDispatcher;
-    server: Deno.HttpServer;
-    manager: MachineManager;
-  },
-) {
+  workers: ShutdownWorkers,
+): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
+
   try {
-    shutdown(signal);
+    Deno.removeSignalListener("SIGINT", onSigInt);
+    if (Deno.build.os !== "windows") {
+      Deno.removeSignalListener("SIGTERM", onSigTerm);
+    }
+    console.log(`${signal} received, shutting down...`);
     workers.heartbeatWorker.stop();
     workers.orderPullWorker.stop();
     workers.resultDispatcher.stop();
@@ -45,21 +50,48 @@ export async function gracefulShutdown(
   }
 }
 
-/** `LIKE '%term%'` with wildcards inside `term` escaped so they match literally. */
+let onSigInt = () => {};
+let onSigTerm = () => {};
+
+export function setShutdownListeners(
+  sigInt: () => void,
+  sigTerm: () => void,
+): void {
+  onSigInt = sigInt;
+  onSigTerm = sigTerm;
+  Deno.addSignalListener("SIGINT", onSigInt);
+  if (Deno.build.os !== "windows") Deno.addSignalListener("SIGTERM", onSigTerm);
+}
+
+/**
+ * Builds a case-insensitive `LIKE '%term%'` SQL expression with
+ * wildcards inside `term` properly escaped.
+ */
 export function contains(column: SQLiteColumn, term: string): SQL {
-    const pattern = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
-    return sql`${column} LIKE ${pattern} ESCAPE '\\'`;
+  const pattern = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
+  return sql`${column} LIKE ${pattern} ESCAPE '\\'`;
 }
 
-/** Narrows an untrusted query value to a known inbox status. */
-export function toOrderStatus(value?: string) {
-    const statuses: readonly string[] = AGENT_ORDER_STATUSES;
-    return value && statuses.includes(value) ? value : undefined;
-}
+export function toUploadAnalyte(analyte: SdkAnalyte): UploadAnalyte {
+  const projected: UploadAnalyte = { assayNo: String(analyte.assayNo ?? "") };
+  const optional = [
+    "assayName",
+    "resultType",
+    "value",
+    "qualitative",
+    "unit",
+    "lowReference",
+    "highReference",
+    "abnormalFlag",
+    "status",
+    "completedAt",
+  ] as const;
 
-/** Narrows an untrusted query value to a known delivery status. */
-export function toDeliveryStatus(value?: string) {
-    const statuses: readonly number[] = RESULT_DELIVERY_STATUSES;
-    const parsed = Number(value);
-    return statuses.includes(parsed) ? parsed : undefined;
+  for (const key of optional) {
+    const value = analyte[key];
+    if (value !== undefined && value !== null && value !== "") {
+      projected[key] = String(value);
+    }
+  }
+  return projected;
 }

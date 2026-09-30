@@ -1,23 +1,14 @@
 import { defineConfig } from "drizzle-kit";
-import { env } from "./lib/env.ts";
-
-export const path = env.MEDICLOUD_DB_PATH;
-if (!path) {
-    throw new Error(
-        "MEDICLOUD_DB_PATH is not defined!",
-    );
-}
-
-export const DB_PATH = `file:${Deno.cwd()}/${path}`;
+import { DB_PATH } from "./db/path.ts";
 
 export default defineConfig({
-    schema: "./db/schema.ts",
+  schema: "./db/tables/*.ts",
 
-    out: "./drizzle",
+  out: "./drizzle",
 
-    dialect: "sqlite",
+  dialect: "sqlite",
 
-    dbCredentials: {
-        url: DB_PATH,
-    },
+  dbCredentials: {
+    url: DB_PATH,
+  },
 });

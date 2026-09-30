@@ -1,109 +1,85 @@
 import { Hono } from "@hono/hono";
+import { cors } from "@hono/hono/cors";
 import { MachineManager } from "@mediCloud/sdk/manager";
-import { env } from "./lib/env.ts";
-import { getOrCreateInstanceId, gracefulShutdown } from "./lib/utils.ts";
-import { AgentRegistries } from "./flow/registries.ts";
+import { env, validateEnvironment } from "./lib/env.ts";
+import {
+  getOrCreateInstanceId,
+  gracefulShutdown,
+  setShutdownListeners,
+} from "./lib/utils.ts";
+import { createAgentRegistries } from "./flow/registries.ts";
 import { registerDashboardRoutes } from "./routes/dashboard.ts";
 import { registerSlaveSyncRoutes } from "./routes/slaveSync.ts";
 import { initDB } from "./db/index.ts";
-import { cors } from "@hono/hono/cors";
-
-const DB_PATH = env.MEDICLOUD_MACHINES_SDK_DB_PATH;
-
-// environment checkups
-function environmentCheckups() {
-  switch (env.AGENT_MODE) {
-    case "slave":
-      if (!env.MASTER_HOST) throw new Error("MASTER_HOST is required in slave mode");
-      if (!env.SLAVE_ID) throw new Error("SLAVE_ID is required in slave mode");
-      if (!env.SLAVE_SECRET) throw new Error("SLAVE_SECRET is required in slave mode");
-      break;
-
-    case "direct":
-    case "master":
-      if (!env.MEDICLOUD_AGENT_ID || !env.MEDICLOUD_AGENT_SECRET || !env.MEDICLOUD_ACCOUNT_ID || !env.MEDICLOUD_API_URL) {
-        throw new Error("[MEDICLOUD_AGENT_ID, MEDICLOUD_AGENT_SECRET, MEDICLOUD_ACCOUNT_ID, MEDICLOUD_API_URL] are required!");
-      }
-      break;
-
-    default:
-      throw new Error(`Unknown AGENT_MODE: ${env.AGENT_MODE}`);
-  }
-}
 
 if (import.meta.main) {
+  validateEnvironment();
 
-  // 1. environment validation
-  environmentCheckups();
-
-  // 2. Agent db + instance identity
   await initDB();
   const instanceId = await getOrCreateInstanceId("./data/agent-instance-id");
 
-  // 3. initialize all workers and registries
-  const registries = await AgentRegistries(instanceId);
   const {
     slaveRegistry,
     syncClient,
     resultDispatcher,
     heartbeatWorker,
-    orderPullWorker
-  } = registries;
+    orderPullWorker,
+  } = createAgentRegistries(instanceId);
 
-  // 4. initialize Machine SDK - created here so resultDispatcher is already available and passed directly into the callback.
+  // resultDispatcher is already available here so we can pass it directly
+  // into the onResultPersisted callback without a forward reference.
   const manager = new MachineManager({
-    dbPath: DB_PATH,
+    dbPath: env.MEDICLOUD_MACHINES_SDK_DB_PATH,
     onResultPersisted: (result) => resultDispatcher.onResult(result),
   });
   const machineHandler = await manager.getHandler();
 
-  // 5. HTTP server - agent routes + optional slave-sync routes + machine SDK passthrough
   const app = new Hono();
-  app.use("*", cors())
+  app.use("*", cors());
 
-  // dashboard routes
-  registerDashboardRoutes(app, slaveRegistry!, syncClient!);
+  // Agent dashboard routes (orders, results, slave management).
+  registerDashboardRoutes(
+    app,
+    slaveRegistry ?? undefined,
+    syncClient ?? undefined,
+  );
 
-  // slave-sync routes only exist on "master" - slaves call these to register, ping, pull orders, upload results
-  if (slaveRegistry) {
+  // Slave sync routes only exist on master. Slaves call these to register,
+  // ping, pull orders, and upload results.
+  if (slaveRegistry && syncClient) {
     registerSlaveSyncRoutes(app, slaveRegistry, syncClient, resultDispatcher);
   }
-  
-  // all unmatched requests go directly to the Machine SDK HTTP handler
-  app.all("*", async (context) => await machineHandler(context.req.raw));
 
-  // host agent
-  const server = Deno.serve({
-    hostname: env.MEDICLOUD_AGENT_HTTP_HOST,
-    port: env.MEDICLOUD_AGENT_HTTP_PORT,
-    onListen: ({ hostname, port }) => {
-      console.info(`Agent listening on http://${hostname}:${port} in ${env.AGENT_MODE} mode`);
+  // All unmatched requests are forwarded to the Machine SDK HTTP handler.
+  app.all("*", (context) => machineHandler(context.req.raw));
+
+  const server = Deno.serve(
+    {
+      hostname: env.MEDICLOUD_AGENT_HTTP_HOST,
+      port: env.MEDICLOUD_AGENT_HTTP_PORT,
+      onListen: ({ hostname, port }) => {
+        console.info(
+          `[Agent] Listening on http://${hostname}:${port} in ${env.AGENT_MODE} mode`,
+        );
+      },
     },
-  }, app.fetch);
+    app.fetch,
+  );
 
-  // 6. start background workers
   heartbeatWorker.start();
   orderPullWorker.start();
   resultDispatcher.startRetryLoop();
 
-  // 7. graceful shutdown
-  Deno.addSignalListener("SIGINT",
-    () => void gracefulShutdown("SIGINT", {
-      heartbeatWorker,
-      orderPullWorker,
-      resultDispatcher,
-      server,
-      manager
-    })
+  const workers = {
+    heartbeatWorker,
+    orderPullWorker,
+    resultDispatcher,
+    server,
+    manager,
+  };
+
+  setShutdownListeners(
+    () => void gracefulShutdown("SIGINT", workers),
+    () => void gracefulShutdown("SIGTERM", workers),
   );
-  if (Deno.build.os !== "windows") {
-    Deno.addSignalListener("SIGTERM",
-      () => void gracefulShutdown("SIGTERM", {
-        heartbeatWorker,
-        orderPullWorker,
-        resultDispatcher,
-        server,
-        manager
-      }));
-  }
 }

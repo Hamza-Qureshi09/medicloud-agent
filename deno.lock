@@ -1,17 +1,17 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@hono/hono@^4.12.32": "4.13.5",
+    "jsr:@hono/hono@^4.12.32": "4.13.10",
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "jsr:@zod/zod@^4.4.3": "4.5.4",
+    "jsr:@zod/zod@^4.4.3": "4.6.5",
     "npm:@libsql/client@~0.17.4": "0.17.4",
     "npm:drizzle-kit@1.0.0-rc.4": "1.0.0-rc.4",
     "npm:drizzle-orm@1.0.0-rc.4": "1.0.0-rc.4_@libsql+client@0.17.4"
   },
   "jsr": {
-    "@hono/hono@4.13.5": {
-      "integrity": "b5b10f340820d14d69add622452e88722d7e99e05e30cdeafcb90133fc752126"
+    "@hono/hono@4.13.10": {
+      "integrity": "c27a60121731a2929bbccd020116cbb483ec34af8a0e64e6fb7ab7c47928aaf7"
     },
     "@std/assert@1.0.19": {
       "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
@@ -22,13 +22,13 @@
     "@std/internal@1.0.14": {
       "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
-    "@zod/zod@4.5.4": {
-      "integrity": "bf0da80e42232d5f9f485d37b5c980e0d88f07fe04b9b1f2bd9012c008404df4"
+    "@zod/zod@4.6.5": {
+      "integrity": "de9ee54513b84efecbdf2988f5a01eca0e2883be4b5625cf320bc0d6dbbade3e"
     }
   },
   "npm": {
-    "@drizzle-team/brocli@0.12.0": {
-      "integrity": "sha512-mlUE+rZ8CatQekLhnaiN91Iemdd+e2gFKooGlnRB3oPTL3VghLfX24dx7HrzMNeC1JrIB/0kpsfyty3f5HNfxQ=="
+    "@drizzle-team/brocli@0.12.1": {
+      "integrity": "sha512-yHwomvolVafvUXhy5TdiJVkuNCxXn+bKOs2aWiWEQh/5YaV97Oa/abJz3dmx7lxgIUsUlS1Jl4mEfvJPo3YsVw=="
     },
     "@esbuild/aix-ppc64@0.25.12": {
       "integrity": "sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==",
@@ -244,8 +244,8 @@
     "@neon-rs/load@0.0.4": {
       "integrity": "sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw=="
     },
-    "@types/node@26.5.0": {
-      "integrity": "sha512-dVSGpriSoCgz8WnDNTuSSuSv1PC/ALXihO4ulRZt7Md8k9mlbdin3lGOcDE8SnWOgf513ByWlXd7BK4azmyg/A==",
+    "@types/node@26.6.2": {
+      "integrity": "sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==",
       "dependencies": [
         "undici-types"
       ]
@@ -322,8 +322,8 @@
       "integrity": "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==",
       "bin": true
     },
-    "js-base64@3.9.3": {
-      "integrity": "sha512-uwYQp+VJ38FVvtim6qNbit6e9uT6dwWQ4Y1+H9TxhW5hcHjpHwoxlR0nMpqUmIFOmu4VqMxwdJA88gIVuZJQ/g=="
+    "js-base64@3.9.4": {
+      "integrity": "sha512-PtOMXpEGuP0RRiRXsjzHzl44dMHxSu2CPvAhinupR1tBa88me+1DPqsobl7eupn5UukjLkln1ZnAOAOXOrYG0Q=="
     },
     "jsbi@4.3.2": {
       "integrity": "sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew=="
@@ -357,8 +357,8 @@
     "undici-types@8.9.0": {
       "integrity": "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="
     },
-    "ws@8.21.3": {
-      "integrity": "sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw=="
+    "ws@8.22.0": {
+      "integrity": "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg=="
     }
   },
   "remote": {
@@ -371,15 +371,23 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/results.routes.ts": "c43a324e58a36400042abeea707be127932e6d4f7a1a08fa62a24446c4efa799",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/routes.ts": "720f60fb3f9073156ac7feb832be6f9f0c5a88b4d5b74ab9e3d696d19ae6cef9",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/testStatistics.routes.ts": "eafcfe3d289ca2c594077fa14e90a953d5f18a12d406e3c0e98eca8410be9e3f",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/utils.ts": "6507e88be83db73240ad2a1e78ff28f11fc79a8d1f0f5bd615ef3503405fe74f",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/utils.ts": "7856a001d17b49a732887349339b5ccb5b2fa0c83d756e8e3868e4ccc3d8d510",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/http/validation.ts": "742ad0dc984863e51b5a290315cb785af8619090d28c9b1d8f3fb47f896d1e21",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/logger.ts": "cbf5932db7597972e0b13299a37f44d13b61d3a157c3bc4a79c2a13b5a3fb597",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/lib/utils.ts": "ccba4acac6d4124765aad461d52bcd643adfa68e2cdc5076742fec44eece352b",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machineManager.ts": "92feb8e387772dc0072762babfa8ffb54ade3de2811cab3fa3874ca16e102ac2",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/biolaboKenza/catalog.ts": "309eae67def6d7f114bf8eebbc5b5c714a87b7acb85d97d9d55a076471bb567a",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/biolaboKenza/inbound.ts": "6d5dc708876d93a8eb5ce502adf98c7a947a2c71d34508dfa116a4fb9d7595ad",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/biolaboKenza/inbound.ts": "86dca22d074f44a89289e76511b86bcce92ad059aacd4eb787b52d6d9950e339",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/biolaboKenza/index.ts": "48793d544b5ad7820e6e066c573d5bc5a24675116b44ad58ee72ced903349cb5",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/biolaboKenza/outbound.ts": "814cc1c844f1f80af56d430e58a31d0f6db0be88d0ed9cf12af5afaf400396b9",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonavera200/inbound.ts": "8282a1bc84684c371b7cd8cf7e8f15e971677a3a66df8d68721b611bd53d28ed",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonavera200/index.ts": "80342ff8ac7a05c6068b1940216a3704c154612afd6f904957e309a2e70f46e0",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonavera200/outbound.ts": "e5bf936e310561f3bab475b88417a811b0fa592224b158c686bc3651d8cc41db",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonaveraCount/catalog.ts": "c629271f56d76e738ac1a20adfe8b78ddb1b0dca16263d8b80598a67a6e671d6",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonaveraCount/inbound.ts": "a285af5e3064e31f01c3d18f3a3f27ebd431c16c2aa7c73dd4a6c5d8a6180901",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonaveraCount/index.ts": "b950fb2bdd365a2d3c4e082f9b2911b68066784f9a2635465ba3fba19f05ba88",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonaveraCount/outbound.ts": "b7d1ea2686218b4a223f4d23407e1b690d0b0abf6db6745fb9d4b8087b87701c",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/bonaveraCount/resultMetadata.ts": "3c82a5c6ef546b785e60af31c24a2ea0375feb5ea085f3d34e746d6615fdb548",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/draccuAfi6100b/catalog.ts": "a5413bb5547dac6ed89ac6370d94a94862b181a8f98e3571ed48b21473a5e95b",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/draccuAfi6100b/inbound.ts": "85047f04570622d2f9b3f2b3df8ca3e8bc6d0e1545578f50dd7489a35f7cd772",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/draccuAfi6100b/index.ts": "21d270f6a4061f24a42fa4a4b88b5139581c34e28c1f8aa86d8b4d275597f90d",
@@ -394,7 +402,7 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/inbound.ts": "232d34fea1183c2a2df790572ff0f3ed3937b35a88d989ea6d174434911f87c4",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/index.ts": "f841b94209b7447dd4a471c8d3bab9800081bb50358b6f190d049f0fa0f444fa",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/maglumi800/outbound.ts": "cc96433a4190e643b693aff6011aebd7e1d1b73cac80dc88c5a3f6a7ee217e89",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/mod.ts": "824b183a51fb193230e42fe3333ad8320b0a75dea21f4831615cd92482286667",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/mod.ts": "6b85fb7d19db8e0327557d3fbf6847afa6bac5288855a5a4314f10e778f75b81",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/astm.ts": "2f04292ed58a6ed18ded51859b2af5d97ffa94e34c95d469d5313bc491ebc5f4",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/catalog.ts": "373347053477707405655bc36f349f37ee75c497519987f74fa2b6121e4cdcdd",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machines/rocheCobasC111/inbound.ts": "e08e7d6f91352457b8653c716a1d376cafab4bc6a28e7cfe4f1bfa8ee418e7cd",
@@ -412,7 +420,9 @@
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/cobasC111Serial.ts": "e635d4b3ed63dbab92a755a5a93882b5b1fa7622ecd19eeabba988d1ca1b6ab1",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/astm/variants/sysmexKx21n.ts": "bb4958507196da0c35f317805c0ee3bb47ecdbf153bee5ab16c3a82d32367d4c",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/constants.ts": "8c158d110aaaf890ebc78df431a209d2922e3d03fe17e319380da1069963d779",
-    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/link.ts": "dc9ee6a5e8f3452b09814f0d44ba63cfee9f8689d0871178bf8a89b913568966",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/link.ts": "36227c000d1c4cd3c8537219659de86909da537f0170f7c361db31753799307f",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/variants/bonavera200.ts": "1c04d116406b8f8661a62083fb88cc26ef4d3daa129f704a77121413d31bbbc2",
+    "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/variants/bonaveraCount.ts": "f5f8e5f7ef33fd0151858d33261aac70980f8495996a0e56255dfb8f6c08f89b",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/hl7/variants/draccuAfi6100b.ts": "48c0aad8b1bebfd2f652d7765c3e9be9a9ff8dd7628da0af53a9378a1cfcaf0d",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/serial/checksum.ts": "f2900abd6055ecdec46b3116cda76324143b02264e2330c7c59967c2b97b0a02",
     "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/protocols/serial/constants.ts": "8e98729a313862573c40e24b98ed09b7d5f0dfa68fcc1692f63a382022fa74b7",
