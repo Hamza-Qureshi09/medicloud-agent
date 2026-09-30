@@ -60,8 +60,8 @@ export const PulledOrderSchema = z.object({
 
 // Validates the upstream orders/pull response.
 export const PullResponseSchema = z.object({
-  leaseId: id.nullable(),
-  leaseExpiresAt: z.string().nullable(),
+  leaseId: id.nullish(),
+  leaseExpiresAt: z.string().nullish(),
   pullAfterMs: nonNegativeDelay,
   orders: z.array(PulledOrderSchema),
 }).loose();

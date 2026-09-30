@@ -25,10 +25,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
 import { useMachineContext } from "@/contexts/machine-context";
-import { ControlSlaveResults } from "./results.tsx";
-import { ControlSlaveOrders } from "./orders.tsx";
+import { ControlSlaveResults } from "./results/results.tsx";
+import { ControlSlaveOrders } from "./orders/orders.tsx";
 import { CopyButton } from "@/components/common/copyButton";
-import { RegisteredSlaves } from "./slaves.tsx";
+import { RegisteredSlaves } from "./slaves/slaves.tsx";
 
 
 

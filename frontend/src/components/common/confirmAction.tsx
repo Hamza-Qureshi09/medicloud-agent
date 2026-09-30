@@ -22,14 +22,21 @@ export function ConfirmAction({
     description,
     actionLabel,
     onConfirm,
+    open: controlledOpen,
+    onOpenChange: setControlledOpen,
 }: {
-    trigger: ReactNode
+    trigger?: ReactNode
     title: string
     description: string
     actionLabel: string
     onConfirm: () => Promise<void>
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }) {
-    const [open, setOpen] = useState(false)
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+    const open = controlledOpen !== undefined ? controlledOpen : uncontrolledOpen
+    const setOpen = setControlledOpen !== undefined ? setControlledOpen : setUncontrolledOpen
+
     const action = useAsyncAction()
 
     async function confirm() {
@@ -48,7 +55,7 @@ export function ConfirmAction({
                 if (nextOpen) action.reset()
             }}
         >
-            <AlertDialogTrigger render={trigger as React.ReactElement} />
+            {trigger && <AlertDialogTrigger render={trigger as React.ReactElement} />}
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogMedia>

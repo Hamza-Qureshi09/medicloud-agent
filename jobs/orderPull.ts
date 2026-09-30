@@ -110,7 +110,7 @@ export class OrderPullWorker {
           );
           await this.storeAndAcknowledge(
             response.leaseId,
-            response.orders,
+            response.orders as PulledOrder[],
             capabilities,
           );
           await this.resumeStoredOrders();

@@ -72,7 +72,7 @@ export const router = createBrowserRouter([
             {
                 path: "control/slaves/:id",
                 lazy: async () => ({
-                    Component: (await import("@/pages/control/slaveDetail.tsx")).SlaveDetailPage,
+                    Component: (await import("@/pages/control/slaves/slaveDetail.tsx")).SlaveDetailPage,
                 }),
             },
             {

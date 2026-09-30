@@ -1,10 +1,10 @@
 import { ResourceEmpty } from "@/components/common/resourceState";
+import { ConfirmAction } from "@/components/common/confirmAction";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAsyncAction } from "@/hooks/use-async-action";
 import { api } from "@/lib/api";
 import { slaveLiveness } from "@/lib/helpers";
 import { slaveStatusLabel, slaveStatusVariant, type SlaveRecord } from "@/types/api";
@@ -13,22 +13,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { type KeyedMutator } from "swr";
 
-
+type PendingAction = { kind: "inactive" | "delete"; slaveId: string } | null;
 
 export function RegisteredSlaves({ slaves, mutate }: { slaves: SlaveRecord[], mutate: KeyedMutator<any> }) {
-    const actions = useAsyncAction("Action failed.");
+    const [pending, setPending] = React.useState<PendingAction>(null);
 
-    async function runHardRefresh() {
-        await mutate();
-    }
-    async function slavesAction(
-        action: () => Promise<unknown>,
-    ) {
-        await actions.execute(async () => {
-            await action();
-            await runHardRefresh();
-        }).catch(() => undefined);
-    }
     return (
         <React.Fragment>
             {/* Slave List */}
@@ -84,29 +73,19 @@ export function RegisteredSlaves({ slaves, mutate }: { slaves: SlaveRecord[], mu
                                                         <DropdownMenuGroup>
                                                             <DropdownMenuItem
                                                                 className="font-normal"
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-
-                                                                    void slavesAction(() =>
-                                                                        api.agent.markInactive(slave.slaveId)
-                                                                    );
-                                                                }}
+                                                                onClick={() =>
+                                                                    setPending({ kind: "inactive", slaveId: slave.slaveId })
+                                                                }
                                                             >
-                                                                <StopCircleIcon/>
+                                                                <StopCircleIcon />
                                                                 Mark Inactive
                                                             </DropdownMenuItem>
 
                                                             <DropdownMenuItem
                                                                 className="font-normal"
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-
-                                                                    void slavesAction(() =>
-                                                                        api.agent.deleteSlave(slave.slaveId)
-                                                                    );
-                                                                }}
+                                                                onClick={() =>
+                                                                    setPending({ kind: "delete", slaveId: slave.slaveId })
+                                                                }
                                                             >
                                                                 <RecycleIcon />
                                                                 Delete
@@ -172,6 +151,33 @@ export function RegisteredSlaves({ slaves, mutate }: { slaves: SlaveRecord[], mu
                     description="When slave agents register to this master, they will appear here."
                 />
             )}
+
+            {/* Confirm dialogs live outside the dropdown and accordion so they survive the menu closing */}
+            <ConfirmAction
+                open={pending?.kind === "inactive"}
+                onOpenChange={(open) => { if (!open) setPending(null); }}
+                title="Mark as inactive?"
+                description="This will mark the slave as inactive. You can reconnect it later."
+                actionLabel="Mark Inactive"
+                onConfirm={async () => {
+                    if (!pending) return;
+                    await api.agent.markInactive(pending.slaveId);
+                    await mutate();
+                }}
+            />
+
+            <ConfirmAction
+                open={pending?.kind === "delete"}
+                onOpenChange={(open) => { if (!open) setPending(null); }}
+                title="Delete slave?"
+                description="This will permanently delete the slave and its configuration."
+                actionLabel="Delete"
+                onConfirm={async () => {
+                    if (!pending) return;
+                    await api.agent.deleteSlave(pending.slaveId);
+                    await mutate();
+                }}
+            />
         </React.Fragment>
     )
 }

@@ -27,7 +27,7 @@ import { toast } from "sonner"
 import { extractApiError, slaveLiveness } from "@/lib/helpers"
 import { slaveStatusLabel, slaveStatusVariant } from "@/types/api"
 import { ITEMS_PER_PAGE, pageCount } from "@/lib/global"
-import { SlaveResultDetail } from "./resultDetails"
+import { SlaveResultDetail } from "../results/resultDetails"
 
 
 export function SlaveDetailPage() {
