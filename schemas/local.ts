@@ -99,7 +99,7 @@ export const CatalogResponseSchema = z.object({
 
 // Validates the local SDK POST /orders response.
 export const CreatedOrderResponseSchema = z.object({
-  order: z.object({ id: z.number().int().positive() }).nullable(),
+  order: z.object({ id: z.number().int().positive() }).nullish(),
 }).loose();
 
 // Validates the local SDK GET /orders/:id response.
@@ -107,7 +107,7 @@ export const MachineOrderResponseSchema = z.object({
   order: z.object({
     id: z.number().int().positive(),
     status: z.string().optional(),
-  }).nullable(),
+  }).nullish(),
 }).loose();
 
 // Defines the order body sent to the local SDK by lib/api.ts.
