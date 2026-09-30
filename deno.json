@@ -1,17 +1,26 @@
 {
   "tasks": {
     "dev": "deno run --watch-hmr --sloppy-imports --env-file=.env -A main.ts",
-    "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate"
+    "check": "deno check main.ts",
+    "lint": "deno lint main.ts types.ts drizzle.config.ts db flow jobs lib routes schemas tests",
+    "test": "deno test tests",
+    "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate",
+    "db:migrate": "deno run --env-file=.env -A db/migrate.ts"
+  },
+  "lint": {
+    "exclude": ["frontend", "drizzle", "data"]
+  },
+  "fmt": {
+    "exclude": ["frontend", "drizzle", "data"]
   },
   "imports": {
+    "@std/assert": "jsr:@std/assert@1",
     "@hono/hono": "jsr:@hono/hono@^4.12.32",
     "@libsql/client": "npm:@libsql/client@^0.17.4",
-    "@std/assert": "jsr:@std/assert@1",
     "@zod/zod": "jsr:@zod/zod@^4.4.3",
-    "@mediCloud/sdk/manager": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machineManager.ts",
-    "@mediCloud/sdk/registry": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts",
     "drizzle-kit": "npm:drizzle-kit@1.0.0-rc.4",
-    "drizzle-orm": "npm:drizzle-orm@1.0.0-rc.4"
-  },
-  "nodeModulesDir": "auto"
+    "drizzle-orm": "npm:drizzle-orm@1.0.0-rc.4",
+    "@mediCloud/sdk/manager": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machineManager.ts",
+    "@mediCloud/sdk/registry": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts"
+  }
 }

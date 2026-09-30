@@ -1,8 +1,8 @@
-
-
-export const AGENT_PROTOCOL_VERSION = "1.0"
-export const AGENT_SOFTWARE_VERSION = "1.0.0"
-
+export const AGENT_PROTOCOL_VERSION = "1.0";
+export const AGENT_SOFTWARE_VERSION = "1.0.0";
+export const DEFAULT_AGENT_PORT = 5001;
+export const DEFAULT_HEARTBEAT_INTERVAL_MS = 30_000;
+export const DEFAULT_ORDER_PULL_INTERVAL_MS = 10_000;
 
 // How quickly to pull again right after a batch of orders was received.
 export const ON_ORDERS_RECEIVED_DELAY_MS = 250;
@@ -11,7 +11,7 @@ export const ON_ORDERS_RECEIVED_DELAY_MS = 250;
 export const ON_ERROR_DELAY_MS = 15_000;
 
 // Random jitter added to each delay to prevent multiple agents hitting upstream at the same time.
-export const JITTER_MS = 2_000; // 2sec delay
+export const JITTER_MS = 2_000;
 
 // Maximum number of orders this agent holds at any one time.
 // Actual capacity sent to upstream is dynamic: MAX_CAPACITY - currently_in_flight_orders.
@@ -20,11 +20,11 @@ export const MAX_CAPACITY = 50;
 // Statuses that count as "in-flight" - order is in agent's care, no result yet.
 // Includes slave-owned statuses so master capacity accounting stays correct.
 export const IN_FLIGHT_STATUSES = [
-    "received",
-    "acknowledged",
-    "processing",
-    "leased_to_slave",
-    "acknowledged_by_slave",
+  "received",
+  "acknowledged",
+  "processing",
+  "leased_to_slave",
+  "acknowledged_by_slave",
 ] as const;
 
 // How many results to upload to upstream in a single batch.
@@ -45,21 +45,37 @@ export const RESULT_RETRY_INTERVAL_MS = 10_000;
 // hammered every 10s. Capped so recovery is still detected promptly.
 export const RESULT_OFFLINE_BACKOFF_MS = 60_000;
 
-
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
-
-/** Lifecycle states a `syncOrderInbox` row can hold. Mirrors the status doc in schema.ts. */
+/** Lifecycle states a sync order inbox row can hold. */
 export const AGENT_ORDER_STATUSES = [
-    "received",
-    "acknowledged",
-    "processing",
-    "leased_to_slave",
-    "acknowledged_by_slave",
-    "completed",
-    "failed",
+  "received",
+  "acknowledged",
+  "processing",
+  "leased_to_slave",
+  "acknowledged_by_slave",
+  "completed",
+  "failed",
 ] as const;
 
 /** Delivery states a `medicloudResultDispatch` row can hold. */
-export const RESULT_DELIVERY_STATUSES = [0, 1, 2, 3] as const;
+export const RESULT_DELIVERY_STATUS = {
+  pending: 0,
+  delivered: 1,
+  retryable: 2,
+  failed: 3,
+} as const;
+export const RESULT_DELIVERY_STATUSES: readonly number[] = Object.values(
+  RESULT_DELIVERY_STATUS,
+);
+
+export const SLAVE_ACTIVE_WINDOW_MS = 2 * 60 * 1_000;
+
+export const ORDER_EXPIRY_MS = 24 * 60 * 60 * 1_000;
+
+export const SLAVE_LEASE_MS = 5 * 60 * 1_000;
+export const SLAVE_MAX_ORDER_BATCH_SIZE = MAX_PAGE_SIZE;
+export const INITIAL_ORDER_PULL_DELAY_MS = 1_000;
+export const SYNC_REQUEST_TIMEOUT_MS = 20_000;
+export const IDLE_LOG_EVERY_N_CYCLES = 6;
