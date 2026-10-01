@@ -29,6 +29,7 @@ import { Link } from "react-router-dom"
 import { OrderStatusBadge } from "@/components/common/statusBadge"
 import { Container } from "@/components/common/container"
 import { TestBadgeList } from "@/components/common/testBadgeList"
+import { StatCard } from "@/components/common/statCard"
 
 
 
@@ -57,7 +58,6 @@ export function DashboardPage() {
     } = useSWR(
         api.orders.listKey(orderQuery),
         () => api.orders.list(orderQuery),
-        {} // swr config for this rqst
     )
 
     // Rqst #2 (test stats)
@@ -69,7 +69,6 @@ export function DashboardPage() {
     } = useSWR(
         api.statistics.listKey(statisticQuery),
         () => api.statistics.list(statisticQuery),
-        {} // swr config for this rqst
     )
 
     // order data
@@ -336,32 +335,4 @@ export function DashboardPage() {
     </Container>
 }
 
-// chip / stat card
-function StatCard({
-    title,
-    value,
-    detail,
-    icon: Icon,
-}: {
-    title: string
-    value: string | number
-    detail: string
-    icon: typeof MicroscopeIcon
-}) {
-    return (
-        <Card size="sm">
-            <CardHeader>
-                <CardDescription>{title}</CardDescription>
-                <CardTitle className="text-3xl tabular-nums">{value}</CardTitle>
-                <CardAction>
-                    <span className="flex size-9 items-center justify-center rounded-full bg-muted text-primary">
-                        <Icon />
-                    </span>
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <p className="text-xs text-muted-foreground">{detail}</p>
-            </CardContent>
-        </Card>
-    )
-}
+

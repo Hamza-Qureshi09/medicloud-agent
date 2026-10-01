@@ -40,7 +40,6 @@ export function CatalogsPage() {
     } = useSWR(
         api.catalogs.listKey,
         () => api.catalogs.list(),
-        {} // swr config for this rqst
     )
     const [selectedDriver, setSelectedDriver] = React.useState<string | null>(null)
 
@@ -52,7 +51,6 @@ export function CatalogsPage() {
     } = useSWR(
         selectedDriver ? api.catalogs.detailKey(selectedDriver) : null,
         ([, driverId]) => api.catalogs.get({ driver:driverId }),
-        {} // swr config for this rqst
     )
 
     const catalogFields = React.useMemo(() => {
