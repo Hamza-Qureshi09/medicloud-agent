@@ -114,7 +114,6 @@ function ResultDetail({ result }: { result: MachineResult }) {
     const detail = useSWR(
         open ? api.results.detailKey(result.id) : null,
         () => api.results.get(result.id),
-        {} // swr config for this rqst
     );
     const current = detail.data?.result ?? result;
 

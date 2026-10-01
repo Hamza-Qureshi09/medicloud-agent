@@ -205,17 +205,16 @@ export function useProfileForm(
                 if (profile?.id) await api.profiles.update(profile.id, payload);
                 else await api.profiles.create(payload);
             });
+
+            // Only refresh and close on success — errors keep the dialog open
+            await onCreated();
+            setOpen(false);
         } catch (err) {
-            console.log(err, "err from use profile form");
             const message = extractApiError(
                 err,
             );
             toast.error(message);
             dispatch({ type: "SET_ROOT_ERROR", error: message });
-        } finally {
-             // hook call
-            await onCreated();
-            setOpen(false);
         }
     }
 
