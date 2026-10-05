@@ -13,7 +13,7 @@ type MachineContextType = {
     connected: number
     activeSlaves: number
     mutate: KeyedMutator<MachineResponse>
-    mutateSlaves: KeyedMutator<any>
+    mutateSlaves: KeyedMutator<{ slaves: SlaveRecord[]; totalMachines: number }>
     isValidating: boolean
     mode: AgentMode | undefined
 }
@@ -44,7 +44,7 @@ export function MachineProvider({
 
     const connected = React.useMemo(() => {
         return data?.running_machines?.filter(
-            (item: any) => item.machine.connected
+            (item) => item.machine.connected
         ).length ?? 0
     }, [data])
 

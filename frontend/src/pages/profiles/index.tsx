@@ -65,7 +65,6 @@ export function ProfilesPage() {
     } = useSWR(
         api.profiles.countKey,
         () => api.profiles.count(),
-        {}
     )
 
     const count = profileCount?.count ?? 0;
@@ -86,7 +85,6 @@ export function ProfilesPage() {
     } = useSWR(
         api.profiles.listKey(profileQuery),
         () => api.profiles.list(profileQuery),
-        {},
     );
 
     const {

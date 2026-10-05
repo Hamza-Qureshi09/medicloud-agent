@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon, WarningIcon} from "@phosphor-icons/react";
+import { StatCard } from "@/components/common/statCard";
 import { api } from "@/lib/api";
 import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
 import { Button } from "@/components/ui/button";
@@ -223,33 +223,4 @@ function SlaveCredentialsReveal({
 
 
 
-// Stat Card
 
-function StatCard({
-    title,
-    value,
-    detail,
-    icon: Icon,
-}: {
-    title: string
-    value: string | number
-    detail: string
-    icon: typeof ShareNetworkIcon
-}) {
-    return (
-        <Card size="sm">
-            <CardHeader>
-                <CardDescription>{title}</CardDescription>
-                <CardTitle className="text-3xl tabular-nums">{value}</CardTitle>
-                <CardAction>
-                    <span className="flex size-9 items-center justify-center rounded-full bg-muted text-primary">
-                        <Icon />
-                    </span>
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <p className="text-xs text-muted-foreground">{detail}</p>
-            </CardContent>
-        </Card>
-    )
-}

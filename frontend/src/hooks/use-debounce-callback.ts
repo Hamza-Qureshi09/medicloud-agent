@@ -4,7 +4,7 @@ import React from "react";
 
 export function useDebounceCallback<T extends (...args: never[]) => void>(
     callback: T,
-    delay: 400
+    delay: number = 400
 ) {
     const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
