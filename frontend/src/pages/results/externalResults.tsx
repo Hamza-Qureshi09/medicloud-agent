@@ -28,6 +28,7 @@ interface ExternalResultsProps {
     results: ExternalResult[] | undefined;
     error: unknown;
     onRetry: () => void;
+    onResend: (id: number) => Promise<void>;
     page: number;
     totalPages: number;
     onPageChange: (page: number) => void;
@@ -51,6 +52,7 @@ export function ExternalResults({
     results,
     error,
     onRetry,
+    onResend,
     page,
     totalPages,
     onPageChange,
@@ -124,7 +126,14 @@ export function ExternalResults({
                                     {new Date(result.createdAt).toLocaleString()}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <ExternalResultDetail result={result} payload={payload} />
+                                    <div className="flex justify-end gap-2">
+                                        {(result.deliveryStatus === 2 || result.deliveryStatus === 3) && (
+                                            <Button type="button" variant="outline" size="sm" onClick={() => void onResend(result.id)}>
+                                                Retry delivery
+                                            </Button>
+                                        )}
+                                        <ExternalResultDetail result={result} payload={payload} />
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
