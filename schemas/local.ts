@@ -103,6 +103,20 @@ export const CreatedOrderResponseSchema = z.object({
 }).loose();
 
 // Validates the local SDK GET /orders/:id response.
+export const MachineResultsResponseSchema = z.object({
+  results: z.array(z.object({
+    id: z.number().int().positive(),
+    orderId: z.number().int().positive(),
+    machineId: z.number().int().positive(),
+    sampleId: z.string(),
+    receivedAt: z.string(),
+    payload: z.object({
+      results: z.array(z.object({ assayNo: z.string() }).loose()),
+    }),
+  }).loose()),
+}).loose();
+
+// Validates the local SDK GET /orders/:id response.
 export const MachineOrderResponseSchema = z.object({
   order: z.object({
     id: z.number().int().positive(),

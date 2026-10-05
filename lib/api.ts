@@ -8,6 +8,7 @@ import {
   CreatedOrderResponseSchema,
   MachineHealthResponseSchema,
   MachineOrderResponseSchema,
+  MachineResultsResponseSchema,
   ProfilesResponseSchema,
 } from "../schemas/local.ts";
 import {
@@ -19,6 +20,7 @@ import {
 } from "../schemas/sync.ts";
 import type {
   CatalogTest,
+  PersistedMachineResult,
   SyncAuthHeaders,
   TMachineProfile,
 } from "../types.ts";
@@ -120,6 +122,21 @@ export async function postMachineOrder(
     throw new Error("Machine SDK did not return a created order.");
   }
   return data.order.id;
+}
+
+// Read a page of persisted SDK results for durable outbox reconciliation.
+export async function fetchMachineResultsPage(
+  limit: number,
+  offset: number,
+): Promise<PersistedMachineResult[]> {
+  const response = await fetch(
+    `${AGENT_URL}/results?limit=${limit}&offset=${offset}`,
+    { signal: AbortSignal.timeout(SYNC_REQUEST_TIMEOUT_MS) },
+  );
+  if (!response.ok) {
+    throw new ApiError("Failed to read local machine results.", response.status);
+  }
+  return MachineResultsResponseSchema.parse(await response.json()).results;
 }
 
 // machine_api: GET /orders/:id, returns null for 404.
