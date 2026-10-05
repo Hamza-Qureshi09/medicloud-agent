@@ -50,6 +50,7 @@ export type SdkAnalyte = Partial<Record<keyof UploadAnalyte, unknown>>;
 export type PersistedMachineResult = {
   id: number;
   orderId: number;
+  machineId: number;
   sampleId: string;
   receivedAt: Date | string;
   payload?: { results?: SdkAnalyte[] };

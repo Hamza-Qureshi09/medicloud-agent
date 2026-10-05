@@ -179,6 +179,8 @@ export const api = {
         listKey: (query: ExternalQuery = {}) => ["externalResults.list", query] as const,
         list: (query: ExternalQuery = {}) =>
             request<{ results: ExternalResult[]; count: number }>("/external-results", { query }),
+        reconcile: () => request<{ scanned: number; queued: number }>("/external-results/reconcile", { method: "POST" }),
+        retry: (id: number) => request<{ queued: boolean }>("/external-results/" + id + "/retry", { method: "POST" }),
     },
 
     slaveOrders: {

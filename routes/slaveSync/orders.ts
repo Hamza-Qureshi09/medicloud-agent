@@ -1,6 +1,6 @@
 import { Hono } from "@hono/hono";
 import { validator } from "@hono/hono/validator";
-import { and, eq, inArray, lt, or } from "drizzle-orm";
+import { and, eq, inArray, lt, ne, or } from "drizzle-orm";
 import { db } from "../../db/index.ts";
 import { syncOrderInbox } from "../../db/tables/syncOrderInbox.ts";
 import type { SlaveRegistry } from "../../flow/master/slaveRegistry.ts";
@@ -157,6 +157,8 @@ export function registerSlaveOrderRoutes(
         const rejected = await db.update(syncOrderInbox).set({
           status: "failed",
           errorText: `${item.code}: ${item.message ?? "Rejected by slave"}`,
+          upstreamStatusPending: "failed",
+          upstreamStatusMessage: item.message ?? "Rejected by slave",
           updatedAt: now,
         }).where(and(
           leasedToSlave(item.dispatchId, slaveId, body.leaseId),
@@ -208,7 +210,23 @@ export function registerSlaveOrderRoutes(
           eq(syncOrderInbox.dispatchId, update.dispatchId),
           eq(syncOrderInbox.targetSlaveId, slaveId),
         ));
-        if (rows.length > 0) allowed.push(update);
+        if (rows.length > 0 && rows[0].status !== "completed") {
+          const changed = await db.update(syncOrderInbox).set({
+            status: update.status === "failed"
+              ? "failed"
+              : "acknowledged_by_slave",
+            ...(update.status === "failed"
+              ? { errorText: update.message ?? "Slave reported failure" }
+              : {}),
+            upstreamStatusPending: update.status,
+            upstreamStatusMessage: update.message ?? null,
+            updatedAt: new Date().toISOString(),
+          }).where(and(
+            eq(syncOrderInbox.id, rows[0].id),
+            ne(syncOrderInbox.status, "completed"),
+          )).returning({ id: syncOrderInbox.id });
+          if (changed.length > 0) allowed.push(update);
+        }
       }
 
       if (allowed.length > 0) {

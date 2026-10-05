@@ -1,4 +1,6 @@
 import React from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import { RefreshButton } from "@/components/common/resourceState";
@@ -68,6 +70,20 @@ export function ResultsPage() {
         ? "Filter by sample ID"
         : "Search external result";
     const isRefreshing = isMachine ? machineResults.isValidating : externalResults.isValidating;
+    const [reconciling, setReconciling] = React.useState(false);
+
+    const reconcile = async () => {
+        setReconciling(true);
+        try {
+            const summary = await api.externalResults.reconcile();
+            toast.success("Checked " + summary.scanned + " SDK results, queued " + summary.queued + " missing deliveries");
+            await externalResults.mutate();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not check SDK results");
+        } finally {
+            setReconciling(false);
+        }
+    };
 
     return (
         <Container>
@@ -77,13 +93,20 @@ export function ResultsPage() {
                 title="Reported analyzer results"
                 description="Result records are read-only. Open a record to inspect analytes, reference ranges, units, and abnormal flags."
                 actions={
-                    <RefreshButton
-                        isLoading={isRefreshing}
-                        onRefresh={() => {
-                            onReset();
-                            void refresh();
-                        }}
-                    />
+                    <div className="flex gap-2">
+                        {!isMachine && (
+                            <Button type="button" variant="outline" disabled={reconciling} onClick={() => void reconcile()}>
+                                {reconciling ? "Checking results..." : "Find missing deliveries"}
+                            </Button>
+                        )}
+                        <RefreshButton
+                            isLoading={isRefreshing}
+                            onRefresh={() => {
+                                onReset();
+                                void refresh();
+                            }}
+                        />
+                    </div>
                 }
             />
 
@@ -119,6 +142,15 @@ export function ResultsPage() {
                         results={externalResults.data?.results}
                         error={externalResults.error}
                         onRetry={() => void externalResults.mutate()}
+                        onResend={async (id) => {
+                            try {
+                                await api.externalResults.retry(id);
+                                toast.success("Result delivery queued again");
+                                await externalResults.mutate();
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "Could not retry delivery");
+                            }
+                        }}
                         page={page}
                         totalPages={totalPages}
                         onPageChange={setPage}

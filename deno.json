@@ -5,13 +5,38 @@
     "lint": "deno lint main.ts types.ts drizzle.config.ts db flow jobs lib routes schemas tests",
     "test": "deno test tests",
     "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate",
-    "db:migrate": "deno run --env-file=.env -A db/migrate.ts"
+    "db:migrate": "deno run --env-file=.env -A db/migrate.ts",
+    "compile:agent:win": "deno compile --sloppy-imports -P --env-file=.env --target x86_64-pc-windows-msvc --output ./binaries/lis-middleware.exe ./main.ts",
+    "compile:agent:linux:x64": "deno compile --sloppy-imports -P --env-file=.env --target x86_64-unknown-linux-gnu --output ./binaries/lis-middleware-linux-x64 ./main.ts",
+    "compile:agent:linux:arm64": "deno compile --sloppy-imports -P --env-file=.env --target aarch64-unknown-linux-gnu --output ./binaries/lis-middleware-linux-arm64 ./main.ts",
+    "compile:agent:mac:x64": "deno compile --sloppy-imports -P --env-file=.env --target x86_64-apple-darwin --output ./binaries/lis-middleware-mac-x64 ./main.ts",
+    "compile:agent:mac:arm64": "deno compile --sloppy-imports -P --env-file=.env --target aarch64-apple-darwin --output ./binaries/lis-middleware-mac-arm64 ./main.ts",
+    "desktop:agent:win": "deno desktop --sloppy-imports -A --env-file=.env --include ./drizzle --include ./frontend/build --target x86_64-pc-windows-msvc --output ./binaries/medicloud-agent-desktop-win ./main.ts",
+    "desktop:agent:linux:x64": "deno desktop --sloppy-imports -A --env-file=.env --include ./drizzle --include ./frontend/build --target x86_64-unknown-linux-gnu --output ./binaries/medicloud-agent-desktop-linux-x64.AppImage ./main.ts",
+    "desktop:agent:linux:arm64": "deno desktop --sloppy-imports -A --env-file=.env --include ./drizzle --include ./frontend/build --target aarch64-unknown-linux-gnu --output ./binaries/medicloud-agent-desktop-linux-arm64.AppImage ./main.ts",
+    "desktop:agent:mac:x64": "deno desktop --sloppy-imports -A --env-file=.env --include ./drizzle --include ./frontend/build --target x86_64-apple-darwin --output ./binaries/medicloud-agent-desktop-mac-x64.app ./main.ts",
+    "desktop:agent:mac:arm64": "deno desktop --sloppy-imports -A --env-file=.env --include ./drizzle --include ./frontend/build --target aarch64-apple-darwin --output ./binaries/medicloud-agent-desktop-mac-arm64.app ./main.ts"
   },
   "lint": {
     "exclude": ["frontend", "drizzle", "data"]
   },
   "fmt": {
     "exclude": ["frontend", "drizzle", "data"]
+  },
+  "compile": {
+    "include": ["./drizzle", "./frontend/build"],
+    "permissions": { "all": true,"env": true }
+  },
+  "desktop": {
+    "app": {
+      "name": "MediCloud Agent"
+    },
+    "backend": "webview",
+    "output": {
+      "windows": "./binaries/medicloud-agent-desktop-win",
+      "linux": "./binaries/medicloud-agent-desktop-linux.AppImage",
+      "macos": "./binaries/medicloud-agent-desktop-mac.app"
+    }
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
@@ -20,7 +45,7 @@
     "@zod/zod": "jsr:@zod/zod@^4.4.3",
     "drizzle-kit": "npm:drizzle-kit@1.0.0-rc.4",
     "drizzle-orm": "npm:drizzle-orm@1.0.0-rc.4",
-    "@mediCloud/sdk/manager": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/machineManager.ts",
-    "@mediCloud/sdk/registry": "https://raw.githubusercontent.com/Huruf-Tech/medicloud-agent-sdk/main/registry.ts"
+    "@mediCloud/sdk/manager": "../medicloud-agent-sdk/machineManager.ts",
+    "@mediCloud/sdk/registry": "../medicloud-agent-sdk/registry.ts"
   }
 }

@@ -57,6 +57,9 @@ export const syncOrderInbox = sqliteTable(
 
     // Error details from the latest failed processing attempt.
     errorText: text(),
+    // Last status awaiting durable delivery to the upstream server.
+    upstreamStatusPending: text(),
+    upstreamStatusMessage: text(),
 
     // Time when this agent received the order.
     receivedAt: text().notNull(),

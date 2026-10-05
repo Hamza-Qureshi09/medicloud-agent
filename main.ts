@@ -42,6 +42,7 @@ if (import.meta.main) {
     app,
     slaveRegistry ?? undefined,
     syncClient ?? undefined,
+    resultDispatcher,
   );
 
   // Slave sync routes only exist on master. Slaves call these to register,

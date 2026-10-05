@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import { syncOrderInbox } from "../db/tables/syncOrderInbox.ts";
 import { medicloudResultDispatch } from "../db/tables/medicloudResultDispatch.ts";
@@ -16,6 +16,7 @@ import type { ResultUploadItem } from "../schemas/sync.ts";
 import { PulledOrderSchema, ResultUploadItemSchema } from "../schemas/sync.ts";
 import type { PersistedMachineResult } from "../types.ts";
 import { toUploadAnalyte } from "../lib/utils.ts";
+import { fetchMachineResultsPage } from "../lib/api.ts";
 
 /**
  * Background worker that delivers machine results to the upstream server
@@ -35,6 +36,8 @@ export class ResultDispatcher {
   private stopped = true;
   private lastError: string | null = null; // Last failure message - prevents log-flooding on persistent outages.
   private offline = false; // Set while upstream is unreachable so the loop backs off instead of spinning.
+  private reconciling = false;
+  private lastReconciledAt = 0;
 
   constructor(private readonly syncClient: SyncClient) {}
 
@@ -44,40 +47,67 @@ export class ResultDispatcher {
    * triggers an immediate flush attempt.
    */
   async onResult(result: PersistedMachineResult): Promise<void> {
-    // Find the inbox row that owns this result's order.
-    const [inbox] = await db
-      .select()
-      .from(syncOrderInbox)
-      .where(eq(syncOrderInbox.agentOrderId, result.orderId))
-      .limit(1);
+    if (await this.enqueueResult(result)) await this.flush();
+  }
 
-    // No matching inbox row → this order did not come from MediCloud - ignore.
+  private async enqueueResult(
+    result: PersistedMachineResult,
+    warnMissing = true,
+  ): Promise<boolean> {
+    let [inbox] = await db.select().from(syncOrderInbox)
+      .where(eq(syncOrderInbox.agentOrderId, result.orderId)).limit(1);
+
     if (!inbox) {
-      console.log(
-        `[ResultDispatcher] Ignoring local result #${result.id} (agent order ${result.orderId}) - not a MediCloud order`,
-      );
-      return;
+      // A result can arrive before POST /orders returns and stores agentOrderId.
+      // Correlate only when one acknowledged upstream order has this sample
+      // and physical profile. Ambiguous matches stay untouched for review.
+      const candidates = await db.select().from(syncOrderInbox).where(and(
+        eq(syncOrderInbox.source, "upstream"),
+        isNull(syncOrderInbox.agentOrderId),
+        isNull(syncOrderInbox.targetSlaveId),
+        inArray(syncOrderInbox.status, ["acknowledged", "processing"]),
+      ));
+      const matches = candidates.filter((row) => {
+        const parsed = PulledOrderSchema.safeParse(JSON.parse(row.payloadJson));
+        return parsed.success &&
+          parsed.data.sampleId === result.sampleId &&
+          Number(parsed.data.profileKey.split(":").at(-1)) === result.machineId;
+      });
+      if (matches.length === 1) {
+        await db.update(syncOrderInbox).set({
+          agentOrderId: result.orderId,
+          status: "processing",
+          submittedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }).where(and(
+          eq(syncOrderInbox.id, matches[0].id),
+          isNull(syncOrderInbox.agentOrderId),
+        ));
+        [inbox] = await db.select().from(syncOrderInbox)
+          .where(eq(syncOrderInbox.agentOrderId, result.orderId)).limit(1);
+      }
+    }
+
+    if (!inbox) {
+      if (warnMissing) {
+        console.warn(
+          "[ResultDispatcher] Result #" + result.id +
+            " has no matched inbox order " + result.orderId,
+        );
+      }
+      return false;
     }
 
     const now = new Date().toISOString();
-
-    // Locally-created orders just need their status updated - no upstream upload.
     if (inbox.source === "local") {
-      await db
-        .update(syncOrderInbox)
+      await db.update(syncOrderInbox)
         .set({ status: "completed", completedAt: now, updatedAt: now })
         .where(eq(syncOrderInbox.id, inbox.id));
-
-      console.log(
-        `[ResultDispatcher] Completed local order ${inbox.dispatchId} ` +
-          `(agent order ${result.orderId}, result #${result.id}) - kept on this agent`,
-      );
-      return;
+      return false;
     }
 
     const order = PulledOrderSchema.parse(JSON.parse(inbox.payloadJson));
-    const idempotencyKey = `${inbox.dispatchId}:${result.id}`;
-
+    const idempotencyKey = inbox.dispatchId + ":" + result.id;
     const upload: ResultUploadItem = {
       idempotencyKey,
       dispatchId: inbox.dispatchId,
@@ -90,35 +120,79 @@ export class ResultDispatcher {
       analytes: (result.payload?.results ?? []).map(toUploadAnalyte),
     };
 
-    // Insert into outbox only if not already there (idempotent).
-    const [existing] = await db
-      .select({ id: medicloudResultDispatch.id })
-      .from(medicloudResultDispatch)
-      .where(eq(medicloudResultDispatch.agentResultId, result.id))
-      .limit(1);
+    const [inserted] = await db.insert(medicloudResultDispatch).values({
+      agentResultId: result.id,
+      agentOrderId: result.orderId,
+      medicloudOrderId: order.orderId,
+      medicloudDispatchId: inbox.dispatchId,
+      idempotencyKey,
+      payloadJson: JSON.stringify(upload),
+      deliveryStatus: RESULT_DELIVERY_STATUS.pending,
+      createdAt: now,
+    }).onConflictDoNothing().returning({ id: medicloudResultDispatch.id });
 
-    if (!existing) {
+    if (inserted) {
       console.log(
-        `[ResultDispatcher] Queued result #${result.id} for dispatch ${inbox.dispatchId} ` +
-          `(sample ${result.sampleId}, ${upload.analytes.length} analyte(s): ` +
-          `${upload.analytes.map((a) => a.assayNo).join(", ") || "none"})`,
+        "[ResultDispatcher] Queued result #" + result.id +
+          " for dispatch " + inbox.dispatchId,
       );
-      await db.insert(medicloudResultDispatch).values({
-        agentResultId: result.id,
-        agentOrderId: result.orderId,
-        medicloudOrderId: order.orderId,
-        medicloudDispatchId: inbox.dispatchId,
-        idempotencyKey,
-        payloadJson: JSON.stringify(upload),
-        deliveryStatus: RESULT_DELIVERY_STATUS.pending,
-        createdAt: now,
-      });
     }
-
-    // Try to deliver immediately rather than waiting for the retry loop.
-    await this.flush();
+    return inserted !== undefined;
   }
 
+  /** Rebuild missing outbox rows from immutable SDK result records. */
+  async reconcile(): Promise<{ scanned: number; queued: number }> {
+    if (this.reconciling) return { scanned: 0, queued: 0 };
+    this.reconciling = true;
+    let scanned = 0;
+    let queued = 0;
+    try {
+      const pageSize = 100;
+      for (let offset = 0;; offset += pageSize) {
+        const page = await fetchMachineResultsPage(pageSize, offset);
+        for (const result of page) {
+          scanned++;
+          if (await this.enqueueResult(result, false)) queued++;
+        }
+        if (page.length < pageSize) break;
+      }
+      this.lastReconciledAt = Date.now();
+      return { scanned, queued };
+    } finally {
+      this.reconciling = false;
+    }
+  }
+
+  async reconcileAndFlush(): Promise<{ scanned: number; queued: number }> {
+    const summary = await this.reconcile();
+    await this.flush();
+    return summary;
+  }
+
+  async retryDelivery(id: number): Promise<boolean> {
+    const [row] = await db.select().from(medicloudResultDispatch)
+      .where(eq(medicloudResultDispatch.id, id)).limit(1);
+    if (!row || row.deliveryStatus === RESULT_DELIVERY_STATUS.delivered) {
+      return false;
+    }
+
+    await db.update(medicloudResultDispatch).set({
+      deliveryStatus: RESULT_DELIVERY_STATUS.pending,
+      retryCount: 0,
+      errorText: null,
+    }).where(eq(medicloudResultDispatch.id, id));
+
+    await db.update(syncOrderInbox).set({
+      status: "processing",
+      errorText: null,
+      upstreamStatusPending: null,
+      upstreamStatusMessage: null,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(syncOrderInbox.dispatchId, row.medicloudDispatchId));
+
+    await this.flush();
+    return true;
+  }
   /**
    * Called by the master when a slave forwards a result produced on a slave-owned machine.
    * Queues it under the original MediCloud order.
@@ -176,6 +250,13 @@ export class ResultDispatcher {
 
   private async runLoop(): Promise<void> {
     try {
+      if (Date.now() - this.lastReconciledAt >= 60_000) {
+        try {
+          await this.reconcile();
+        } catch (error) {
+          console.error("[ResultDispatcher] SDK result scan failed:", error);
+        }
+      }
       await this.flush();
     } catch (error) {
       const message = describeError(error);
@@ -372,6 +453,9 @@ export class ResultDispatcher {
         .set({
           status: "failed",
           errorText: `Result delivery abandoned: ${failure.message}`,
+          upstreamStatusPending: "failed",
+          upstreamStatusMessage: "Result delivery abandoned: " +
+            failure.message,
           updatedAt: now,
         })
         .where(eq(syncOrderInbox.dispatchId, failure.dispatchId));

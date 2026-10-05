@@ -132,6 +132,8 @@ export function registerDashboardOrderRoutes(
         .set({
           status: "failed",
           errorText: "Rejected by operator",
+          upstreamStatusPending: "failed",
+          upstreamStatusMessage: "Rejected by operator from master dashboard",
           updatedAt: now,
         })
         .where(eq(syncOrderInbox.id, parsedId.data));

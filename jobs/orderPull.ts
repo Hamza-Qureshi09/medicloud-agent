@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import { syncOrderInbox } from "../db/tables/syncOrderInbox.ts";
 import { postMachineOrder } from "../lib/api.ts";
@@ -72,6 +72,8 @@ export class OrderPullWorker {
     let nextDelay = this.orderPullIntervalMs;
 
     try {
+      // Retry durable status updates before pulling more work.
+      await this.flushPendingStatuses();
       // Recover lost acks, then resume acknowledged orders before fetching more.
       await this.reacknowledgeStoredOrders();
       await this.resumeStoredOrders();
@@ -144,6 +146,44 @@ export class OrderPullWorker {
     }
   }
 
+  private async flushPendingStatuses(): Promise<void> {
+    const rows = await db.select().from(syncOrderInbox)
+      .where(isNotNull(syncOrderInbox.upstreamStatusPending)).limit(50);
+    for (const row of rows) {
+      const status = row.upstreamStatusPending;
+      if (row.status === "completed" && status === "processing") {
+        await db.update(syncOrderInbox).set({
+          upstreamStatusPending: null,
+          upstreamStatusMessage: null,
+        }).where(eq(syncOrderInbox.id, row.id));
+        continue;
+      }
+      if (status !== "processing" && status !== "failed") continue;
+      try {
+        await this.syncClient.reportStatus([{
+          dispatchId: row.dispatchId,
+          status,
+          ...(row.upstreamStatusMessage
+            ? { message: row.upstreamStatusMessage }
+            : {}),
+        }]);
+        await db.update(syncOrderInbox).set({
+          upstreamStatusPending: null,
+          upstreamStatusMessage: null,
+        }).where(and(
+          eq(syncOrderInbox.id, row.id),
+          eq(syncOrderInbox.upstreamStatusPending, status),
+        ));
+      } catch (error) {
+        console.error(
+          "[OrderPullWorker] Could not forward stored status for " +
+            row.dispatchId + ":",
+          error,
+        );
+        break;
+      }
+    }
+  }
   /**
    * Returns how many more orders this agent can accept right now.
    * Subtracts the current in-flight count from MAX_CAPACITY.
@@ -402,15 +442,24 @@ export class OrderPullWorker {
     });
 
     const now = new Date().toISOString();
-    await db
+    const updated = await db
       .update(syncOrderInbox)
       .set({
         agentOrderId,
         status: "processing",
+        upstreamStatusPending: "processing",
+        upstreamStatusMessage: null,
         submittedAt: now,
         updatedAt: now,
       })
-      .where(eq(syncOrderInbox.dispatchId, dispatchId));
+      .where(and(
+        eq(syncOrderInbox.dispatchId, dispatchId),
+        inArray(syncOrderInbox.status, ["acknowledged", "processing"]),
+      ))
+      .returning({ id: syncOrderInbox.id });
+
+    // A fast result may already have completed this inbox row.
+    if (updated.length === 0) return;
 
     console.log(
       `[OrderPullWorker] Submitted ${dispatchId} to machine profile ${localProfileId} ` +
@@ -424,6 +473,13 @@ export class OrderPullWorker {
         dispatchId,
         status: "processing",
       }]);
+      await db.update(syncOrderInbox).set({
+        upstreamStatusPending: null,
+        upstreamStatusMessage: null,
+      }).where(and(
+        eq(syncOrderInbox.dispatchId, dispatchId),
+        eq(syncOrderInbox.upstreamStatusPending, "processing"),
+      ));
     } catch (error) {
       // Non-fatal - the machine is already processing the order.
       console.error(
@@ -438,7 +494,13 @@ export class OrderPullWorker {
     const now = new Date().toISOString();
     await db
       .update(syncOrderInbox)
-      .set({ status: "failed", errorText: message, updatedAt: now })
+      .set({
+        status: "failed",
+        errorText: message,
+        upstreamStatusPending: "failed",
+        upstreamStatusMessage: message,
+        updatedAt: now,
+      })
       .where(eq(syncOrderInbox.dispatchId, dispatchId));
 
     await this.syncClient.reportStatus([{
@@ -446,6 +508,13 @@ export class OrderPullWorker {
       status: "failed",
       message,
     }]);
+    await db.update(syncOrderInbox).set({
+      upstreamStatusPending: null,
+      upstreamStatusMessage: null,
+    }).where(and(
+      eq(syncOrderInbox.dispatchId, dispatchId),
+      eq(syncOrderInbox.upstreamStatusPending, "failed"),
+    ));
     console.error(`[OrderPullWorker] Order ${dispatchId} failed: ${message}`);
   }
 }
