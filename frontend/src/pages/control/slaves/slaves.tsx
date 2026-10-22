@@ -42,7 +42,7 @@ export function RegisteredSlaves({ slaves, mutate }: { slaves: SlaveRecord[], mu
                                                     className="hover:underline text-primary"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    Slave: {slave.instanceId || slave.slaveId.split('-')[1] || slave.slaveId}
+                                                    Slave: {slave.name || slave.instanceId || slave.slaveId.split('-')[1] || slave.slaveId}
                                                 </Link>
                                                 <Badge variant={slaveStatusVariant[slaveLiveness(slave)]} className="ml-2">
                                                     {slaveStatusLabel[slaveLiveness(slave)]}

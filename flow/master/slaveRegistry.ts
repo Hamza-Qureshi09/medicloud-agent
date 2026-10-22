@@ -24,7 +24,7 @@ export class SlaveRegistry {
    *
    * Returns the one-time credentials - the secret cannot be retrieved again.
    */
-  async register(): Promise<{ slaveId: string; slaveSecret: string }> {
+  async register(name?: string): Promise<{ slaveId: string; slaveSecret: string }> {
     const slaveSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
     const secretHash = await this.hash(slaveSecret);
     const slaveId = crypto.randomUUID();
@@ -32,6 +32,7 @@ export class SlaveRegistry {
 
     await db.insert(slaveRegistry).values({
       slaveId,
+      name: name?.trim() || null,
       secretHash,
       machinesJson: JSON.stringify([]),
       isActive: false,
@@ -59,12 +60,14 @@ export class SlaveRegistry {
     slaveId: string,
     machines: SyncMachineCapability[],
     instanceId: string,
+    name?: string,
   ): Promise<void> {
     const now = new Date().toISOString();
     await db
       .update(slaveRegistry)
       .set({
         instanceId,
+        ...(name?.trim() ? { name: name.trim() } : {}),
         machinesJson: JSON.stringify(machines),
         lastPingAt: now,
         isActive: true,

@@ -1,4 +1,5 @@
-import { pageMeta } from "@/lib/helpers"
+import { SlaveSetupNotice } from "../common/slaveSetupNotice";
+import { getPageMeta } from "@/lib/page-meta"
 import { Outlet, useLocation } from "react-router-dom"
 import {
     SidebarInset,
@@ -12,7 +13,7 @@ import { ThemeMenu } from "../common/themeMenu"
 
 export function RootLayout() {
     const location = useLocation()
-    const meta = pageMeta[location.pathname] ?? pageMeta["/"]
+    const meta = getPageMeta(location.pathname)
 
     return (
         <SidebarProvider>
@@ -40,6 +41,7 @@ export function RootLayout() {
                 
                 {/* main content */}
                 <main className="min-w-0 flex-1 p-4 md:p-6">
+                    <SlaveSetupNotice />
                     <Outlet />
                 </main>
             </SidebarInset>

@@ -58,9 +58,7 @@ function driverDefaults(
     const result: Record<string, string> = {};
 
     for (const field of driver.configFields) {
-        const value = cfg[field.key] !== undefined
-            ? cfg[field.key]
-            : field.default;
+        const value = cfg[field.key] !== undefined ? cfg[field.key] : field.default;
         result[field.key] = value !== undefined ? String(value) : "";
     }
 
@@ -103,9 +101,7 @@ function profileFormReducer(
         case "SET_FIELD": {
             const errors = state.errors[action.key]
                 ? Object.fromEntries(
-                    Object.entries(state.errors).filter(([k]) =>
-                        k !== action.key
-                    ),
+                    Object.entries(state.errors).filter(([k]) => k !== action.key),
                 )
                 : state.errors;
             return {
@@ -213,7 +209,7 @@ export function useProfileForm(
             const message = extractApiError(
                 err,
             );
-            toast.error(message);
+            toast.error(message, { id: message });
             dispatch({ type: "SET_ROOT_ERROR", error: message });
         }
     }

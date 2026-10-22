@@ -1,3 +1,5 @@
+import { validator } from "@hono/hono/validator";
+import { SlaveRegistrationSchema } from "../../schemas/slaveConnection.ts";
 import { Hono } from "@hono/hono";
 import type { SlaveRegistry } from "../../flow/master/slaveRegistry.ts";
 
@@ -16,15 +18,26 @@ export function registerSlaveManagementRoutes(
   });
 
   // Creates a new slave slot and returns one-time credentials.
-  app.post("/slaves/register", async (c) => {
-    if (!slaveRegistry) {
-      return c.json({
-        error: "Slave registration is only available in master mode",
-      }, 400);
-    }
-    const { slaveId, slaveSecret } = await slaveRegistry.register();
-    return c.json({ slaveId, slaveSecret });
-  });
+  app.post(
+    "/slaves/register",
+    validator("json", (value, context) => {
+      const parsed = SlaveRegistrationSchema.safeParse(value);
+      return parsed.success
+        ? parsed.data
+        : context.json({ error: "Invalid slave name" }, 400);
+    }),
+    async (c) => {
+      if (!slaveRegistry) {
+        return c.json({
+          error: "Slave registration is only available in master mode",
+        }, 400);
+      }
+      const { slaveId, slaveSecret } = await slaveRegistry.register(
+        c.req.valid("json").name,
+      );
+      return c.json({ slaveId, slaveSecret });
+    },
+  );
 
   // Gets a single slave by its ID.
   app.get("/slaves/:slaveId", async (c) => {

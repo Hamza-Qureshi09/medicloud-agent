@@ -20,7 +20,6 @@ import {
     StopIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     Card,
     CardContent,
@@ -116,7 +115,7 @@ export function ProfilesPage() {
         [driversData]
     );
 
-    const profileAction = useAsyncAction("Analyzer action failed.");
+    const profileAction = useAsyncAction("Analyzer action failed.", "Analyzer status updated");
     async function runHardRefresh() {
         await Promise.all([
             machineMutate(),
@@ -166,14 +165,7 @@ export function ProfilesPage() {
                 }
             />
 
-            {profileAction.error ? (
-                <Alert variant="destructive">
-                    <AlertTitle className="font-normal">Analyzer action failed</AlertTitle>
-                    <AlertDescription className="font-normal">
-                        {profileAction.error}
-                    </AlertDescription>
-                </Alert>
-            ) : null}
+
 
             {profilesData?.profiles.length ? (
                 <div className="flex flex-col gap-6">

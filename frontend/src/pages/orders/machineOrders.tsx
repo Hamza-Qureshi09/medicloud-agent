@@ -1,3 +1,4 @@
+import { OrderTiming } from "@/components/common/orderTiming";
 import type { MachineOrder, MachineProfile } from "@/types/api";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
@@ -11,8 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowCounterClockwiseIcon, TrashIcon, ArrowRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowCounterClockwiseIcon, TrashIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { OrderStatusBadge } from "@/components/common/statusBadge";
 import { ConfirmAction } from "@/components/common/confirmAction";
 import { PageLoading, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
@@ -43,7 +43,7 @@ export function MachineOrders({
     onRefresh,
 }: MachineOrdersProps) {
 
-    const orderAction = useAsyncAction("Order action failed.");
+    const orderAction = useAsyncAction("Order action failed.", "Order action completed");
 
     async function runOrderMutation(action: () => Promise<unknown>) {
         await orderAction.execute(async () => {
@@ -60,13 +60,7 @@ export function MachineOrders({
     return (
         <>
             {/* Action-level error */}
-            {orderAction.error ? (
-                <Alert variant="destructive">
-                    <WarningCircleIcon className="size-4" />
-                    <AlertTitle className="font-normal">Order action failed</AlertTitle>
-                    <AlertDescription className="font-normal">{orderAction.error}</AlertDescription>
-                </Alert>
-            ) : null}
+
 
             {orders.length ? (
                 <div className="flex flex-col gap-4">
@@ -79,6 +73,7 @@ export function MachineOrders({
                                     <TableHead className="font-normal">Analyzer</TableHead>
                                     <TableHead className="font-normal">Tests</TableHead>
                                     <TableHead className="font-normal">Status</TableHead>
+                                    <TableHead className="font-normal">Estimated timing</TableHead>
                                     <TableHead className="font-normal">Expiry</TableHead>
                                     {/* Sticky right column for actions on smaller viewports */}
                                     <TableHead className="text-center font-normal sticky right-0 bg-card z-10 shadow-[-12px_0_12px_-4px_rgba(0,0,0,0.05)] border-l border-border/40">
@@ -113,13 +108,14 @@ export function MachineOrders({
                                         </TableCell>
 
                                         <TableCell className="max-w-56 truncate font-normal">
-                                            <TestBadgeList tests={order.tests} maxVisible={2} /> 
+                                            <TestBadgeList tests={order.tests} maxVisible={2} />
                                         </TableCell>
 
                                         <TableCell className="font-normal">
                                             <OrderStatusBadge status={order.status} />
                                         </TableCell>
 
+                                        <TableCell><OrderTiming order={order} /></TableCell>
                                         <TableCell className="text-muted-foreground text-xs font-mono font-normal">
                                             {new Date(order.expiresAt).toLocaleString()}
                                         </TableCell>
@@ -201,4 +197,3 @@ export function MachineOrders({
         </>
     );
 }
-

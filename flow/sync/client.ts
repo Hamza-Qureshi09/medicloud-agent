@@ -1,3 +1,4 @@
+import { createMasterUrl } from "../../lib/utils.ts";
 import {
   sync_acknowledge_orders,
   sync_heartbeat,
@@ -5,7 +6,6 @@ import {
   sync_report_status,
   sync_upload_results,
 } from "../../lib/api.ts";
-import { ApiError, describeError } from "../../lib/error.ts";
 import { env } from "../../lib/env.ts";
 import type {
   AckRequest,
@@ -14,7 +14,7 @@ import type {
   SyncHeartbeatPayload,
   SyncMachineCapability,
 } from "../../schemas/sync.ts";
-import type { SyncAuthHeaders } from "../../types.ts";
+import type { SyncAuthHeaders, SyncConnection } from "../../types.ts";
 import {
   AGENT_PROTOCOL_VERSION,
   AGENT_SOFTWARE_VERSION,
@@ -33,6 +33,7 @@ export class SyncClient {
     private readonly headerPrefix: "agent" | "slave" = "agent",
     private readonly apiPrefix = "/api/agent-sync",
     private readonly authProvider?: () => Promise<SyncAuthHeaders>,
+    private readonly connectionProvider?: () => SyncConnection,
   ) {}
 
   /** Sends a heartbeat with current mode and machine capabilities. */
@@ -40,12 +41,14 @@ export class SyncClient {
     mode: SyncHeartbeatPayload["mode"],
     machines: SyncMachineCapability[],
   ) {
+    const connection = await this.getConnection();
     return sync_heartbeat(
-      this.baseUrl,
+      connection.baseUrl,
       this.apiPrefix,
-      await this.getAuth(),
+      connection.auth,
       {
         mode,
+        ...(connection.slaveName ? { slaveName: connection.slaveName } : {}),
         protocolVersion: AGENT_PROTOCOL_VERSION,
         softwareVersion: AGENT_SOFTWARE_VERSION,
         machines,
@@ -58,10 +61,11 @@ export class SyncClient {
    * Master and direct agents pull from MediCloud. Slaves pull from the master.
    */
   async pullOrders(capacity: number, availableProfileKeys: string[]) {
+    const connection = await this.getConnection();
     return sync_pull_orders(
-      this.baseUrl,
+      connection.baseUrl,
       this.apiPrefix,
-      await this.getAuth(),
+      connection.auth,
       {
         capacity,
         availableProfileKeys,
@@ -77,10 +81,11 @@ export class SyncClient {
     accepted: AckRequest["accepted"],
     rejected: AckRequest["rejected"],
   ) {
+    const connection = await this.getConnection();
     return sync_acknowledge_orders(
-      this.baseUrl,
+      connection.baseUrl,
       this.apiPrefix,
-      await this.getAuth(),
+      connection.auth,
       {
         leaseId,
         accepted,
@@ -93,10 +98,11 @@ export class SyncClient {
   async reportStatus(
     updates: StatusRequest["updates"],
   ) {
+    const connection = await this.getConnection();
     return sync_report_status(
-      this.baseUrl,
+      connection.baseUrl,
       this.apiPrefix,
-      await this.getAuth(),
+      connection.auth,
       {
         updates,
       },
@@ -105,15 +111,21 @@ export class SyncClient {
 
   /** Uploads a batch of finished results to the upstream host. */
   async uploadResults(batchId: string, results: ResultUploadItem[]) {
+    const connection = await this.getConnection();
     return sync_upload_results(
-      this.baseUrl,
+      connection.baseUrl,
       this.apiPrefix,
-      await this.getAuth(),
+      connection.auth,
       {
         batchId,
         results,
       },
     );
+  }
+
+  private async getConnection(): Promise<SyncConnection> {
+    if (this.connectionProvider) return this.connectionProvider();
+    return { baseUrl: this.baseUrl, auth: await this.getAuth() };
   }
 
   private async getAuth(): Promise<SyncAuthHeaders> {
@@ -148,49 +160,17 @@ export function createMedicloudSyncClient(instanceId: string): SyncClient {
  */
 export function createSlaveSyncClient(
   instanceId: string,
-  options: { masterUrl?: string } = {},
+  options: { masterUrl?: string; connectionProvider?: () => SyncConnection } =
+    {},
 ): SyncClient {
-  const masterUrl = options.masterUrl ??
-    `http://${env.MASTER_HOST}:${env.MASTER_PORT}`;
-
-  let pending: Promise<SyncAuthHeaders> | undefined;
-
-  const initialize = (): SyncAuthHeaders => {
-    const slaveId = env.SLAVE_ID;
-    const slaveSecret = env.SLAVE_SECRET;
-
-    if (!slaveId || !slaveSecret) {
-      throw new Error(
-        "SLAVE_ID and SLAVE_SECRET environment variables are required in slave mode.",
-      );
-    }
-
-    return {
-      clientId: slaveId,
-      secret: slaveSecret,
-      instanceId,
-      headerPrefix: "slave",
-    };
-  };
-
   return new SyncClient(
-    masterUrl,
-    "",
-    "",
+    options.masterUrl ?? createMasterUrl(env.MASTER_HOST, env.MASTER_PORT),
+    env.SLAVE_ID,
+    env.SLAVE_SECRET,
     instanceId,
     "slave",
     "/slave-sync",
-    () => {
-      if (!pending) {
-        pending = Promise.resolve().then(initialize).catch((error) => {
-          pending = undefined;
-          throw new ApiError(
-            `Slave configuration missing: ${describeError(error)}`,
-            503,
-          );
-        });
-      }
-      return pending;
-    },
+    undefined,
+    options.connectionProvider,
   );
 }

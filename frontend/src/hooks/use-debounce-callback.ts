@@ -1,33 +1,25 @@
-
 import React from "react";
-
 
 export function useDebounceCallback<T extends (...args: never[]) => void>(
     callback: T,
-    delay: number = 400
+    delay = 400,
 ) {
-    const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+    const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const cancel = React.useCallback(() => {
+        if (timer.current !== null) clearTimeout(timer.current);
+        timer.current = null;
+    }, []);
 
-    const debouncedCallback = React.useCallback(
-        (...args: Parameters<T>) => {
-            if (timer.current) {
-                clearTimeout(timer.current);
-            }
+    const debouncedCallback = React.useCallback((...args: Parameters<T>) => {
+        cancel();
+        timer.current = setTimeout(() => {
+            timer.current = null;
+            callback(...args);
+        }, delay);
+    }, [callback, delay, cancel]);
 
-            timer.current = setTimeout(() => {
-                callback(...args);
-            }, delay);
-        }, [callback, delay]
-    )
+    // A callback belongs to its current tab/filter context.
+    React.useEffect(() => cancel, [callback, delay, cancel]);
 
-    React.useEffect(() => {
-        return () => {
-            if (timer.current) {
-                clearTimeout(timer.current)
-            }
-        }
-    }, [])
-
-    return debouncedCallback;
-
+    return Object.assign(debouncedCallback, { cancel });
 }

@@ -11,9 +11,8 @@ export const env = {
 };
 
 export function validateEnvironment(): void {
-  const required = env.AGENT_MODE === "slave"
-    ? (["MASTER_HOST", "SLAVE_ID", "SLAVE_SECRET"] as const)
-    : ([
+  if (env.AGENT_MODE === "slave") return;
+  const required = ([
       "MEDICLOUD_AGENT_ID",
       "MEDICLOUD_AGENT_SECRET",
       "MEDICLOUD_ACCOUNT_ID",

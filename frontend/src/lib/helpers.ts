@@ -12,55 +12,10 @@ export function slaveLiveness(slave: SlaveRecord): SlaveLiveness {
         return "never";
     }
 
-    return Date.now() - lastSeen.getTime() <= SLAVE_ONLINE_WINDOW_MS
+    return slave.isActive && Date.now() - lastSeen.getTime() < SLAVE_ONLINE_WINDOW_MS
         ? "online"
         : "stale";
 }
-
-// dashboard header metadata
-export const pageMeta: Record<string, { title: string; description: string }> =
-    {
-        "/": {
-            title: "Laboratory operations",
-            description:
-                "Live analyzer activity, order flow, and turnaround performance.",
-        },
-        "/profiles": {
-            title: "Analyzer profiles",
-            description:
-                "Configure, start, stop, and monitor connected instruments.",
-        },
-        "/orders": {
-            title: "Test orders",
-            description:
-                "Stage worklists, track progress, and resolve failed submissions.",
-        },
-        "/results": {
-            title: "Result audit",
-            description:
-                "Review immutable analyzer results and reported analytes.",
-        },
-        "/statistics": {
-            title: "Turnaround intelligence",
-            description:
-                "Inspect learned test durations used for completion estimates.",
-        },
-        "/catalogs": {
-            title: "Test catalogs",
-            description:
-                "Browse assays supported by each registered analyzer driver.",
-        },
-        "/control": {
-            title: "Control Center",
-            description:
-                "Monitor and manage connected slave agents and their capabilities.",
-        },
-        "/drivers": {
-            title: "Machine drivers",
-            description:
-                "Review the analyzer integrations available to this service.",
-        },
-    };
 
 // api error handler
 export class ApiError extends Error {
@@ -76,7 +31,7 @@ export class ApiError extends Error {
 }
 
 // body stringify
-export function json(method: "POST" | "PATCH", body: unknown): RequestInit {
+export function json(method: "POST" | "PATCH" | "PUT", body: unknown): RequestInit {
     return { method, body: JSON.stringify(body) };
 }
 

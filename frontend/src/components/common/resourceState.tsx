@@ -1,3 +1,4 @@
+import { useToastError } from "@/hooks/use-toast-error";
 import {
     ArrowClockwiseIcon,
     CloudSlashIcon,
@@ -52,14 +53,14 @@ export function ResourceError({
     error: unknown
     onRetry?: () => void
 }) {
-    const message = error instanceof Error ? error.message : "The request failed."
+    useToastError(error, "Data could not be loaded");
     return (
         <Alert variant="destructive">
             <WarningCircleIcon />
             <div className="flex flex-row justify-between items-center">
                 <div className={""}>
                     <AlertTitle>Data could not be loaded</AlertTitle>
-                    <AlertDescription>{message}</AlertDescription>
+                    <AlertDescription>Use refresh to try again.</AlertDescription>
                 </div>
                 {onRetry ? (
                     <Button variant="outline" size="sm" onClick={onRetry} >

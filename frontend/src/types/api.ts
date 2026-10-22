@@ -39,7 +39,7 @@ export interface RunningMachine {
 
 export interface MachineResponse {
   status: string
-  mode?: string
+  mode?: AgentMode
   version?: string
   registered_drivers: Driver[]
   running_machines: RunningMachine[]
@@ -51,9 +51,26 @@ export interface CatalogSummary {
   driverId: string
   machine: string
   catalogCount: number
+  source?: "database" | "static"
+}
+
+export interface CatalogAnalyte {
+  code: string
+  name: string
+  unit?: string
+  category?: string
+  decimals?: number
 }
 
 export interface CatalogTest {
+  analytes?: CatalogAnalyte[]
+  aliases?: string[]
+  deviceCode?: string
+  unit?: string
+  normalRange?: string
+  category?: string
+  slot?: number
+  enabled?: boolean
   id?: string
   code?: string
   name?: string
@@ -195,6 +212,7 @@ export interface AgentHealthyResponse {
 
 // slave record
 export interface SlaveRecord {
+  name?: string | null
   id: number
   slaveId: string
   instanceId: string | null

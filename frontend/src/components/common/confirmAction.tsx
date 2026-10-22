@@ -63,9 +63,7 @@ export function ConfirmAction({
                     </AlertDialogMedia>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>{description}</AlertDialogDescription>
-                    {action.error ? (
-                        <p className="text-sm text-destructive">{action.error}</p>
-                    ) : null}
+
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel disabled={action.pending}>Cancel</AlertDialogCancel>

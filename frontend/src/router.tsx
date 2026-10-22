@@ -64,6 +64,10 @@ export const router = createBrowserRouter([
                 }),
             },
             {
+                path: "master-connection",
+                lazy: async () => ({ Component: (await import("@/pages/masterConnection/index.tsx")).MasterConnectionPage }),
+            },
+            {
                 path: "control",
                 lazy: async () => ({
                     Component: (await import("@/pages/control/index.tsx")).ControlPage,
