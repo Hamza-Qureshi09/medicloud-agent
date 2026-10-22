@@ -1,3 +1,4 @@
+import type { SlaveConnectionIdentity } from "./schemas/slaveConnection.ts";
 export type {
   CatalogAnalyte,
   CatalogTest,
@@ -64,10 +65,27 @@ export type AgentRegistriesResult = {
   resultDispatcher: ResultDispatcher;
 };
 
-export type ShutdownWorkers = {
-  heartbeatWorker: HeartbeatWorker;
-  orderPullWorker: OrderPullWorker;
-  resultDispatcher: ResultDispatcher;
+export type ShutdownWorkers = AgentWorkers & {
   server: Deno.HttpServer;
   manager: MachineManager;
+};
+
+export type SyncConnection = {
+  baseUrl: string;
+  auth: SyncAuthHeaders;
+  slaveName?: string;
+};
+
+export type AgentWorkers = Pick<
+  AgentRegistriesResult,
+  "heartbeatWorker" | "orderPullWorker" | "resultDispatcher"
+>;
+
+export type SlaveWorkerControl = {
+  pause: () => Promise<void>;
+  resume: () => void;
+  validateChange: (
+    previous: SlaveConnectionIdentity,
+    next: SlaveConnectionIdentity,
+  ) => Promise<void>;
 };

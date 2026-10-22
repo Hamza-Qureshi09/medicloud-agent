@@ -1,3 +1,4 @@
+import { liveListConfig } from "@/lib/swr";
 import React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,10 @@ const TABS = ["machine", "external"] as const;
 const SEARCH_KEYS = { machine: "sampleId", external: "search" } as const;
 
 export function ResultsPage() {
-    const { tab, search, input, page, setPage, onSearch, onTab, onReset } =
-        useTabbedFilters(TABS, SEARCH_KEYS);
+    const { tab, search, input, page, setPage, onSearch, onTab, onReset } = useTabbedFilters(
+        TABS,
+        SEARCH_KEYS,
+    );
     const isMachine = tab === "machine";
 
     // Each list is fetched only while its own tab is open.
@@ -31,10 +34,12 @@ export function ResultsPage() {
     const machineResults = useSWR(
         isMachine ? api.results.listKey(resultQuery) : null,
         () => api.results.list(resultQuery),
+        liveListConfig,
     );
     const resultCount = useSWR(
         isMachine ? api.results.countKey : null,
         () => api.results.count(),
+        liveListConfig,
     );
 
     const externalQuery = React.useMemo(() => ({
@@ -46,6 +51,7 @@ export function ResultsPage() {
     const externalResults = useSWR(
         isMachine ? null : api.externalResults.listKey(externalQuery),
         () => api.externalResults.list(externalQuery),
+        liveListConfig,
     );
 
     const refresh = React.useCallback(async () => {
@@ -66,9 +72,7 @@ export function ResultsPage() {
         })
         : pageCount({ page, rows: 0, total: externalResults.data?.count ?? 0 });
 
-    const searchPlaceholder = isMachine
-        ? "Filter by sample ID"
-        : "Search external result";
+    const searchPlaceholder = isMachine ? "Filter by sample ID" : "Search external result";
     const isRefreshing = isMachine ? machineResults.isValidating : externalResults.isValidating;
     const [reconciling, setReconciling] = React.useState(false);
 
@@ -76,7 +80,10 @@ export function ResultsPage() {
         setReconciling(true);
         try {
             const summary = await api.externalResults.reconcile();
-            toast.success("Checked " + summary.scanned + " SDK results, queued " + summary.queued + " missing deliveries");
+            toast.success(
+                "Checked " + summary.scanned + " SDK results, queued " + summary.queued +
+                    " missing deliveries",
+            );
             await externalResults.mutate();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Could not check SDK results");
@@ -95,7 +102,12 @@ export function ResultsPage() {
                 actions={
                     <div className="flex gap-2">
                         {!isMachine && (
-                            <Button type="button" variant="outline" disabled={reconciling} onClick={() => void reconcile()}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={reconciling}
+                                onClick={() => void reconcile()}
+                            >
                                 {reconciling ? "Checking results..." : "Find missing deliveries"}
                             </Button>
                         )}
@@ -148,7 +160,11 @@ export function ResultsPage() {
                                 toast.success("Result delivery queued again");
                                 await externalResults.mutate();
                             } catch (error) {
-                                toast.error(error instanceof Error ? error.message : "Could not retry delivery");
+                                toast.error(
+                                    error instanceof Error
+                                        ? error.message
+                                        : "Could not retry delivery",
+                                );
                             }
                         }}
                         page={page}

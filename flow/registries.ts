@@ -1,3 +1,4 @@
+import type { SlaveConnection } from "./slave/connection.ts";
 import { HeartbeatWorker } from "../jobs/heartbeat.ts";
 import { OrderPullWorker } from "../jobs/orderPull.ts";
 import { ResultDispatcher } from "../jobs/resultDispatcher.ts";
@@ -26,6 +27,7 @@ import {
  */
 export function createAgentRegistries(
   instanceId: string,
+  connection?: SlaveConnection,
 ): AgentRegistriesResult {
   // SlaveRegistry is only needed on "master" to track connected slaves.
   const slaveRegistry = env.AGENT_MODE === "master"
@@ -34,7 +36,12 @@ export function createAgentRegistries(
 
   // Slaves talk to master. Direct and master agents talk to MediCloud.
   const syncClient = env.AGENT_MODE === "slave"
-    ? createSlaveSyncClient(instanceId)
+    ? createSlaveSyncClient(
+      instanceId,
+      connection
+        ? { connectionProvider: () => connection.getConnection() }
+        : {},
+    )
     : createMedicloudSyncClient(instanceId);
 
   // What capabilities to report depends on the agent's mode:
@@ -50,6 +57,7 @@ export function createAgentRegistries(
     getCapabilities,
     env.AGENT_MODE,
     env.MEDICLOUD_PING_INTERVAL_MS,
+    connection ? (error) => connection.recordHeartbeat(error) : undefined,
   );
 
   // Polls upstream for new orders, validates them, submits to the local machine SDK.

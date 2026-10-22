@@ -34,7 +34,8 @@ export async function getLocalMachineCapabilities(): Promise<
         item.profile.id === profile.id
       );
 
-      const catalogTests = await fetchDriverCatalog(profile.driverId);
+      const catalogTests = (await fetchDriverCatalog(profile.driverId))
+        .filter((test) => test.enabled !== false);
 
       // Only carry tests whose analytes this SDK build actually knows -
       // an empty list upstream would read as "answers with nothing".

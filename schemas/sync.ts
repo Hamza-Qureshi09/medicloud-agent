@@ -126,6 +126,7 @@ export const StatusResponseSchema = z.object({
 
 // Validates heartbeat bodies received by slave sync routes.
 export const HeartbeatRequestSchema = z.object({
+  slaveName: z.string().trim().min(1).max(100).optional(),
   mode: z.enum(["direct", "master", "slave"]).optional(),
   protocolVersion: id.optional(),
   softwareVersion: z.string().optional(),

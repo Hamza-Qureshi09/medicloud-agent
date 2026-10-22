@@ -11,6 +11,9 @@ export const slaveRegistry = sqliteTable(
     // Internal unique ID for this slave registry record.
     id: int().primaryKey({ autoIncrement: true }),
 
+    // Operator-provided slave name shown on the master dashboard.
+    name: text(),
+
     // Unique identifier of the slave agent.
     slaveId: text().notNull().unique(),
 

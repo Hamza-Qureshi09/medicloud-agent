@@ -1,3 +1,5 @@
+import { loadSlaveConnection } from "./flow/slave/runtime.ts";
+import { registerSlaveConnectionRoutes } from "./routes/dashboard/slaveConnection.ts";
 import { Hono } from "@hono/hono";
 import { cors } from "@hono/hono/cors";
 import { MachineManager } from "@mediCloud/sdk/manager";
@@ -8,6 +10,7 @@ import {
   setShutdownListeners,
 } from "./lib/utils.ts";
 import { createAgentRegistries } from "./flow/registries.ts";
+import { startAgentWorkers } from "./flow/workers.ts";
 import { registerDashboardRoutes } from "./routes/dashboard.ts";
 import { registerSlaveSyncRoutes } from "./routes/slaveSync.ts";
 import { initDB } from "./db/index.ts";
@@ -18,13 +21,18 @@ if (import.meta.main) {
   await initDB();
   const instanceId = await getOrCreateInstanceId("./data/agent-instance-id");
 
+  const slaveConnection = await loadSlaveConnection(instanceId);
+
+  // Manage registries and workers for the agent.
+  // This includes the slave registry, sync client, heartbeat worker, order pull worker, and result dispatcher.
+  const registries = createAgentRegistries(instanceId, slaveConnection);
   const {
     slaveRegistry,
     syncClient,
     resultDispatcher,
     heartbeatWorker,
     orderPullWorker,
-  } = createAgentRegistries(instanceId);
+  } = registries;
 
   // resultDispatcher is already available here so we can pass it directly
   // into the onResultPersisted callback without a forward reference.
@@ -51,6 +59,10 @@ if (import.meta.main) {
     registerSlaveSyncRoutes(app, slaveRegistry, syncClient, resultDispatcher);
   }
 
+  if (slaveConnection) {
+    registerSlaveConnectionRoutes(app, slaveConnection, instanceId);
+  }
+
   // All unmatched requests are forwarded to the Machine SDK HTTP handler.
   app.all("*", (context) => machineHandler(context.req.raw));
 
@@ -67,9 +79,7 @@ if (import.meta.main) {
     app.fetch,
   );
 
-  heartbeatWorker.start();
-  orderPullWorker.start();
-  resultDispatcher.startRetryLoop();
+  startAgentWorkers(registries, slaveConnection);
 
   const workers = {
     heartbeatWorker,

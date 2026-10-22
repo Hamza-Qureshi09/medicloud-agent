@@ -1,49 +1,50 @@
-import React from "react"
-import { useParams, useNavigate, Link } from "react-router-dom"
-import useSWR from "swr"
-import { api } from "@/lib/api"
-import { useMachineContext } from "../../contexts/machine-context.tsx"
-import { useAsyncAction } from "@/hooks/use-async-action"
-import { PageSection } from "@/components/common/pageSection"
-import { PageLoading, ResourceError } from "@/components/common/resourceState"
-import { ConnectionBadge } from "@/components/common/statusBadge"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ConfirmAction } from "@/components/common/confirmAction"
-import { Container } from "@/components/common/container"
+import { liveResourceConfig } from "@/lib/swr";
+import React from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import useSWR from "swr";
+import { api } from "@/lib/api";
+import { useMachineContext } from "../../contexts/machine-context.tsx";
+import { useAsyncAction } from "@/hooks/use-async-action";
+import { PageSection } from "@/components/common/pageSection";
+import { PageLoading, ResourceError } from "@/components/common/resourceState";
+import { ConnectionBadge } from "@/components/common/statusBadge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ConfirmAction } from "@/components/common/confirmAction";
+import { Container } from "@/components/common/container";
 import {
     ArrowLeftIcon,
-    CpuIcon,
-    PlayIcon,
-    StopIcon,
-    TrashIcon,
-    CheckCircleIcon,
-    XCircleIcon,
-    RadioIcon,
-    QueueIcon,
     ArrowRightIcon,
     CalendarIcon,
-    DotsThreeVerticalIcon
-} from "@phosphor-icons/react"
-import { ProfileConfigDetailCard } from "@/pages/profiles/profileConfigView"
-import { parseProfileConfig } from "@/lib/profile-config"
-import { ProfileForm } from "./profleForm"
-import { toast } from "sonner"
-import { extractApiError } from "@/lib/helpers"
+    CheckCircleIcon,
+    CpuIcon,
+    DotsThreeVerticalIcon,
+    PlayIcon,
+    QueueIcon,
+    RadioIcon,
+    StopIcon,
+    TrashIcon,
+    XCircleIcon,
+} from "@phosphor-icons/react";
+import { ProfileConfigDetailCard } from "@/pages/profiles/profileConfigView";
+import { parseProfileConfig } from "@/lib/profile-config";
+import { ProfileForm } from "./profleForm";
+import { toast } from "sonner";
+import { extractApiError } from "@/lib/helpers";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 export function ProfileDetailPage() {
-    const { id } = useParams<{ id: string }>()
-    const navigate = useNavigate()
-    const machineId = Number(id)
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const machineId = Number(id);
 
-    const { data: healthData, mutate: healthMutate } = useMachineContext()
+    const { data: healthData, mutate: healthMutate } = useMachineContext();
 
     // Fetch Profile Detail
     const {
@@ -52,35 +53,38 @@ export function ProfileDetailPage() {
         mutate: profileMutate,
     } = useSWR(
         machineId ? api.profiles.detailKey(machineId) : null,
-        () => api.profiles.get(machineId)
-    )
+        () => api.profiles.get(machineId),
+    );
 
     // Match registered drivers list
-    const registeredDriversData = React.useMemo(() => healthData?.registered_drivers ?? [], [healthData?.registered_drivers])
+    const registeredDriversData = React.useMemo(() => healthData?.registered_drivers ?? [], [
+        healthData?.registered_drivers,
+    ]);
     const driversById = React.useMemo(() => {
         return new Map(
-            registeredDriversData.map((driver) => [driver.id, driver])
+            registeredDriversData.map((driver) => [driver.id, driver]),
         );
-    }, [registeredDriversData])
+    }, [registeredDriversData]);
 
     // Fetch associated staged orders for worklist link
     const { data: ordersData } = useSWR(
         machineId ? api.orders.listKey({ machineId, status: "pending" }) : null,
-        () => api.orders.list({ machineId, status: "pending" })
-    )
+        () => api.orders.list({ machineId, status: "pending" }),
+        liveResourceConfig,
+    );
 
-    const profileAction = useAsyncAction("Lifecycle action failed.")
+    const profileAction = useAsyncAction("Lifecycle action failed.", "Analyzer status updated");
 
     // Match running machine health state
     const runningMachine = React.useMemo(() => {
         return (healthData?.running_machines ?? []).find(
-            (m) => m.profile.id === machineId
-        )?.machine
-    }, [healthData, machineId])
+            (m) => m.profile.id === machineId,
+        )?.machine;
+    }, [healthData, machineId]);
 
     // Active orders calculations
-    const activeOrdersCount = ordersData?.orders?.length ?? 0
-    const recentSampleId = ordersData?.orders[0]?.sampleId
+    const activeOrdersCount = ordersData?.orders?.length ?? 0;
+    const recentSampleId = ordersData?.orders[0]?.sampleId;
     const driverId = profileData?.profile?.driverId;
 
     // Match driver metadata
@@ -91,35 +95,32 @@ export function ProfileDetailPage() {
 
     // Authoritative config parsing
     const parsedConfig = React.useMemo(() => {
-        return parseProfileConfig(profileData?.profile?.config, matchedDriver)
-    }, [profileData?.profile?.config, matchedDriver])
+        return parseProfileConfig(profileData?.profile?.config, matchedDriver);
+    }, [profileData?.profile?.config, matchedDriver]);
 
     // Derived service status logic
     const serviceStatus = React.useMemo(() => {
-        const isRunning = runningMachine?.running ?? profileData?.profile?.enabled ?? false
-        const isConnected = isRunning && (runningMachine?.connected ?? false)
-        return { isRunning, isConnected, endpointDisplay: parsedConfig.endpointDisplay }
-    }, [runningMachine, profileData?.profile?.enabled, parsedConfig.endpointDisplay])
+        const isRunning = runningMachine?.running ?? profileData?.profile?.enabled ?? false;
+        const isConnected = isRunning && (runningMachine?.connected ?? false);
+        return { isRunning, isConnected, endpointDisplay: parsedConfig.endpointDisplay };
+    }, [runningMachine, profileData?.profile?.enabled, parsedConfig.endpointDisplay]);
 
-
-    if (!profileData && !profileError) return <PageLoading />
+    if (!profileData && !profileError) return <PageLoading />;
     if (profileError || !profileData?.profile) {
         return (
             <ResourceError
                 error={profileError || new Error("Analyzer profile not found")}
                 onRetry={() => profileMutate()}
             />
-        )
+        );
     }
 
-    const profileRecord = profileData.profile
+    const profileRecord = profileData.profile;
     async function handleLifecycleAction(action: () => Promise<unknown>) {
         await profileAction.execute(async () => {
-            await action()
-            await Promise.all([healthMutate(), profileMutate()])
-        }).catch((err) => {
-            toast.error(extractApiError(err, "Analyzer action failed."))
-        })
+            await action();
+            await Promise.all([healthMutate(), profileMutate()]);
+        }).catch(() => undefined);
     }
 
     // status block
@@ -128,19 +129,21 @@ export function ProfileDetailPage() {
             icon: <XCircleIcon weight="fill" className="size-4 shrink-0 text-muted-foreground" />,
             label: "Service offline",
             detail: 'Listener is stopped. Click "Start analyzer" to begin.',
-        } : serviceStatus.isConnected ? {
+        }
+        : serviceStatus.isConnected
+        ? {
             icon: <CheckCircleIcon weight="fill" className="size-4 shrink-0 text-primary" />,
             label: "Active & connected",
             detail: `Analyzer is live on ${serviceStatus.endpointDisplay}.`,
-        } : {
+        }
+        : {
             icon: <RadioIcon className="size-4 shrink-0 text-primary animate-pulse" />,
             label: "Listening",
             detail: `Waiting for analyzer on ${serviceStatus.endpointDisplay}.`,
-        }
+        };
 
     return (
         <Container className="w-full">
-
             {/* Back navigation */}
             <Button
                 variant="ghost"
@@ -156,7 +159,9 @@ export function ProfileDetailPage() {
             <PageSection
                 eyebrow={`Profile #${profileRecord.id}`}
                 title={profileRecord.name || matchedDriver?.brand || `Analyzer ${profileRecord.id}`}
-                description={`${matchedDriver?.brand ?? profileRecord.driverId} · ${parsedConfig.interfaceLabel}`}
+                description={`${
+                    matchedDriver?.brand ?? profileRecord.driverId
+                } · ${parsedConfig.interfaceLabel}`}
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         {/* running or stopped badges */}
@@ -168,34 +173,44 @@ export function ProfileDetailPage() {
                         {/* desktop action btns */}
                         <div className="hidden sm:flex items-center gap-2">
                             {/* 1. Start/Stop analyzer first */}
-                            {serviceStatus.isRunning ? (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="font-normal"
-                                    disabled={profileAction.pending}
-                                    onClick={() => handleLifecycleAction(() => api.profiles.stop(profileRecord.id))}
-                                >
-                                    <StopIcon data-icon="inline-start" />
-                                    Stop analyzer
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    className="font-normal"
-                                    disabled={profileAction.pending}
-                                    onClick={() => handleLifecycleAction(() => api.profiles.start(profileRecord.id))}
-                                >
-                                    <PlayIcon data-icon="inline-start" />
-                                    Start analyzer
-                                </Button>
-                            )}
+                            {serviceStatus.isRunning
+                                ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="font-normal"
+                                        disabled={profileAction.pending}
+                                        onClick={() =>
+                                            handleLifecycleAction(() =>
+                                                api.profiles.stop(profileRecord.id)
+                                            )}
+                                    >
+                                        <StopIcon data-icon="inline-start" />
+                                        Stop analyzer
+                                    </Button>
+                                )
+                                : (
+                                    <Button
+                                        size="sm"
+                                        className="font-normal"
+                                        disabled={profileAction.pending}
+                                        onClick={() =>
+                                            handleLifecycleAction(() =>
+                                                api.profiles.start(profileRecord.id)
+                                            )}
+                                    >
+                                        <PlayIcon data-icon="inline-start" />
+                                        Start analyzer
+                                    </Button>
+                                )}
 
                             {/* 2. Edit profile second */}
                             <ProfileForm
                                 drivers={registeredDriversData}
                                 profile={profileRecord}
-                                onCreated={async () => { await profileMutate() }}
+                                onCreated={async () => {
+                                    await profileMutate();
+                                }}
                             />
 
                             {/* 3. Delete profile last */}
@@ -211,10 +226,12 @@ export function ProfileDetailPage() {
                                 actionLabel="Delete profile"
                                 onConfirm={async () => {
                                     try {
-                                        await api.profiles.remove(profileRecord.id)
-                                        navigate("/dashboard/profiles")
+                                        await api.profiles.remove(profileRecord.id);
+                                        navigate("/dashboard/profiles");
                                     } catch (err) {
-                                        toast.error(extractApiError(err, "Could not delete profile."))
+                                        toast.error(
+                                            extractApiError(err, "Could not delete profile."),
+                                        );
                                     }
                                 }}
                             />
@@ -223,34 +240,44 @@ export function ProfileDetailPage() {
                         {/* mobile only actions */}
                         <div className="sm:hidden flex items-center gap-2">
                             {/* Mobile Start/Stop */}
-                            {serviceStatus.isRunning ? (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="font-normal"
-                                    disabled={profileAction.pending}
-                                    onClick={() => handleLifecycleAction(() => api.profiles.stop(profileRecord.id))}
-                                >
-                                    <StopIcon data-icon="inline-start" />
-                                    Stop
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    className="font-normal"
-                                    disabled={profileAction.pending}
-                                    onClick={() => handleLifecycleAction(() => api.profiles.start(profileRecord.id))}
-                                >
-                                    <PlayIcon data-icon="inline-start" />
-                                    Start
-                                </Button>
-                            )}
+                            {serviceStatus.isRunning
+                                ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="font-normal"
+                                        disabled={profileAction.pending}
+                                        onClick={() =>
+                                            handleLifecycleAction(() =>
+                                                api.profiles.stop(profileRecord.id)
+                                            )}
+                                    >
+                                        <StopIcon data-icon="inline-start" />
+                                        Stop
+                                    </Button>
+                                )
+                                : (
+                                    <Button
+                                        size="sm"
+                                        className="font-normal"
+                                        disabled={profileAction.pending}
+                                        onClick={() =>
+                                            handleLifecycleAction(() =>
+                                                api.profiles.start(profileRecord.id)
+                                            )}
+                                    >
+                                        <PlayIcon data-icon="inline-start" />
+                                        Start
+                                    </Button>
+                                )}
 
                             {/* Mobile Edit */}
                             <ProfileForm
                                 drivers={registeredDriversData}
                                 profile={profileRecord}
-                                onCreated={async () => { await profileMutate() }}
+                                onCreated={async () => {
+                                    await profileMutate();
+                                }}
                             />
 
                             {/* Mobile Dropdown for additional/destructive actions */}
@@ -285,10 +312,15 @@ export function ProfileDetailPage() {
                                             actionLabel="Delete profile"
                                             onConfirm={async () => {
                                                 try {
-                                                    await api.profiles.remove(profileRecord.id)
-                                                    navigate("/dashboard/profiles")
+                                                    await api.profiles.remove(profileRecord.id);
+                                                    navigate("/dashboard/profiles");
                                                 } catch (err) {
-                                                    toast.error(extractApiError(err, "Could not delete profile."))
+                                                    toast.error(
+                                                        extractApiError(
+                                                            err,
+                                                            "Could not delete profile.",
+                                                        ),
+                                                    );
                                                 }
                                             }}
                                         />
@@ -296,14 +328,12 @@ export function ProfileDetailPage() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-
                     </div>
                 }
             />
 
             {/* Page body - 2-column on large, stacked on mobile */}
             <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 items-start">
-
                 {/* left sidebar card */}
                 <Card className="lg:col-span-1 rounded-3xl overflow-hidden shadow-none">
                     <CardHeader className="">
@@ -346,16 +376,18 @@ export function ProfileDetailPage() {
                                 </div>
                             )}
 
-                            {matchedDriver?.models?.length ? (
-                                <div>
-                                    <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
-                                        Models
-                                    </dt>
-                                    <dd className="font-normal text-xs text-foreground mt-0.5 truncate">
-                                        {matchedDriver.models.join(", ")}
-                                    </dd>
-                                </div>
-                            ) : null}
+                            {matchedDriver?.models?.length
+                                ? (
+                                    <div>
+                                        <dt className="text-[10px] text-muted-foreground font-normal uppercase tracking-wider">
+                                            Models
+                                        </dt>
+                                        <dd className="font-normal text-xs text-foreground mt-0.5 truncate">
+                                            {matchedDriver.models.join(", ")}
+                                        </dd>
+                                    </div>
+                                )
+                                : null}
 
                             {matchedDriver?.protocol && (
                                 <div className="col-span-2">
@@ -363,7 +395,8 @@ export function ProfileDetailPage() {
                                         Protocol
                                     </dt>
                                     <dd className="font-normal text-xs text-foreground mt-0.5">
-                                        {matchedDriver.protocol.name} · {matchedDriver.protocol.version}
+                                        {matchedDriver.protocol.name} ·{" "}
+                                        {matchedDriver.protocol.version}
                                     </dd>
                                 </div>
                             )}
@@ -385,7 +418,9 @@ export function ProfileDetailPage() {
                         <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-start gap-2.5">
                             {statusBlock.icon}
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-normal text-foreground">{statusBlock.label}</span>
+                                <span className="text-xs font-normal text-foreground">
+                                    {statusBlock.label}
+                                </span>
                                 <span className="text-[11px] font-normal text-muted-foreground leading-relaxed">
                                     {statusBlock.detail}
                                 </span>
@@ -408,11 +443,9 @@ export function ProfileDetailPage() {
                                 </div>
                             </div>
                             <Link
-                                to={
-                                    recentSampleId
-                                        ? `/dashboard/orders?sampleId=${recentSampleId}`
-                                        : "/dashboard/orders"
-                                }
+                                to={recentSampleId
+                                    ? `/dashboard/orders?sampleId=${recentSampleId}`
+                                    : "/dashboard/orders"}
                                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-normal shrink-0"
                             >
                                 View
@@ -431,7 +464,6 @@ export function ProfileDetailPage() {
                     />
                 </div>
             </div>
-
         </Container>
-    )
+    );
 }

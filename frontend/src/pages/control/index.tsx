@@ -1,40 +1,83 @@
-import { useState, useCallback } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import {
+    slaveRegistrationFormSchema,
+    type SlaveRegistrationValues,
+} from "@/schemas/slaveConnection";
+import { Navigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { useCallback, useState } from "react";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
-import { ShareNetworkIcon, PlugsConnectedIcon, DesktopIcon, WarningIcon} from "@phosphor-icons/react";
+import {
+    DesktopIcon,
+    PlugsConnectedIcon,
+    ShareNetworkIcon,
+    WarningIcon,
+} from "@phosphor-icons/react";
 import { StatCard } from "@/components/common/statCard";
 import { api } from "@/lib/api";
-import { RefreshButton, ResourceError, PageLoading } from "@/components/common/resourceState";
+import {
+    PageLoading,
+    RefreshButton,
+    ResourceError,
+} from "@/components/common/resourceState";
 import { Button } from "@/components/ui/button";
 import { FormErrorList } from "@/components/common/formError";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
-    DialogFooter
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
-import type { SlaveRecord, SlaveCredentials } from "../../types/api.ts";
+import type { SlaveCredentials, SlaveRecord } from "../../types/api.ts";
 import { useMachineContext } from "@/contexts/machine-context";
 import { ControlSlaveResults } from "./results/results.tsx";
 import { ControlSlaveOrders } from "./orders/orders.tsx";
 import { CopyButton } from "@/components/common/copyButton";
 import { RegisteredSlaves } from "./slaves/slaves.tsx";
 
-
-
 export function ControlPage() {
-    const { slavesData: data, activeSlaves, mutateSlaves: mutate, error } = useMachineContext();
-    
+    const { mode, error, mutate } = useMachineContext();
+    if (error) {
+        return (
+            <ResourceError
+                error={error}
+                onRetry={() => void mutate()}
+            />
+        );
+    }
+    if (!mode) return <PageLoading />;
+    if (mode === "slave") {
+        return <Navigate to="/dashboard/master-connection" replace />;
+    }
+    if (mode !== "master") {
+        return (
+            <Container>
+                <PageSection
+                    title="Agent control"
+                    description="Slave management is available on a master agent."
+                />
+            </Container>
+        );
+    }
+    return <MasterControlPage />;
+}
+
+function MasterControlPage() {
+    const {
+        slavesData: data,
+        activeSlaves,
+        mutateSlaves: mutate,
+        slavesError: error,
+    } = useMachineContext();
+
     // Get slaves from API
     const slaves = data?.slaves as SlaveRecord[] || [];
 
@@ -45,7 +88,7 @@ export function ControlPage() {
 
     // Early returns must be after all hooks!
     if (!data && !error) return <PageLoading />;
-    
+
     if (error) {
         return <ResourceError error={error} onRetry={() => mutate()} />;
     }
@@ -84,36 +127,44 @@ export function ControlPage() {
                     icon={DesktopIcon}
                 />
             </div>
-          <Tabs defaultValue="slaves">
-      <TabsList>
-        <TabsTrigger value="slaves">Slaves</TabsTrigger>
-        <TabsTrigger value="orders">Orders</TabsTrigger>
-        <TabsTrigger value="results">Results</TabsTrigger>
-      </TabsList>
-      <TabsContent value="slaves">
-                <RegisteredSlaves slaves={slaves} mutate= {mutate}/>
-            </TabsContent>
-            <TabsContent value="orders">
-                <ControlSlaveOrders />
-            </TabsContent>
-            <TabsContent value="results">
-                <ControlSlaveResults />
-            </TabsContent>
+            <Tabs defaultValue="slaves">
+                <TabsList>
+                    <TabsTrigger value="slaves">Slaves</TabsTrigger>
+                    <TabsTrigger value="orders">Orders</TabsTrigger>
+                    <TabsTrigger value="results">Results</TabsTrigger>
+                </TabsList>
+                <TabsContent value="slaves">
+                    <RegisteredSlaves slaves={slaves} mutate={mutate} />
+                </TabsContent>
+                <TabsContent value="orders">
+                    <ControlSlaveOrders />
+                </TabsContent>
+                <TabsContent value="results">
+                    <ControlSlaveResults />
+                </TabsContent>
             </Tabs>
         </Container>
     );
 }
 
-
-
 function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
     const [open, setOpen] = useState(false);
-    const [credentials, setCredentials] = useState<SlaveCredentials | null>(null);
-    const action = useAsyncAction("Failed to register slave.");
+    const [credentials, setCredentials] = useState<SlaveCredentials | null>(
+        null,
+    );
+    const action = useAsyncAction(
+        "Failed to register slave.",
+        "Slave registered",
+    );
+    const nameForm = useForm<SlaveRegistrationValues>({
+        resolver: zodResolver(slaveRegistrationFormSchema),
+        defaultValues: { name: "" },
+    });
 
     const handleOpen = useCallback(() => {
         setOpen(true);
         setCredentials(null);
+        nameForm.reset();
         action.reset();
     }, [action]);
 
@@ -122,10 +173,14 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
         if (credentials) onRegistered();
     }, [credentials, onRegistered]);
 
-    const onSubmit = async () => {
-        const result = await action.execute(() => api.agent.registerSlave()).catch(() => undefined);
+    const onSubmit = nameForm.handleSubmit(async ({ name }) => {
+        const result = await action.execute(() =>
+            api.agent.registerSlave(name || undefined)
+        ).catch(
+            () => undefined,
+        );
         if (result) setCredentials(result);
-    };
+    }, (errors) => toast.error(errors.name?.message || "Check the slave name"));
 
     return (
         <>
@@ -133,38 +188,71 @@ function RegisterSlaveButton({ onRegistered }: { onRegistered: () => void }) {
                 Register New Slave
             </Button>
 
-            <Dialog open={open} onOpenChange={(nextOpen) => nextOpen ? handleOpen() : handleDismiss()}>
+            <Dialog
+                open={open}
+                onOpenChange={(nextOpen) =>
+                    nextOpen ? handleOpen() : handleDismiss()}
+            >
                 <DialogContent>
-                    {credentials ? (
-                        <SlaveCredentialsReveal credentials={credentials} onDismiss={handleDismiss} />
-                    ) : (
-                        <>
-                            <DialogHeader>
-                                <DialogTitle>Register New Slave</DialogTitle>
-                                <DialogDescription>
-                                    Create a new slave agent registration. You will receive one-time credentials to configure the slave. Its name will be auto-generated when it connects.
-                                </DialogDescription>
-                            </DialogHeader>
+                    {credentials
+                        ? (
+                            <SlaveCredentialsReveal
+                                credentials={credentials}
+                                onDismiss={handleDismiss}
+                            />
+                        )
+                        : (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        Register New Slave
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Create a new slave agent registration.
+                                        You will receive one-time credentials to
+                                        configure the slave. The slave can
+                                        supply its own name when it connects.
+                                    </DialogDescription>
+                                </DialogHeader>
 
-                            <FormErrorList errorMessage={action.error} />
+                                <label className="grid gap-1 text-sm">
+                                    <span>Slave name (optional)</span>
+                                    <Input
+                                        {...nameForm.register("name")}
+                                        maxLength={100}
+                                        placeholder="Chemistry room PC"
+                                    />
+                                </label>
+                                <FormErrorList errorMessage={action.error} />
 
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={handleDismiss} disabled={action.pending}>
-                                    Cancel
-                                </Button>
-                                <Button onClick={onSubmit} disabled={action.pending}>
-                                    {action.pending ? <Spinner data-icon="inline-start" /> : null}
-                                    Register
-                                </Button>
-                            </DialogFooter>
-                        </>
-                    )}
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleDismiss}
+                                        disabled={action.pending}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={onSubmit}
+                                        disabled={action.pending}
+                                    >
+                                        {action.pending
+                                            ? (
+                                                <Spinner data-icon="inline-start" />
+                                            )
+                                            : null}
+                                        Register
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
                 </DialogContent>
             </Dialog>
         </>
     );
 }
-
 
 // Credentials Reveal (shown once after successful registration)
 
@@ -194,7 +282,8 @@ function SlaveCredentialsReveal({
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive">
                     <WarningIcon className="size-4 shrink-0" />
                     <p className="text-xs leading-snug">
-                        The secret key cannot be retrieved again. Store it somewhere safe.
+                        The secret key cannot be retrieved again. Store it
+                        somewhere safe.
                     </p>
                 </div>
 
@@ -220,7 +309,3 @@ function SlaveCredentialsReveal({
         </>
     );
 }
-
-
-
-

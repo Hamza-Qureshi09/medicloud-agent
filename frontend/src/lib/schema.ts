@@ -1,3 +1,4 @@
+import { parseTests } from "./utils"
 import { z } from "zod"
 
 const optionalText = z.string().trim().optional()
@@ -62,14 +63,7 @@ export type OrderFormValues = z.input<typeof orderFormSchema>
 
 // order payload
 export function orderPayload(values: OrderFormValues, editing: boolean) {
-    const tests = [
-        ...new Set(
-            values.tests
-                .split(",")
-                .map((test) => test.trim())
-                .filter(Boolean),
-        ),
-    ]
+    const tests = parseTests(values.tests)
     return {
         ...(!editing ? { machineId: Number(values.machineId) } : {}),
         sampleId: values.sampleId.trim(),

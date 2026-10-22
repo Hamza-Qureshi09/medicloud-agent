@@ -1,79 +1,91 @@
-import React from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import useSWR from "swr"
-import { api, type ExternalQuery } from "@/lib/api"
-import { useAsyncAction } from "@/hooks/use-async-action"
-import { PageSection } from "@/components/common/pageSection"
-import { PageLoading, ResourceError, ResourceEmpty } from "@/components/common/resourceState"
-import { AgentOrderStatusBadge, ConnectionBadge, ResultDeliveryStatusBadge } from "@/components/common/statusBadge"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ConfirmAction } from "@/components/common/confirmAction"
-import { CopyButton } from "@/components/common/copyButton"
-import { Pagination } from "@/components/common/pagination"
-import { Container } from "@/components/common/container"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { liveListConfig, liveResourceConfig } from "@/lib/swr";
+import React from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import useSWR from "swr";
+import { api, type ExternalQuery } from "@/lib/api";
+import { useAsyncAction } from "@/hooks/use-async-action";
+import { PageSection } from "@/components/common/pageSection";
+import { PageLoading, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
+import {
+    AgentOrderStatusBadge,
+    ConnectionBadge,
+    ResultDeliveryStatusBadge,
+} from "@/components/common/statusBadge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ConfirmAction } from "@/components/common/confirmAction";
+import { CopyButton } from "@/components/common/copyButton";
+import { Pagination } from "@/components/common/pagination";
+import { Container } from "@/components/common/container";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     ArrowLeftIcon,
-    StopIcon,
-    TrashIcon,
     CalendarIcon,
     GlobeIcon,
-    IdentificationCardIcon
-} from "@phosphor-icons/react"
-import { toast } from "sonner"
-import { extractApiError, slaveLiveness } from "@/lib/helpers"
-import { slaveStatusLabel, slaveStatusVariant } from "@/types/api"
-import { ITEMS_PER_PAGE, pageCount } from "@/lib/global"
-import { SlaveResultDetail } from "../results/resultDetails"
-
+    IdentificationCardIcon,
+    StopIcon,
+    TrashIcon,
+} from "@phosphor-icons/react";
+import { toast } from "sonner";
+import { extractApiError, slaveLiveness } from "@/lib/helpers";
+import { slaveStatusLabel, slaveStatusVariant } from "@/types/api";
+import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
+import { SlaveResultDetail } from "../results/resultDetails";
 
 export function SlaveDetailPage() {
-    const { id } = useParams<{ id: string }>()
-    const navigate = useNavigate()
-    const slaveId = id!
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const slaveId = id!;
 
     const { data, error, mutate } = useSWR(
         slaveId ? api.agent.slaveDetailKey(slaveId) : null,
         () => api.agent.getSlave(slaveId),
-        { refreshInterval: 10_000 },
-    )
+        liveResourceConfig,
+    );
 
-    const slaveAction = useAsyncAction("Slave action failed.")
+    const slaveAction = useAsyncAction("Slave action failed.", "Slave updated");
 
-    const slave = data?.slave
-    const liveness = slave ? slaveLiveness(slave) : "never"
+    const slave = data?.slave;
+    const liveness = slave ? slaveLiveness(slave) : "never";
 
     const machines = React.useMemo(() => {
-        try { return slave?.machinesJson ? JSON.parse(slave.machinesJson) : [] }
-        catch { return [] }
-    }, [slave?.machinesJson])
+        try {
+            return slave?.machinesJson ? JSON.parse(slave.machinesJson) : [];
+        } catch {
+            return [];
+        }
+    }, [slave?.machinesJson]);
 
     const connectedMachines = React.useMemo(
         () => machines.filter((m: any) => m.connected).length,
         [machines],
-    )
+    );
 
     // Loading / error
-    if (!data && !error) return <PageLoading />
+    if (!data && !error) return <PageLoading />;
     if (error || !slave) {
         return (
             <ResourceError
                 error={error || new Error("Slave not found")}
                 onRetry={() => mutate()}
             />
-        )
+        );
     }
 
     async function handleAction(actionFn: () => Promise<unknown>) {
         await slaveAction.execute(async () => {
-            await actionFn()
-            await mutate()
-        }).catch((err) => {
-            toast.error(extractApiError(err, "Slave action failed."))
-        })
+            await actionFn();
+            await mutate();
+        }).catch(() => undefined);
     }
 
     // Connection status block
@@ -97,7 +109,6 @@ export function SlaveDetailPage() {
 
     return (
         <Container className="w-full">
-
             {/* Back navigation */}
             <Button
                 variant="ghost"
@@ -112,28 +123,42 @@ export function SlaveDetailPage() {
             {/* Page header with actions */}
             <PageSection
                 eyebrow="Slave Node"
-                title={slave?.instanceId || slave?.slaveId?.split('-')[1] || slave?.slaveId || "Unknown"}
-                description={`Registered slave agent ID · ${machines.length} delegated machine${machines.length !== 1 ? "s" : ""}`}
+                title={slave?.name || slave?.instanceId || slave?.slaveId?.split("-")[1] ||
+                    slave?.slaveId || "Unknown"}
+                description={`Registered slave agent ID · ${machines.length} delegated machine${
+                    machines.length !== 1 ? "s" : ""
+                }`}
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
-
                         {slave.isActive && (
                             <ConfirmAction
-                            trigger={
-                                <Button variant="outline" size="sm" className="font-normal" disabled={slaveAction.pending}>
-                                    <StopIcon data-icon="inline-start" />
-                                    Mark Inactive
-                                </Button>
-                            }
-                            title="Mark Slave Inactive"
-                            description={`Are you sure you want to mark ${slave?.instanceId} as inactive? It will stop receiving orders.`}
-                            actionLabel="Mark Inactive"
-                            onConfirm={() => handleAction(() => api.agent.markInactive(slaveId))}
-                        />)}
+                                trigger={
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="font-normal"
+                                        disabled={slaveAction.pending}
+                                    >
+                                        <StopIcon data-icon="inline-start" />
+                                        Mark Inactive
+                                    </Button>
+                                }
+                                title="Mark Slave Inactive"
+                                description={`Are you sure you want to mark ${slave?.instanceId} as inactive? It will stop receiving orders.`}
+                                actionLabel="Mark Inactive"
+                                onConfirm={() =>
+                                    handleAction(() => api.agent.markInactive(slaveId))}
+                            />
+                        )}
 
                         <ConfirmAction
                             trigger={
-                                <Button variant="destructive" size="sm" className="font-normal" disabled={slaveAction.pending}>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="font-normal"
+                                    disabled={slaveAction.pending}
+                                >
                                     <TrashIcon data-icon="inline-start" />
                                     Delete
                                 </Button>
@@ -143,10 +168,10 @@ export function SlaveDetailPage() {
                             actionLabel="Delete slave"
                             onConfirm={async () => {
                                 try {
-                                    await api.agent.deleteSlave(slaveId)
-                                    navigate("/dashboard/control")
+                                    await api.agent.deleteSlave(slaveId);
+                                    navigate("/dashboard/control");
                                 } catch (err) {
-                                    toast.error(extractApiError(err, "Could not delete slave."))
+                                    toast.error(extractApiError(err, "Could not delete slave."));
                                 }
                             }}
                         />
@@ -156,16 +181,14 @@ export function SlaveDetailPage() {
 
             {/* Page body - 2-column layout */}
             <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 items-start">
-
                 {/* Left sidebar: Overview */}
                 <Card className="lg:col-span-1 rounded-3xl overflow-hidden shadow-none">
-                    
                     <CardHeader className="px-3.5">
                         <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-semibold">Overview</CardTitle>
-                         <Badge variant={slaveStatusVariant[liveness]}>
-                            {slaveStatusLabel[liveness]}
-                        </Badge>
+                            <CardTitle className="text-sm font-semibold">Overview</CardTitle>
+                            <Badge variant={slaveStatusVariant[liveness]}>
+                                {slaveStatusLabel[liveness]}
+                            </Badge>
                         </div>
                         <CardDescription className="text-xs font-normal">
                             Identity, network & connection health
@@ -202,7 +225,10 @@ export function SlaveDetailPage() {
                                     Active
                                 </dt>
                                 <dd className="text-xs text-foreground mt-0.5">
-                                    <Badge variant={slave.isActive ? "default" : "outline"} className="text-[10px]">
+                                    <Badge
+                                        variant={slave.isActive ? "default" : "outline"}
+                                        className="text-[10px]"
+                                    >
                                         {slave.isActive ? "Yes" : "No"}
                                     </Badge>
                                 </dd>
@@ -215,7 +241,8 @@ export function SlaveDetailPage() {
                                         Network
                                     </dt>
                                     <dd className="font-mono text-xs text-foreground font-normal mt-0.5">
-                                        {slave.host}{slave.port ? `:${slave.port}` : ""}
+                                        {slave.host}
+                                        {slave.port ? `:${slave.port}` : ""}
                                     </dd>
                                 </div>
                             )}
@@ -242,7 +269,8 @@ export function SlaveDetailPage() {
                         </dl>
 
                         {/* Connection status indicator */}
-                        {/* <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-start gap-2.5">
+                        {
+                            /* <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-start gap-2.5">
                             {statusBlock.icon}
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-xs font-normal text-foreground">{statusBlock.label}</span>
@@ -250,7 +278,8 @@ export function SlaveDetailPage() {
                                     {statusBlock.detail}
                                 </span>
                             </div>
-                        </div> */}
+                        </div> */
+                        }
 
                         {/* Quick machine stats */}
                         <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-center justify-between gap-2">
@@ -291,9 +320,8 @@ export function SlaveDetailPage() {
                 </div>
             </div>
         </Container>
-    )
+    );
 }
-
 
 function MachinesTab({ machines }: { machines: any[] }) {
     if (!machines.length) {
@@ -302,7 +330,7 @@ function MachinesTab({ machines }: { machines: any[] }) {
                 title="No delegated machines"
                 description="This slave has not reported any machine capabilities yet."
             />
-        )
+        );
     }
 
     return (
@@ -334,9 +362,9 @@ function MachinesTab({ machines }: { machines: any[] }) {
                             <TableCell className="text-xs text-muted-foreground">
                                 {Array.isArray(machine.catalogTests)
                                     ? machine.catalogTests.slice(0, 5).join(", ") +
-                                      (machine.catalogTests.length > 5
-                                          ? ` +${machine.catalogTests.length - 5} more`
-                                          : "")
+                                        (machine.catalogTests.length > 5
+                                            ? ` +${machine.catalogTests.length - 5} more`
+                                            : "")
                                     : "—"}
                             </TableCell>
                         </TableRow>
@@ -344,41 +372,40 @@ function MachinesTab({ machines }: { machines: any[] }) {
                 </TableBody>
             </Table>
         </div>
-    )
+    );
 }
-
 
 // ─── Orders Tab ──────────────────────────────────────────────────────────────
 
 function SlaveOrdersTab({ slaveId }: { slaveId: string }) {
-    const [page, setPage] = React.useState(1)
+    const [page, setPage] = React.useState(1);
 
     const query = React.useMemo<ExternalQuery>(() => ({
         search: slaveId,
         limit: ITEMS_PER_PAGE,
         offset: (page - 1) * ITEMS_PER_PAGE,
-    }), [slaveId, page])
+    }), [slaveId, page]);
 
     const { data, error, mutate } = useSWR(
         api.slaveOrders.listKey(query),
         () => api.slaveOrders.list(query),
-        { refreshInterval: 10_000 },
-    )
+        liveListConfig,
+    );
 
-    const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 })
-    const refresh = React.useCallback(() => void mutate(), [mutate])
-    
+    const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 });
+    const refresh = React.useCallback(() => void mutate(), [mutate]);
+
     const orders = data?.orders;
 
-    if (error) return <ResourceError error={error} onRetry={refresh} />
-    if (!orders) return <PageLoading />
+    if (error) return <ResourceError error={error} onRetry={refresh} />;
+    if (!orders) return <PageLoading />;
     if (!orders.length) {
         return (
             <ResourceEmpty
                 title="No orders"
                 description="No orders have been routed to this slave yet."
             />
-        )
+        );
     }
 
     return (
@@ -396,7 +423,10 @@ function SlaveOrdersTab({ slaveId }: { slaveId: string }) {
                     </TableHeader>
                     <TableBody>
                         {orders.map((order) => (
-                            <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
+                            <TableRow
+                                key={order.id}
+                                className="hover:bg-muted/50 transition-colors"
+                            >
                                 <TableCell className="font-mono text-xs font-normal">
                                     {order.dispatchId}
                                 </TableCell>
@@ -421,43 +451,46 @@ function SlaveOrdersTab({ slaveId }: { slaveId: string }) {
                 <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             )}
         </>
-    )
+    );
 }
-
 
 // Results Tab
 function SlaveResultsTab({ slaveId }: { slaveId: string }) {
-    const [page, setPage] = React.useState(1)
+    const [page, setPage] = React.useState(1);
 
     const query = React.useMemo<ExternalQuery>(() => ({
         search: slaveId,
         limit: ITEMS_PER_PAGE,
         offset: (page - 1) * ITEMS_PER_PAGE,
-    }), [slaveId, page])
+    }), [slaveId, page]);
 
     const { data, error, mutate } = useSWR(
         api.slaveResults.listKey(query),
         () => api.slaveResults.list(query),
-        { refreshInterval: 10_000 },
-    )
+        liveListConfig,
+    );
 
-    const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 })
-    const refresh = React.useCallback(() => void mutate(), [mutate])
+    const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 });
+    const refresh = React.useCallback(() => void mutate(), [mutate]);
 
     const rows = React.useMemo(
-        () => (data?.results ?? []).map((result) => ({ result, payload: JSON.parse(result.payloadJson) })),
+        () =>
+            (data?.results ?? []).map((result) => ({
+                result,
+                payload: JSON.parse(result.payloadJson),
+            })),
         [data?.results],
-    )
+    );
 
-    if (error) return <ResourceError error={error} onRetry={refresh} />
-    if (!data?.results) return <PageLoading />
+    if (error) return <ResourceError error={error} onRetry={refresh} />;
+    if (!data?.results) return <PageLoading />;
     if (!rows.length) {
         return (
             <ResourceEmpty
                 title="No results"
                 description="No results have been produced by this slave yet."
             />
-        )
+        );
     }
 
     return (
@@ -477,7 +510,10 @@ function SlaveResultsTab({ slaveId }: { slaveId: string }) {
                     </TableHeader>
                     <TableBody>
                         {rows.map(({ result, payload }) => (
-                            <TableRow key={result.id} className="hover:bg-muted/50 transition-colors">
+                            <TableRow
+                                key={result.id}
+                                className="hover:bg-muted/50 transition-colors"
+                            >
                                 <TableCell className="font-mono text-xs font-normal">
                                     {result.medicloudDispatchId}
                                 </TableCell>
@@ -508,5 +544,5 @@ function SlaveResultsTab({ slaveId }: { slaveId: string }) {
                 <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             )}
         </>
-    )
+    );
 }

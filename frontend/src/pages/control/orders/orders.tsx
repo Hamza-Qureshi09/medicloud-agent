@@ -1,9 +1,24 @@
+import { liveListConfig } from "@/lib/swr";
 import { Pagination } from "@/components/common/pagination";
 import { PageLoading, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
 import { AgentOrderStatusBadge } from "@/components/common/statusBadge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { api, type ExternalQuery } from "@/lib/api";
 import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
 import { useCallback, useMemo, useReducer } from "react";
@@ -21,18 +36,16 @@ const orderStatuses: { value: string; label: string }[] = [
     { value: "failed", label: "Failed" },
 ];
 
-
-
 type FilterState = {
-    search: string;      // raw input value
-    committed: string;   // debounced value used in the query
+    search: string; // raw input value
+    committed: string; // debounced value used in the query
     status: string;
     page: number;
 };
 
 type FilterAction =
-    | { type: "SET_SEARCH_INPUT"; value: string }   // just typing, no query change
-    | { type: "COMMIT_SEARCH"; value: string }       // debounce fired
+    | { type: "SET_SEARCH_INPUT"; value: string } // just typing, no query change
+    | { type: "COMMIT_SEARCH"; value: string } // debounce fired
     | { type: "SET_STATUS"; value: string }
     | { type: "SET_PAGE"; value: number };
 
@@ -72,7 +85,7 @@ export function ControlSlaveOrders() {
     const { data, error, mutate } = useSWR(
         api.slaveOrders.listKey(query),
         () => api.slaveOrders.list(query),
-        { refreshInterval: 10_000 },
+        liveListConfig,
     );
 
     const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 });
@@ -131,67 +144,75 @@ export function ControlSlaveOrders() {
             </div>
 
             {/* Table */}
-            {error ? (
-                <ResourceError error={error} onRetry={refresh} />
-            ) : !orders ? (
-                <PageLoading />
-            ) : !orders.length ? (
-                <ResourceEmpty
-                    title="No slave orders"
-                    description="No orders have been routed to slave agents yet. Orders dispatched to slave-owned machines will appear here."
-                />
-            ) : (
-                <>
-                    <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="font-normal">Dispatch ID</TableHead>
-                                    <TableHead className="font-normal">Profile Key</TableHead>
-                                    <TableHead className="font-normal">Target Slave</TableHead>
-                                    <TableHead className="font-normal">Driver</TableHead>
-                                    <TableHead className="font-normal">Status</TableHead>
-                                    <TableHead className="font-normal">Received At</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {orders.map((order) => (
-                                    <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
-                                        <TableCell className="font-mono text-xs font-normal">
-                                            {order.dispatchId}
-                                        </TableCell>
-                                        <TableCell className="font-normal">
-                                            {order.profileKey}
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs font-normal text-muted-foreground">
-                                            {order.targetSlaveId ? (order.targetSlaveId.split('-')[1] || order.targetSlaveId) : "—"}
-                                        </TableCell>
-                                        <TableCell className="font-normal text-muted-foreground">
-                                            {order.driverId}
-                                        </TableCell>
-                                        <TableCell className="font-normal">
-                                            <AgentOrderStatusBadge status={order.status} />
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-xs font-mono font-normal">
-                                            {new Date(order.receivedAt).toLocaleString()}
-                                        </TableCell>
+            {error
+                ? <ResourceError error={error} onRetry={refresh} />
+                : !orders
+                ? <PageLoading />
+                : !orders.length
+                ? (
+                    <ResourceEmpty
+                        title="No slave orders"
+                        description="No orders have been routed to slave agents yet. Orders dispatched to slave-owned machines will appear here."
+                    />
+                )
+                : (
+                    <>
+                        <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="font-normal">Dispatch ID</TableHead>
+                                        <TableHead className="font-normal">Profile Key</TableHead>
+                                        <TableHead className="font-normal">Target Slave</TableHead>
+                                        <TableHead className="font-normal">Driver</TableHead>
+                                        <TableHead className="font-normal">Status</TableHead>
+                                        <TableHead className="font-normal">Received At</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className="flex justify-center pt-2">
-                            <Pagination
-                                page={page}
-                                totalPages={totalPages}
-                                onPageChange={setPage}
-                            />
+                                </TableHeader>
+                                <TableBody>
+                                    {orders.map((order) => (
+                                        <TableRow
+                                            key={order.id}
+                                            className="hover:bg-muted/50 transition-colors"
+                                        >
+                                            <TableCell className="font-mono text-xs font-normal">
+                                                {order.dispatchId}
+                                            </TableCell>
+                                            <TableCell className="font-normal">
+                                                {order.profileKey}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs font-normal text-muted-foreground">
+                                                {order.targetSlaveId
+                                                    ? (order.targetSlaveId.split("-")[1] ||
+                                                        order.targetSlaveId)
+                                                    : "—"}
+                                            </TableCell>
+                                            <TableCell className="font-normal text-muted-foreground">
+                                                {order.driverId}
+                                            </TableCell>
+                                            <TableCell className="font-normal">
+                                                <AgentOrderStatusBadge status={order.status} />
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground text-xs font-mono font-normal">
+                                                {new Date(order.receivedAt).toLocaleString()}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                    )}
-                </>
-            )}
+
+                        {totalPages > 1 && (
+                            <div className="flex justify-center pt-2">
+                                <Pagination
+                                    page={page}
+                                    totalPages={totalPages}
+                                    onPageChange={setPage}
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
         </div>
     );
 }

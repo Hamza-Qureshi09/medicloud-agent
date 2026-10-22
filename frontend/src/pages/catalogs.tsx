@@ -1,7 +1,13 @@
-import React from "react";
+import { useState } from "react";
 import useSWR from "swr";
+import { FlaskIcon, PlusIcon } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
-import { PageLoading, RefreshButton, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
+import {
+    PageLoading,
+    RefreshButton,
+    ResourceEmpty,
+    ResourceError,
+} from "@/components/common/resourceState";
 import { Container } from "@/components/common/container";
 import { PageSection } from "@/components/common/pageSection";
 import {
@@ -10,196 +16,131 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { EyeIcon, FlaskIcon } from "@phosphor-icons/react";
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CatalogDetailDialog } from "./catalogs/catalogDetail";
+import { CreateCatalogDialog } from "./catalogs/forms";
 
+type CatalogView = { kind: "closed" } | { kind: "create" } | {
+    kind: "detail";
+    driverId: string;
+};
 
 export function CatalogsPage() {
-    const {
-        data: catalogsData,
-        isValidating: catalogIsValidating,
-        mutate: catalogsMutate,
-        error: catalogErrors
-    } = useSWR(
+    const { data, error, isValidating, mutate } = useSWR(
         api.catalogs.listKey,
-        () => api.catalogs.list(),
-    )
-    const [selectedDriver, setSelectedDriver] = React.useState<string | null>(null)
-
-    const {
-        data: catalogDetailsData,
-        mutate: catalogDetailsMutate,
-        error: catalogDetailsErrors,
-        isLoading: catalogDetailsLoading
-    } = useSWR(
-        selectedDriver ? api.catalogs.detailKey(selectedDriver) : null,
-        ([, driverId]) => api.catalogs.get({ driver:driverId }),
-    )
-
-    const catalogFields = React.useMemo(() => {
-        return Array.from(
-            new Set(
-                (catalogDetailsData?.tests ?? []).flatMap((test) => Object.keys(test))
-            )
+        api.catalogs.list,
+    );
+    const { data: drivers } = useSWR(
+        api.drivers.listKey(),
+        () => api.drivers.list(),
+    );
+    const [view, setView] = useState<CatalogView>({ kind: "closed" });
+    const availableDrivers = (drivers?.drivers ?? []).filter((driver) =>
+        !(data?.catalogs ?? []).some((catalog) =>
+            catalog.driverId === driver.id
         )
-    }, [catalogDetailsData?.tests])
+    );
+    const close = () => setView({ kind: "closed" });
 
-    // convert camelCase, snake_case, or kebab-case into a human-readable label.
-    function fieldLabel(field: string) {
-        return field
-            .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-            .replace(/[_-]+/g, " ")
-            .replace(/\b\w/g, (letter) => letter.toUpperCase())
-    }
-
-    function fieldValue(value: unknown) {
-        if (Array.isArray(value)) {
-            return value.length ? value.map(String).join(", ") : "—"
-        }
-        if (value && typeof value === "object") {
-            return JSON.stringify(value)
-        }
-        if (value === null || value === undefined || value === "") return "N/A"
-        return String(value)
-    }
-
-
-
-    if (!catalogsData && !catalogErrors) return <PageLoading />
-    if (catalogErrors) {
+    if (!data && !error) return <PageLoading />;
+    if (error) {
         return (
-            <ResourceError error={catalogErrors} onRetry={() => catalogsMutate()} />
-        )
+            <ResourceError
+                error={error}
+                onRetry={() => void mutate()}
+            />
+        );
     }
 
     return (
         <Container>
-
-            {/* top page details */}
             <PageSection
                 eyebrow="Assay capability"
                 title="Analyzer test catalogs"
-                description="Catalogs expose the test codes and mappings supported by each machine driver."
+                description="Analyzer catalogs are stored in this agent's machine database and can be managed here."
                 actions={
-                    <RefreshButton
-                        isLoading={catalogIsValidating}
-                        onRefresh={() => catalogsMutate()}
-                    />
+                    <div className="flex gap-2">
+                        <Button
+                            type="button"
+                            onClick={() => setView({ kind: "create" })}
+                        >
+                            <PlusIcon data-icon="inline-start" />Create catalog
+                        </Button>
+                        <RefreshButton
+                            isLoading={isValidating}
+                            onRefresh={() => void mutate()}
+                        />
+                    </div>
                 }
             />
-
-            {/* data */}
-            {catalogsData?.catalogs?.length ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {catalogsData.catalogs?.map((catalog) => (
-                        <Card key={catalog.id}>
-                            <CardHeader>
-                                <span className="flex size-10 items-center justify-center rounded-2xl bg-muted text-primary">
-                                    <FlaskIcon />
-                                </span>
-                                <CardTitle>{catalog.machine}</CardTitle>
-                                <CardDescription>{catalog.driverId}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex items-center justify-between gap-3">
-                                <Badge variant="secondary">{catalog.catalogCount} tests</Badge>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setSelectedDriver(catalog.driverId)}
-                                >
-                                    <EyeIcon data-icon="inline-start" />
-                                    Browse tests
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <ResourceEmpty
-                    title="No test catalogs"
-                    description="Registered analyzer catalogs will appear here."
+            {data?.catalogs.length
+                ? (
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {data.catalogs.map((catalog) => (
+                            <Card key={catalog.id}>
+                                <CardHeader>
+                                    <span className="flex size-10 items-center justify-center rounded-2xl bg-muted text-primary">
+                                        <FlaskIcon />
+                                    </span>
+                                    <CardTitle>{catalog.machine}</CardTitle>
+                                    <CardDescription>
+                                        {catalog.driverId}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex items-center justify-between gap-3">
+                                    <div className="flex gap-2">
+                                        <Badge variant="secondary">
+                                            {catalog.catalogCount} tests
+                                        </Badge>
+                                        <Badge variant="outline">
+                                            {catalog.source === "database"
+                                                ? "Managed"
+                                                : "Static"}
+                                        </Badge>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setView({
+                                                kind: "detail",
+                                                driverId: catalog.driverId,
+                                            })}
+                                    >
+                                        Open
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )
+                : (
+                    <ResourceEmpty
+                        title="No test catalogs"
+                        description="Create a catalog for a registered driver."
+                    />
+                )}
+            {view.kind === "create" && (
+                <CreateCatalogDialog
+                    drivers={availableDrivers}
+                    onClose={close}
+                    onCreated={async (driverId) => {
+                        await mutate();
+                        setView({ kind: "detail", driverId });
+                    }}
                 />
             )}
-
-            {/* dialog */}
-            <Dialog
-                open={Boolean(selectedDriver)}
-                onOpenChange={(open) => !open && setSelectedDriver(null)}
-            >
-                <DialogContent className="sm:max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{catalogDetailsData?.machine || "Test catalog"}</DialogTitle>
-                        <DialogDescription>
-                            Test codes exposed by {selectedDriver}.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {catalogDetailsLoading ? (
-                        <PageLoading rows={4} />
-                    ) : catalogDetailsErrors ? (
-                        <ResourceError error={catalogDetailsErrors} onRetry={() => catalogDetailsMutate()} />
-                    ) : catalogDetailsData?.tests.length ? (
-                        <div className="overflow-hidden rounded-3xl border bg-card">
-                            <div className="max-h-[60vh] overflow-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            {catalogFields.map((field) => (
-                                                <TableHead key={field}>{fieldLabel(field)}</TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {catalogDetailsData.tests.map((test, index) => (
-                                            <TableRow
-                                                key={String(
-                                                    test.id ||
-                                                    test.code ||
-                                                    test.hostCode ||
-                                                    test.appCode ||
-                                                    index,
-                                                )}
-                                            >
-                                                {catalogFields.map((field) => (
-                                                    <TableCell
-                                                        key={field}
-                                                        className="max-w-72 whitespace-normal"
-                                                    >
-                                                        {fieldValue(test[field])}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    ) : (
-                        <ResourceEmpty
-                            title="No tests in this catalog"
-                            description="The selected driver returned an empty test catalog."
-                        />
-                    )}
-
-                </DialogContent>
-            </Dialog>
+            {view.kind === "detail" && (
+                <CatalogDetailDialog
+                    key={view.driverId}
+                    driverId={view.driverId}
+                    onClose={close}
+                    onSaved={() => mutate()}
+                />
+            )}
         </Container>
-    )
+    );
 }

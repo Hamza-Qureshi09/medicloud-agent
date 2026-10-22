@@ -28,7 +28,7 @@ export function registerSlaveHeartbeatRoute(
 
       const body = context.req.valid("json");
       const instanceId = context.req.header("x-slave-instance-id") || "";
-      await registry.ping(slaveId, body.machines, instanceId);
+      await registry.ping(slaveId, body.machines, instanceId, body.slaveName);
 
       return context.json({
         serverTime: new Date().toISOString(),

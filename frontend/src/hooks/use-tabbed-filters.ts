@@ -57,17 +57,27 @@ export function useTabbedFilters<T extends string>(
     );
 
     const onStatus = React.useCallback(
-        (value: string) => write({ tab, [searchKey]: search, status: value }),
-        [write, tab, searchKey, search],
+        (value: string) => {
+            debouncedCommitSearch.cancel();
+            write({ tab, [searchKey]: search, status: value });
+        },
+        [write, tab, searchKey, search, debouncedCommitSearch],
     );
 
     // Switching tabs drops the filters; they belong to the tab that set them.
     const onTab = React.useCallback(
-        (value: string | number | null) => write({ tab: String(value ?? "") }),
-        [write],
+        (value: string | number | null) => {
+            debouncedCommitSearch.cancel();
+            write({ tab: String(value ?? "") });
+        },
+        [write, debouncedCommitSearch],
     );
 
-    const onReset = React.useCallback(() => write({ tab }), [write, tab]);
+    const onReset = React.useCallback(() => {
+        debouncedCommitSearch.cancel();
+        setInput("");
+        write({ tab });
+    }, [write, tab, debouncedCommitSearch]);
 
     return { tab, search, status, input, page, setPage, onSearch, onStatus, onTab, onReset };
 }

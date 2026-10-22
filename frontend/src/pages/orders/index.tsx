@@ -1,3 +1,4 @@
+import { liveListConfig } from "@/lib/swr";
 import React from "react";
 import type { OrderStatus } from "@/types/api";
 import { Container } from "@/components/common/container";
@@ -23,11 +24,6 @@ import { AgentOrders } from "./agentOrders";
 
 const TABS = ["machine", "agent"] as const;
 const SEARCH_KEYS = { machine: "sampleId", agent: "search" } as const;
-// swrConfig default.
-const ORDERS_SWR_OPTIONS = {
-    revalidateOnFocus: false,
-    refreshInterval: 10_000,
-} as const;
 
 const machineStatuses: { value: string; label: string }[] = [
     { value: "all", label: "All statuses" },
@@ -70,12 +66,12 @@ export function OrdersPage() {
     const machineOrders = useSWR(
         isMachine ? api.orders.listKey(orderQuery) : null,
         () => api.orders.list(orderQuery),
-        ORDERS_SWR_OPTIONS,
+        liveListConfig,
     );
     const orderCount = useSWR(
         isMachine ? api.orders.countKey : null,
         () => api.orders.count(),
-        ORDERS_SWR_OPTIONS,
+        liveListConfig,
     );
 
     const agentQuery = React.useMemo(() => ({
@@ -88,7 +84,7 @@ export function OrdersPage() {
     const agentOrders = useSWR(
         isMachine ? null : api.agentOrders.listKey(agentQuery),
         () => api.agentOrders.list(agentQuery),
-        ORDERS_SWR_OPTIONS,
+        liveListConfig,
     );
 
     const refresh = React.useCallback(async () => {
@@ -116,7 +112,6 @@ export function OrdersPage() {
 
     return (
         <Container>
-
             {/* Page header */}
             <PageSection
                 eyebrow="Worklist"
@@ -154,8 +149,8 @@ export function OrdersPage() {
                 >
                     <SelectTrigger className="w-full font-normal" aria-label="Filter by status">
                         <SelectValue className="font-normal">
-                            {statusOptions.find((option) => option.value === status)?.label
-                                ?? "All statuses"}
+                            {statusOptions.find((option) => option.value === status)?.label ??
+                                "All statuses"}
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>

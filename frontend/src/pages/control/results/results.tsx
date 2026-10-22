@@ -1,11 +1,26 @@
+import { liveListConfig } from "@/lib/swr";
 // Slave-scoped results table for the Control tab
 
 import { Pagination } from "@/components/common/pagination";
 import { PageLoading, ResourceEmpty, ResourceError } from "@/components/common/resourceState";
 import { ResultDeliveryStatusBadge } from "@/components/common/statusBadge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { api, type ExternalQuery } from "@/lib/api";
 import { ITEMS_PER_PAGE, pageCount } from "@/lib/global";
 import React, { useCallback, useMemo, useReducer } from "react";
@@ -23,15 +38,15 @@ const deliveryStatuses: { value: string; label: string }[] = [
 ];
 
 type FilterState = {
-    search: string;      // raw input value
-    committed: string;   // debounced value used in the query
+    search: string; // raw input value
+    committed: string; // debounced value used in the query
     status: string;
     page: number;
 };
 
 type FilterAction =
-    | { type: "SET_SEARCH_INPUT"; value: string }   // just typing, no query change
-    | { type: "COMMIT_SEARCH"; value: string }       // debounce fired
+    | { type: "SET_SEARCH_INPUT"; value: string } // just typing, no query change
+    | { type: "COMMIT_SEARCH"; value: string } // debounce fired
     | { type: "SET_STATUS"; value: string }
     | { type: "SET_PAGE"; value: number };
 
@@ -71,7 +86,7 @@ export function ControlSlaveResults() {
     const { data, error, mutate } = useSWR(
         api.slaveResults.listKey(query),
         () => api.slaveResults.list(query),
-        { refreshInterval: 10_000 },
+        liveListConfig,
     );
 
     const totalPages = pageCount({ page, rows: 0, total: data?.count ?? 0 });
@@ -96,7 +111,11 @@ export function ControlSlaveResults() {
     const refresh = useCallback(() => void mutate(), [mutate]);
 
     const rows = React.useMemo(
-        () => (data?.results ?? []).map((result) => ({ result, payload: JSON.parse(result.payloadJson) })),
+        () =>
+            (data?.results ?? []).map((result) => ({
+                result,
+                payload: JSON.parse(result.payloadJson),
+            })),
         [data?.results],
     );
 
@@ -115,9 +134,13 @@ export function ControlSlaveResults() {
                     value={status || "all"}
                     onValueChange={handleStatus}
                 >
-                    <SelectTrigger className="w-full font-normal" aria-label="Filter by delivery status">
+                    <SelectTrigger
+                        className="w-full font-normal"
+                        aria-label="Filter by delivery status"
+                    >
                         <SelectValue className="font-normal">
-                            {deliveryStatuses.find((o) => o.value === status)?.label ?? "All statuses"}
+                            {deliveryStatuses.find((o) => o.value === status)?.label ??
+                                "All statuses"}
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -133,82 +156,100 @@ export function ControlSlaveResults() {
             </div>
 
             {/* Table */}
-            {error ? (
-                <ResourceError error={error} onRetry={refresh} />
-            ) : !data?.results ? (
-                <PageLoading />
-            ) : !rows.length ? (
-                <ResourceEmpty
-                    title="No slave results"
-                    description="No results have been received from slave agents yet. Results from slave-processed orders will appear here."
-                />
-            ) : (
-                <>
-                    <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="font-normal">Dispatch ID</TableHead>
-                                    <TableHead className="font-normal">Sample ID</TableHead>
-                                    <TableHead className="font-normal">MediCloud Order</TableHead>
-                                    <TableHead className="font-normal">Agent Order</TableHead>
-                                    <TableHead className="font-normal">Delivery Status</TableHead>
-                                    <TableHead className="font-normal">Retries</TableHead>
-                                    <TableHead className="font-normal">Created</TableHead>
-                                    <TableHead className="text-right font-normal">Detail</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {rows.map(({ result, payload }) => (
-                                    <TableRow key={result.id} className="hover:bg-muted/50 transition-colors">
-                                        <TableCell className="font-mono text-xs font-normal">
-                                            {result.medicloudDispatchId}
-                                        </TableCell>
-                                        <TableCell className="font-normal">
-                                            {payload.sampleId || "—"}
-                                        </TableCell>
-                                        <TableCell className="font-normal text-muted-foreground">
-                                            {result.medicloudOrderId}
-                                        </TableCell>
-                                        <TableCell className="tabular-nums font-mono text-xs font-normal">
-                                            {result.agentOrderId != null ? (
-                                                <Link
-                                                    to={`/dashboard/orders/${result.agentOrderId}`}
-                                                    className="hover:underline hover:text-primary text-muted-foreground transition-colors font-normal"
-                                                >
-                                                    #{result.agentOrderId}
-                                                </Link>
-                                            ) : "—"}
-                                        </TableCell>
-                                        <TableCell className="font-normal">
-                                            <ResultDeliveryStatusBadge status={result.deliveryStatus} />
-                                        </TableCell>
-                                        <TableCell className="tabular-nums text-xs font-normal">
-                                            {result.retryCount}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-xs font-mono font-normal">
-                                            {new Date(result.createdAt).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <SlaveResultDetail result={result} payload={payload} />
-                                        </TableCell>
+            {error
+                ? <ResourceError error={error} onRetry={refresh} />
+                : !data?.results
+                ? <PageLoading />
+                : !rows.length
+                ? (
+                    <ResourceEmpty
+                        title="No slave results"
+                        description="No results have been received from slave agents yet. Results from slave-processed orders will appear here."
+                    />
+                )
+                : (
+                    <>
+                        <div className="overflow-x-auto rounded-2xl border border-border bg-card relative">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="font-normal">Dispatch ID</TableHead>
+                                        <TableHead className="font-normal">Sample ID</TableHead>
+                                        <TableHead className="font-normal">
+                                            MediCloud Order
+                                        </TableHead>
+                                        <TableHead className="font-normal">Agent Order</TableHead>
+                                        <TableHead className="font-normal">
+                                            Delivery Status
+                                        </TableHead>
+                                        <TableHead className="font-normal">Retries</TableHead>
+                                        <TableHead className="font-normal">Created</TableHead>
+                                        <TableHead className="text-right font-normal">
+                                            Detail
+                                        </TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className="flex justify-center pt-2">
-                            <Pagination
-                                page={page}
-                                totalPages={totalPages}
-                                onPageChange={setPage}
-                            />
+                                </TableHeader>
+                                <TableBody>
+                                    {rows.map(({ result, payload }) => (
+                                        <TableRow
+                                            key={result.id}
+                                            className="hover:bg-muted/50 transition-colors"
+                                        >
+                                            <TableCell className="font-mono text-xs font-normal">
+                                                {result.medicloudDispatchId}
+                                            </TableCell>
+                                            <TableCell className="font-normal">
+                                                {payload.sampleId || "—"}
+                                            </TableCell>
+                                            <TableCell className="font-normal text-muted-foreground">
+                                                {result.medicloudOrderId}
+                                            </TableCell>
+                                            <TableCell className="tabular-nums font-mono text-xs font-normal">
+                                                {result.agentOrderId != null
+                                                    ? (
+                                                        <Link
+                                                            to={`/dashboard/orders/${result.agentOrderId}`}
+                                                            className="hover:underline hover:text-primary text-muted-foreground transition-colors font-normal"
+                                                        >
+                                                            #{result.agentOrderId}
+                                                        </Link>
+                                                    )
+                                                    : "—"}
+                                            </TableCell>
+                                            <TableCell className="font-normal">
+                                                <ResultDeliveryStatusBadge
+                                                    status={result.deliveryStatus}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="tabular-nums text-xs font-normal">
+                                                {result.retryCount}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground text-xs font-mono font-normal">
+                                                {new Date(result.createdAt).toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <SlaveResultDetail
+                                                    result={result}
+                                                    payload={payload}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                    )}
-                </>
-            )}
+
+                        {totalPages > 1 && (
+                            <div className="flex justify-center pt-2">
+                                <Pagination
+                                    page={page}
+                                    totalPages={totalPages}
+                                    onPageChange={setPage}
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
         </div>
     );
 }

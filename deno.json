@@ -1,9 +1,9 @@
 {
   "tasks": {
     "dev": "deno run --watch-hmr --sloppy-imports --env-file=.env -A main.ts",
-    "check": "deno check main.ts",
+    "check": "deno check --sloppy-imports main.ts",
     "lint": "deno lint main.ts types.ts drizzle.config.ts db flow jobs lib routes schemas tests",
-    "test": "deno test tests",
+    "test": "deno test --sloppy-imports --allow-env --allow-read --allow-write --allow-net --allow-run=deno tests",
     "db:generate": "deno run --env-file=.env -A npm:drizzle-kit@1.0.0-rc.4 generate",
     "db:migrate": "deno run --env-file=.env -A db/migrate.ts",
     "compile:agent:win": "deno compile --sloppy-imports -P --env-file=.env --target x86_64-pc-windows-msvc --output ./binaries/lis-middleware.exe ./main.ts",

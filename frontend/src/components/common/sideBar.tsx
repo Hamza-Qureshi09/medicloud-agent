@@ -13,29 +13,10 @@ import {
     SidebarRail,
     SidebarSeparator,
 } from "@/components/ui/sidebar"
-import {
-    ActivityIcon,
-    ChartLineUpIcon,
-    FlaskIcon,
-    GaugeIcon,
-    ListChecksIcon,
-    MicroscopeIcon,
-    TestTubeIcon,
-    UsersThreeIcon,
-    ShareNetworkIcon
-} from "@phosphor-icons/react"
+import { ActivityIcon } from "@phosphor-icons/react"
+import { navigationGroups } from "@/lib/navigation"
 import { useMachineContext } from "../../contexts/machine-context.tsx";
 
-const navigation = [
-    { to: "/dashboard", label: "Overview", icon: GaugeIcon },
-    { to: "/dashboard/profiles", label: "Analyzers", icon: MicroscopeIcon },
-    { to: "/dashboard/orders", label: "Orders", icon: ListChecksIcon },
-    { to: "/dashboard/results", label: "Results", icon: TestTubeIcon },
-    { to: "/dashboard/statistics", label: "Turnaround", icon: ChartLineUpIcon },
-    { to: "/dashboard/catalogs", label: "Test catalogs", icon: FlaskIcon },
-    { to: "/dashboard/control", label: "Manage Slaves", icon: ShareNetworkIcon },
-    { to: "/dashboard/drivers", label: "Drivers", icon: UsersThreeIcon },
-]
 
 export function AppSidebar() {
     const location = useLocation()
@@ -65,19 +46,16 @@ export function AppSidebar() {
 
             {/* sideBar content */}
             <SidebarContent className="bg-background">
-                <SidebarGroup>
-                    <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+                {navigationGroups(mode).map((group) => <SidebarGroup key={group.label}>
+                    <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navigation.map((item) => {
-                                if (item.to === "/dashboard/control" && mode !== "master") return null;
-                                
-                                return (
+                            {group.items.map((item) => (
                                     <SidebarMenuItem key={item.to}>
                                         <SidebarMenuButton
                                             render={<NavLink to={item.to} />}
                                             isActive={
-                                            location.pathname === item.to // this will not help in nested paths matching
+                                            location.pathname.replace(/\/$/, "") === item.to || (item.to !== "/dashboard" && location.pathname.startsWith(item.to + "/"))
                                             }
                                             tooltip={item.label}
                                             size={"sm"}
@@ -89,11 +67,10 @@ export function AppSidebar() {
                                             <span>{item.label}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-                                );
-                            })}
+                            ))}
                         </SidebarMenu>
                     </SidebarGroupContent>
-                </SidebarGroup>
+                </SidebarGroup>)}
             </SidebarContent>
 
             {/* sidebar footer */}

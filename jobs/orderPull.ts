@@ -1,3 +1,4 @@
+import { acknowledgeStoredOrders } from "../db/repositories/orderAcknowledgements.ts";
 import { and, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import { syncOrderInbox } from "../db/tables/syncOrderInbox.ts";
@@ -8,6 +9,7 @@ import {
   INITIAL_ORDER_PULL_DELAY_MS,
   JITTER_MS,
   MAX_CAPACITY,
+  MIN_ORDER_PULL_INTERVAL_MS,
   ON_ERROR_DELAY_MS,
   ON_ORDERS_RECEIVED_DELAY_MS,
   ORDER_EXPIRY_MS,
@@ -36,6 +38,10 @@ export class OrderPullWorker {
   private stopped = true;
   private lastError: string | null = null; // Last failure message - prevents log-flooding on persistent outages.
   private idleCycles = 0; //Consecutive empty pulls - throttles the "nothing to do" log line.
+
+  get busy(): boolean {
+    return this.running;
+  }
 
   constructor(
     private readonly syncClient: SyncClient,
@@ -126,7 +132,10 @@ export class OrderPullWorker {
             );
           }
           this.idleCycles++;
-          nextDelay = response.pullAfterMs || this.orderPullIntervalMs;
+          nextDelay = Math.max(
+            MIN_ORDER_PULL_INTERVAL_MS,
+            response.pullAfterMs || this.orderPullIntervalMs,
+          );
         }
       }
     } catch (error) {
@@ -296,16 +305,7 @@ export class OrderPullWorker {
 
     // Mark acknowledged orders in the DB.
     const acknowledgedAt = new Date().toISOString();
-    for (const dispatchId of ackResult.acknowledged) {
-      await db
-        .update(syncOrderInbox)
-        .set({
-          status: "acknowledged",
-          updatedAt: acknowledgedAt,
-          acknowledgedAt,
-        })
-        .where(eq(syncOrderInbox.dispatchId, dispatchId));
-    }
+    await acknowledgeStoredOrders(ackResult.acknowledged, acknowledgedAt);
   }
 
   /**
@@ -344,16 +344,7 @@ export class OrderPullWorker {
         );
 
         const now = new Date().toISOString();
-        for (const dispatchId of ackResult.acknowledged) {
-          await db
-            .update(syncOrderInbox)
-            .set({
-              status: "acknowledged",
-              acknowledgedAt: now,
-              updatedAt: now,
-            })
-            .where(eq(syncOrderInbox.dispatchId, dispatchId));
-        }
+        await acknowledgeStoredOrders(ackResult.acknowledged, now);
 
         // Upstream no longer recognises our lease - it has expired and been handed on.
         // Release the row so it stops consuming capacity until the next pull.
