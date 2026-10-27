@@ -19,8 +19,8 @@ node_modules
 binaries
 
 # Regression tests are versioned with the source.
-# !frontend/.env.example
-frontend/*
+!frontend/.env.example
+# frontend/*
 
 
 # md related 
