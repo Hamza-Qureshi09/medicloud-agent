@@ -25,6 +25,7 @@ binaries
 
 # md related 
 **.md
+!/docs/**/*.md
 
 
 # tests
